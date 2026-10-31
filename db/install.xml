@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/oksigeniafamily/db" VERSION="20261031" COMMENT="XMLDB file for local_oksigeniafamily"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_oksigeniafamily_family" COMMENT="One household: its adults and its children">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active or closed"/>
+        <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="manual" SEQUENCE="false" COMMENT="Where it came from: manual, claim, csv, cifra, oneroster"/>
+        <FIELD NAME="sourcekey" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The household in its source, if it has one"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timeclosed" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="When it was closed, for the retention of its data"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="status" UNIQUE="false" FIELDS="status"/>
+        <INDEX NAME="sourcekey" UNIQUE="false" FIELDS="source, sourcekey"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_oksigeniafamily_adult" COMMENT="An adult of a household, with or without a Moodle account">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="familyid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="firstname" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="lastname" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="email" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="phone" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false" COMMENT="In E.164 form"/>
+        <FIELD NAME="sourcekey" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The adult in its source, such as cifra:123 or oneroster:abc"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The adult's Moodle account, if any"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active or left"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="familyid" TYPE="foreign" FIELDS="familyid" REFTABLE="local_oksigeniafamily_family" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="phone" UNIQUE="false" FIELDS="phone"/>
+        <INDEX NAME="sourcekey" UNIQUE="false" FIELDS="sourcekey"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_oksigeniafamily_child" COMMENT="A child of a household: a student, with a Moodle account or a key in the school's data">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="familyid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The student's Moodle account, if any"/>
+        <FIELD NAME="sourcekey" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The student in the school's data, such as cifra:123 or oneroster:abc"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active or left"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timeleft" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="familyid" TYPE="foreign" FIELDS="familyid" REFTABLE="local_oksigeniafamily_family" REFFIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="sourcekey" UNIQUE="false" FIELDS="sourcekey"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_oksigeniafamily_claim" COMMENT="A code that a family claims to join a student">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The student"/>
+        <FIELD NAME="codehash" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="SHA-256 of the code; the code itself is never stored"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active or revoked"/>
+        <FIELD NAME="claims" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="How many adults claimed it"/>
+        <FIELD NAME="expires" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Who issued it"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="codehash" UNIQUE="true" FIELDS="codehash"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>

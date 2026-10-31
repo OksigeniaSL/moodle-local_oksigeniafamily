@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+
 /**
  * English strings for local_oksigeniafamily.
  *
@@ -24,5 +25,39 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['claiminvalid'] = 'This code does not work: it may be mistyped, out of date or withdrawn by the school.';
+$string['event:adultadded'] = 'Adult joined a family';
+$string['event:adultremoved'] = 'Adult left a family';
+$string['event:childlinked'] = 'Child joined a family';
+$string['event:childunlinked'] = 'Child left a family';
+$string['event:familyclosed'] = 'Family closed';
+$string['messageprovider:newadult'] = 'A new adult joins a student\'s family';
+$string['notice:newadult'] = 'Someone with the code of {$a->child} has joined their family as {$a->adult}. If you do not know them, tell the school so it can remove them.';
+$string['notice:newadult:subject'] = '{$a->adult} has joined as family of {$a->child}';
+$string['notice:someone'] = 'an adult';
+$string['oksigeniafamily:manage'] = 'Manage the family records';
 $string['pluginname'] = 'Oksigenia Family';
-$string['privacy:metadata'] = 'Oksigenia Family does not store any personal data yet.';
+$string['privacy:metadata:adult'] = 'The adults of each household, with or without a Moodle account.';
+$string['privacy:metadata:adult:email'] = 'The adult\'s e-mail, if the school or the adult gave it.';
+$string['privacy:metadata:adult:firstname'] = 'The adult\'s first name.';
+$string['privacy:metadata:adult:lastname'] = 'The adult\'s last name.';
+$string['privacy:metadata:adult:phone'] = 'The adult\'s phone number, if the school or the adult gave it.';
+$string['privacy:metadata:adult:userid'] = 'The adult\'s Moodle account, if they have one.';
+$string['privacy:metadata:child'] = 'The students who are the children of each household.';
+$string['privacy:metadata:child:status'] = 'Whether the student is still in the family.';
+$string['privacy:metadata:child:timeleft'] = 'When the student left the family.';
+$string['privacy:metadata:child:userid'] = 'The student\'s Moodle account.';
+$string['privacy:metadata:claim'] = 'The codes that join a family to a student (only their hash is kept).';
+$string['privacy:metadata:claim:userid'] = 'The student the code is for.';
+$string['privacy:metadata:claim:usermodified'] = 'Who issued the code.';
+$string['privacy:metadata:sourcekey'] = 'The person\'s key in the school\'s own data (such as its management system).';
+$string['privacy:metadata:timecreated'] = 'When the record was made.';
+$string['settings:claimdays'] = 'Codes last (days)';
+$string['settings:claimdays_desc'] = 'How many days a student\'s code joins families after it is issued.';
+$string['settings:gracedays'] = 'Grace before closing (days)';
+$string['settings:gracedays_desc'] = 'How long a family with no children left waits before it closes. A student who comes back within it finds the family as it was.';
+$string['settings:parentroleid'] = 'Role for adults with an account';
+$string['settings:parentroleid_desc'] = 'The role given to each adult with a Moodle account over each of their children, such as Moodle\'s parent or mentor role. It is taken away on its own when either leaves. None: no role is given.';
+$string['settings:retentiondays'] = 'Keep closed families (days)';
+$string['settings:retentiondays_desc'] = 'How long a closed family is kept before it is erased with its adults.';
+$string['task:sync'] = 'Keep the family records up to date';
