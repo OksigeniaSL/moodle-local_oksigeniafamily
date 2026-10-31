@@ -1,0 +1,7 @@
+﻿sourcedId,status,dateLastModified,enabledUser,username,userIds,givenName,familyName,middleName,identifier,email,sms,phone,agentSourcedIds,grades,password,userMasterIdentifier,preferredGivenName,preferredMiddleName,preferredFamilyName,primaryOrgSourcedId,pronouns
+u1,,,true,ana.montes,,Ana,Montes,,1001,ana@example.invalid,,,,03,,,,,,sch1,
+u2,,,true,leo.faro,,Leo,"Faro, del Mar",,1002,,,,,03,,,,,,sch1,
+u3,,,false,noa.rios,,Noa,Ríos,,1003,,,,,03,,,,,,sch1,
+t1,,,true,hugo.lago,,Hugo,Lago,,2001,hugo.lago@example.invalid,,,,,,,,,,sch1,
+p1,,,true,bruno.montes,,Bruno,Montes,,3001,,,,u1,,,,,,,sch1,
+b1,,,true,teo.brisa,,Teo,Brisa,,1004,,,,,05,,,,,,sch2,

@@ -1,0 +1,7 @@
+sourcedId,status,dateLastModified,classSourcedId,schoolSourcedId,userSourcedId,role,primary,beginDate,endDate
+e1,,,c1,sch1,u1,student,false,,
+e2,,,c1,sch1,u2,student,false,,
+e3,,,c2,sch1,u2,student,false,,
+e4,,,c1,sch1,t1,teacher,true,,
+e5,,,c3,sch2,b1,student,false,,
+e6,,,c1,sch1,u3,student,false,,

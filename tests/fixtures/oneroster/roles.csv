@@ -1,0 +1,7 @@
+sourcedId,status,dateLastModified,userSourcedId,roleType,role,beginDate,endDate,orgSourcedId,userProfileSourcedId
+r1,,,u1,primary,student,,,sch1,
+r2,,,u2,primary,student,,,sch1,
+r3,,,u3,primary,student,,,sch1,
+r4,,,t1,primary,teacher,,,sch1,
+r5,,,p1,primary,guardian,,,sch1,
+r6,,,b1,primary,student,,,sch2,
