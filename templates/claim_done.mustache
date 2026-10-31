@@ -1,0 +1,57 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/claim_done
+
+    After a family claims a code: who they are family of now, and what each plugin gives them for that child.
+
+    Context variables required for this template:
+    * done - Who they are family of now.
+    * linksheading - The heading of the links.
+    * links - A list of { label, url, pin, note } from the plugins.
+    * pinlabel - How the PIN is introduced.
+    * haslinks - Whether there are any.
+    * nolinks - What to say when there are none.
+
+    Example context (json):
+    {
+        "done": "You are now family of Ana at Colegio Ejemplo.",
+        "linksheading": "What you have now:",
+        "links": [{ "label": "Canteen menu", "url": "https://example.com/local/oksigeniameals/k.php", "pin": "4826", "note": "" }],
+        "pinlabel": "PIN",
+        "haslinks": true,
+        "nolinks": "The school will tell you how to go on."
+    }
+}}
+<div class="local-oksigeniafamily-claimdone">
+    <p class="lead">{{done}}</p>
+    {{#haslinks}}
+    <h3 class="h5">{{linksheading}}</h3>
+    <ul class="list-unstyled">
+        {{#links}}
+        <li class="mb-3">
+            <a class="btn btn-primary" href="{{url}}">{{label}}</a>
+            {{#pin}}<div class="mt-1">{{pinlabel}}: <strong class="text-monospace">{{pin}}</strong></div>{{/pin}}
+            {{#note}}<div class="form-text">{{note}}</div>{{/note}}
+        </li>
+        {{/links}}
+    </ul>
+    {{/haslinks}}
+    {{^haslinks}}
+    <p>{{nolinks}}</p>
+    {{/haslinks}}
+</div>

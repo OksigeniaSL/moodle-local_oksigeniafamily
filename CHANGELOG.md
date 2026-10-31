@@ -7,6 +7,12 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- The page where a family claims a student's code (`claim.php`): no account needed, the adult's name and, if they
+  give them, a mobile phone (kept in E.164, with the site's country code) and an e-mail; a signed-in adult joins with
+  their account. After it, what each plugin gives that family for the child, from
+  `<component>_oksigeniafamily_links(\stdClass $adult, int $childuserid)`, one or several links per child, each
+  with an optional PIN shown apart and an optional note. Ten wrong codes from one address in
+  fifteen minutes and it waits.
 - The family records: households with their adults (with or without a Moodle account) and their children, who are
   students with an account or only a key in the school's data (`cifra:<id>`, `oneroster:<sourcedId>`).
 - The API for other plugins (`\local_oksigeniafamily\api`): who is family of whom by account, by adult and by phone,

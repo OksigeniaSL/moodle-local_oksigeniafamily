@@ -24,6 +24,19 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['cachedef_claimattempts'] = 'Intentos fallidos de código por visitante';
+$string['claim:badphone'] = 'Esto no parece un número de teléfono.';
+$string['claim:code'] = 'Código';
+$string['claim:done'] = 'Ya eres familia de {$a->child} en {$a->site}.';
+$string['claim:email'] = 'Correo (opcional)';
+$string['claim:intro'] = 'Escribe el código que te ha dado el centro y tus datos. No necesitas cuenta.';
+$string['claim:links'] = 'Lo que tienes ahora:';
+$string['claim:nolinks'] = 'El centro te dirá cómo seguir.';
+$string['claim:phone'] = 'Móvil (opcional)';
+$string['claim:pin'] = 'PIN (guárdalo: solo se enseña ahora)';
+$string['claim:submit'] = 'Unirme';
+$string['claim:title'] = 'Únete a la familia de un alumno';
+$string['claim:toomany'] = 'Demasiados intentos. Espera un rato y vuelve a probar.';
 $string['claiminvalid'] = 'Este código no funciona: puede que esté mal escrito, que haya caducado o que el centro lo haya retirado.';
 $string['event:adultadded'] = 'Un adulto se une a una familia';
 $string['event:adultremoved'] = 'Un adulto deja una familia';
@@ -57,6 +70,8 @@ $string['settings:gracedays'] = 'Margen antes de cerrar (días)';
 $string['settings:gracedays_desc'] = 'Cuánto espera una familia sin hijos antes de cerrarse. Un alumno que vuelve dentro de ese plazo encuentra su familia como estaba.';
 $string['settings:parentroleid'] = 'Rol para los adultos con cuenta';
 $string['settings:parentroleid_desc'] = 'El rol que se da a cada adulto con cuenta de Moodle sobre cada uno de sus hijos, como el rol de padre o de mentor de Moodle. Se quita solo cuando cualquiera de los dos se va. Ninguno: no se da rol.';
+$string['settings:phoneprefix'] = 'Prefijo del país para los teléfonos';
+$string['settings:phoneprefix_desc'] = 'Se añade a los números que se escriben sin él, como +34.';
 $string['settings:retentiondays'] = 'Conservar las familias cerradas (días)';
 $string['settings:retentiondays_desc'] = 'Cuánto se guarda una familia cerrada antes de borrarla con sus adultos.';
 $string['task:sync'] = 'Mantener al día las fichas de familias';

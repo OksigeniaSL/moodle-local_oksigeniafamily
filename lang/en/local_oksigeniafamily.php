@@ -24,6 +24,19 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+$string['cachedef_claimattempts'] = 'Failed code tries per visitor';
+$string['claim:badphone'] = 'This does not look like a phone number.';
+$string['claim:code'] = 'Code';
+$string['claim:done'] = 'You are now family of {$a->child} at {$a->site}.';
+$string['claim:email'] = 'E-mail (optional)';
+$string['claim:intro'] = 'Type the code the school gave you and your details. You do not need an account.';
+$string['claim:links'] = 'What you have now:';
+$string['claim:nolinks'] = 'The school will tell you how to go on.';
+$string['claim:phone'] = 'Mobile phone (optional)';
+$string['claim:pin'] = 'PIN (keep it: it is only shown now)';
+$string['claim:submit'] = 'Join';
+$string['claim:title'] = 'Join a student\'s family';
+$string['claim:toomany'] = 'Too many tries. Wait a while and try again.';
 $string['claiminvalid'] = 'This code does not work: it may be mistyped, out of date or withdrawn by the school.';
 $string['event:adultadded'] = 'Adult joined a family';
 $string['event:adultremoved'] = 'Adult left a family';
@@ -57,6 +70,8 @@ $string['settings:gracedays'] = 'Grace before closing (days)';
 $string['settings:gracedays_desc'] = 'How long a family with no children left waits before it closes. A student who comes back within it finds the family as it was.';
 $string['settings:parentroleid'] = 'Role for adults with an account';
 $string['settings:parentroleid_desc'] = 'The role given to each adult with a Moodle account over each of their children, such as Moodle\'s parent or mentor role. It is taken away on its own when either leaves. None: no role is given.';
+$string['settings:phoneprefix'] = 'Country code for phones';
+$string['settings:phoneprefix_desc'] = 'Added to the phone numbers typed without one, such as +34.';
 $string['settings:retentiondays'] = 'Keep closed families (days)';
 $string['settings:retentiondays_desc'] = 'How long a closed family is kept before it is erased with its adults.';
 $string['task:sync'] = 'Keep the family records up to date';
