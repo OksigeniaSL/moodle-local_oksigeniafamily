@@ -7,6 +7,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- For WhatsApp (Oksigenia Marandu): `api::adults_by_phone()`, every adult with a number; `api::update_adult()`,
+  with the event `adult_updated` carrying the phone the adult had, so the old number is let go at once; an adult
+  known by their account who claims with a new phone keeps it. `claim()` says that it does not slow down guessing by
+  itself: the claim page does, by address, and callers from shared addresses slow down by their own key.
 - The page where a family claims a student's code (`claim.php`): no account needed, the adult's name and, if they
   give them, a mobile phone (kept in E.164, with the site's country code) and an e-mail; a signed-in adult joins with
   their account. After it, what each plugin gives that family for the child, from

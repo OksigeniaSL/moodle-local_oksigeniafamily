@@ -40,6 +40,7 @@ $string['claim:toomany'] = 'Too many tries. Wait a while and try again.';
 $string['claiminvalid'] = 'This code does not work: it may be mistyped, out of date or withdrawn by the school.';
 $string['event:adultadded'] = 'Adult joined a family';
 $string['event:adultremoved'] = 'Adult left a family';
+$string['event:adultupdated'] = 'Adult details changed';
 $string['event:childlinked'] = 'Child joined a family';
 $string['event:childunlinked'] = 'Child left a family';
 $string['event:familyclosed'] = 'Family closed';

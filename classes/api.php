@@ -169,6 +169,24 @@ class api {
     }
 
     /**
+     * Every adult with a phone number (the same number can stand for two adults, such as two families of one person).
+     *
+     * @param string $phone The number in E.164 form.
+     * @return stdClass[] Adult records, keyed by id.
+     */
+    public static function adults_by_phone(string $phone): array {
+        global $DB;
+
+        $sql = "SELECT a.*
+                  FROM {local_oksigeniafamily_adult} a
+                  JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
+                 WHERE a.phone = :phone AND a.status = :aactive
+              ORDER BY a.id ASC";
+
+        return $DB->get_records_sql($sql, ['phone' => $phone, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]);
+    }
+
+    /**
      * A student's key in a source of the school's data, to match readers or diners without an account.
      *
      * @param int $childuserid The student's account.
@@ -279,6 +297,44 @@ class api {
         roles::sync_family($familyid);
 
         return $childid;
+    }
+
+    /**
+     * Change an adult's details. When anything changes, the event `adult_updated` carries the phone they had, so a plugin
+     * that linked the old number lets it go at once.
+     *
+     * @param int $adultid The adult.
+     * @param array $data Any of firstname, lastname, email, phone (E.164) and sourcekey.
+     * @return bool Whether anything changed.
+     */
+    public static function update_adult(int $adultid, array $data): bool {
+        global $DB;
+
+        $adult = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid], '*', MUST_EXIST);
+        $changes = ['id' => $adultid];
+        foreach (['firstname', 'lastname', 'email', 'phone', 'sourcekey'] as $field) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+            $value = $data[$field] === '' ? null : $data[$field];
+            if ($value !== $adult->$field) {
+                $changes[$field] = $value;
+            }
+        }
+        if (count($changes) === 1) {
+            return false;
+        }
+        $changes['timemodified'] = time();
+        $DB->update_record('local_oksigeniafamily_adult', (object) $changes);
+
+        event\adult_updated::create([
+            'objectid' => $adultid,
+            'context' => \context_system::instance(),
+            'relateduserid' => $adult->userid ?: null,
+            'other' => ['familyid' => (int) $adult->familyid, 'oldphone' => $adult->phone],
+        ])->trigger();
+
+        return true;
     }
 
     /**
@@ -414,6 +470,10 @@ class api {
      * phone) brings the student into their own family; a new one starts a family of their own, so two parents who live
      * apart each have theirs. The student's other adults and the school are told.
      *
+     * It does not slow down guessing by itself: the claim page does, by the visitor's address. A caller that gets codes
+     * from a shared address, such as WhatsApp (everything comes from Meta's addresses), slows down by its own key, such
+     * as the phone number.
+     *
      * @param string $code The code, as typed (spaces, dashes and case do not matter).
      * @param array $adult Any of firstname, lastname, email, phone (E.164) and userid of who claims it.
      * @return stdClass The adult record, with `childuserid` and `childid` of the student joined.
@@ -447,6 +507,10 @@ class api {
         } else {
             $familyid = (int) $known->familyid;
             $adultid = (int) $known->id;
+            // An adult known by their account who now gives a phone keeps it, so WhatsApp finds them.
+            if (!empty($adult['phone']) && $adult['phone'] !== $known->phone) {
+                self::update_adult($adultid, ['phone' => $adult['phone']]);
+            }
         }
         $others = self::adults_of_child((int) $claim->userid);
         $childid = self::add_child($familyid, (int) $claim->userid);

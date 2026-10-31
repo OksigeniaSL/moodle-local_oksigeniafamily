@@ -116,6 +116,26 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * Every adult with a number, and a change of details that says which phone the adult had.
+     */
+    public function test_phone_and_updates(): void {
+        $this->resetAfterTest();
+
+        $first = api::add_adult(api::create_family(), ['firstname' => 'Pilar', 'phone' => '+34600000001']);
+        $second = api::add_adult(api::create_family(), ['firstname' => 'Pilar', 'phone' => '+34600000001']);
+        $this->assertEqualsCanonicalizing([$first, $second], array_map('intval', array_keys(api::adults_by_phone('+34600000001'))));
+
+        $sink = $this->redirectEvents();
+        $this->assertFalse(api::update_adult($first, ['phone' => '+34600000001']));
+        $this->assertTrue(api::update_adult($first, ['phone' => '+34600000009', 'email' => 'pilar@example.com']));
+        $events = array_values(array_filter($sink->get_events(), fn($event) => $event instanceof event\adult_updated));
+        $this->assertCount(1, $events);
+        $this->assertSame('+34600000001', $events[0]->other['oldphone']);
+        $this->assertSame([$second], array_map('intval', array_keys(api::adults_by_phone('+34600000001'))));
+        $this->assertSame($first, (int) api::adult_by_phone('+34600000009')->id);
+    }
+
+    /**
      * Moodle's parent role follows the records: given to each adult with an account over each child, taken away when
      * the child leaves, and none at all while the site chooses no role.
      */

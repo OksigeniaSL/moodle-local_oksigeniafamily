@@ -40,6 +40,7 @@ $string['claim:toomany'] = 'Demasiados intentos. Espera un rato y vuelve a proba
 $string['claiminvalid'] = 'Este código no funciona: puede que esté mal escrito, que haya caducado o que el centro lo haya retirado.';
 $string['event:adultadded'] = 'Un adulto se une a una familia';
 $string['event:adultremoved'] = 'Un adulto deja una familia';
+$string['event:adultupdated'] = 'Cambian los datos de un adulto';
 $string['event:childlinked'] = 'Un hijo se une a una familia';
 $string['event:childunlinked'] = 'Un hijo deja una familia';
 $string['event:familyclosed'] = 'Familia cerrada';
