@@ -136,6 +136,23 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * Who an adult is, for Oksigenia Marandu's list of numbers.
+     */
+    public function test_marandu_label(): void {
+        global $CFG;
+        $this->resetAfterTest();
+        require_once($CFG->dirroot . '/local/oksigeniafamily/lib.php');
+
+        $ana = $this->getDataGenerator()->create_user(['firstname' => 'Ana']);
+        $familyid = api::create_family();
+        $adultid = api::add_adult($familyid, ['firstname' => 'Lucía', 'lastname' => 'Sanz', 'phone' => '+34600000001']);
+        api::add_child($familyid, (int) $ana->id);
+
+        $this->assertSame('Lucía Sanz (family of Ana)', local_oksigeniafamily_oksigeniamarandu_label($adultid));
+        $this->assertNull(local_oksigeniafamily_oksigeniamarandu_label($adultid + 100));
+    }
+
+    /**
      * Moodle's parent role follows the records: given to each adult with an account over each child, taken away when
      * the child leaves, and none at all while the site chooses no role.
      */

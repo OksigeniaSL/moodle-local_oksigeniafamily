@@ -7,6 +7,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- For Oksigenia Marandu's list of numbers: who each adult is (`local_oksigeniafamily_oksigeniamarandu_label()`, such
+  as "Lucía Sanz (family of Ana)") and the string `marandu:item`.
 - For WhatsApp (Oksigenia Marandu): `api::adults_by_phone()`, every adult with a number; `api::update_adult()`,
   with the event `adult_updated` carrying the phone the adult had, so the old number is let go at once; an adult
   known by their account who claims with a new phone keeps it. `claim()` says that it does not slow down guessing by
