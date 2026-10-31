@@ -1,0 +1,49 @@
+name: no-ai-signature
+
+# Second lock of the rule «no AI signature» (see .githooks/commit-msg): checks the new commits of each pull request
+# or push and the text of the pull request.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  signature:
+    name: No AI signature
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Commits and pull request text
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          pattern='(<noreply@anthropic\.com>|^Claude-Session:|^Co-Authored-By:.*\bClaude\b|Generated with \[|claude\.ai/code/)'
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            range="$HEAD_SHA -1"
+          else
+            range="$BASE..$HEAD_SHA"
+          fi
+          failed=0
+          for c in $(git rev-list $range); do
+            if git log -1 --format=%B "$c" | grep -nEi "$pattern"; then
+              echo "::error::Commit $c carries an AI signature"
+              failed=1
+            fi
+          done
+          if printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" | grep -nEi "$pattern"; then
+            echo "::error::The pull request text carries an AI signature"
+            failed=1
+          fi
+          exit $failed

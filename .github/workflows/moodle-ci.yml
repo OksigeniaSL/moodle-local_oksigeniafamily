@@ -1,0 +1,210 @@
+# Moodle Plugin CI — the suite that Moodle Marketplace reviewers expect (validate, lint, codechecker, phpdoc,
+# savepoints, mustache, grunt) plus the plugin's PHPUnit and Behat tests.
+#
+# Pushes and pull requests run a short matrix (the lowest and the highest supported branch); tags or a manual run
+# go through every branch that still gets security fixes, plus main. main tracks the next Moodle release and is
+# allowed to fail, so upstream breakage shows up early.
+#
+# Reference template: https://github.com/moodlehq/moodle-plugin-ci
+name: Moodle Plugin CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    # What is not code does not run the suite: the minutes of Actions are counted.
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE', '.gitignore', 'provenance/**']
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'LICENSE', '.gitignore', 'provenance/**']
+  workflow_dispatch:
+
+# A new push cancels the run of the one before it on the same branch, which nobody needs any more.
+concurrency:
+  group: moodle-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  matrix:
+    runs-on: ubuntu-22.04
+    outputs:
+      include: ${{ steps.pick.outputs.include }}
+    steps:
+      - id: pick
+        run: |
+          low='{"moodle-branch":"MOODLE_405_STABLE","php":"8.1","node":"20"}'
+          b502='{"moodle-branch":"MOODLE_502_STABLE","php":"8.3","node":"22"}'
+          high='{"moodle-branch":"MOODLE_503_STABLE","php":"8.3","node":"22","pg":"17"}'
+          next='{"moodle-branch":"main","php":"8.4","node":"22","pg":"17","experimental":true}'
+          if [[ "$GITHUB_REF" == refs/tags/* || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+            echo "include=[$low,$b502,$high,$next]" >> "$GITHUB_OUTPUT"
+          else
+            echo "include=[$low,$high]" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    needs: matrix
+    runs-on: ubuntu-22.04
+    continue-on-error: ${{ matrix.experimental || false }}
+
+    services:
+      postgres:
+        # 5.3+ needs PostgreSQL 17 (the Behat install runs the environment check); the older branches stay on 16.
+        image: postgres:${{ matrix.pg || '16' }}
+        env:
+          POSTGRES_USER: 'postgres'
+          POSTGRES_HOST_AUTH_METHOD: 'trust'
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.include) }}
+
+    steps:
+      - name: Check out plugin code
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pgsql, zip, gd, soap, xmlrpc, mbstring, intl
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo "$(pwd)/ci/bin" >> "$GITHUB_PATH"
+          echo "$(pwd)/ci/vendor/bin" >> "$GITHUB_PATH"
+          sudo locale-gen en_AU.UTF-8
+
+      - name: Install Moodle (${{ matrix.moodle-branch }})
+        run: |
+          moodle-plugin-ci install \
+            --plugin=$(pwd)/plugin \
+            --db-host=127.0.0.1 \
+            --db-user=postgres \
+            --db-pass='' \
+            --db-name=moodle \
+            --db-type=pgsql \
+            --branch=${{ matrix.moodle-branch }}
+        env:
+          DB: pgsql
+          MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+
+      - name: validate
+        if: always()
+        run: moodle-plugin-ci validate
+
+      - name: phplint
+        if: always()
+        run: moodle-plugin-ci phplint
+
+      - name: phpmd
+        if: always()
+        run: moodle-plugin-ci phpmd
+
+      - name: codechecker
+        if: always()
+        run: moodle-plugin-ci codechecker
+
+      - name: phpdoc
+        if: always()
+        run: moodle-plugin-ci phpdoc
+
+      - name: savepoints
+        if: always()
+        run: moodle-plugin-ci savepoints
+
+      - name: mustache
+        if: always()
+        run: moodle-plugin-ci mustache
+
+      - name: grunt
+        if: always()
+        run: moodle-plugin-ci grunt --max-lint-warnings 0
+
+      - name: phpunit
+        if: always()
+        run: moodle-plugin-ci phpunit --fail-on-warning
+
+      - name: behat
+        if: always()
+        run: moodle-plugin-ci behat --profile chrome
+
+  mariadb:
+    # Many school sites run on MariaDB: the tests of the plugin run on MariaDB 11.4 too.
+    runs-on: ubuntu-22.04
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MYSQL_USER: 'root'
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+          MYSQL_CHARACTER_SET_SERVER: 'utf8mb4'
+          MYSQL_COLLATION_SERVER: 'utf8mb4_unicode_ci'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+
+    steps:
+      - name: Check out plugin code
+        uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli, zip, gd, soap, xmlrpc, mbstring, intl
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install moodle-plugin-ci
+        run: |
+          composer create-project -n --no-dev --prefer-dist moodlehq/moodle-plugin-ci ci ^4
+          echo "$(pwd)/ci/bin" >> "$GITHUB_PATH"
+          echo "$(pwd)/ci/vendor/bin" >> "$GITHUB_PATH"
+          sudo locale-gen en_AU.UTF-8
+
+      - name: Install Moodle (MOODLE_503_STABLE, MariaDB)
+        run: |
+          moodle-plugin-ci install \
+            --plugin=$(pwd)/plugin \
+            --db-host=127.0.0.1 \
+            --db-user=root \
+            --db-pass='' \
+            --db-name=moodle \
+            --db-type=mariadb \
+            --branch=MOODLE_503_STABLE
+        env:
+          DB: mariadb
+          MOODLE_BRANCH: MOODLE_503_STABLE
+
+      - name: phpunit
+        run: moodle-plugin-ci phpunit --fail-on-warning
