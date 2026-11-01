@@ -7,6 +7,7 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- The notice that a new adult joined a child also reaches the phone, in the Moodle app or Oksigenia Aty.
 - For Oksigenia Marandu's list of numbers: who each adult is (`local_oksigeniafamily_oksigeniamarandu_label()`, such
   as "Lucía Sanz (family of Ana)") and the string `marandu:item`.
 - For WhatsApp (Oksigenia Marandu): `api::adults_by_phone()`, every adult with a number; `api::update_adult()`,
