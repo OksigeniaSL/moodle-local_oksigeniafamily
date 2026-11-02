@@ -413,4 +413,41 @@ class consent_view {
 
         return $rows;
     }
+
+    /**
+     * The card of a child's page in Oksigenia Aty: the open requests about the child, with what this adult answered.
+     *
+     * @param int $adultuserid The adult's account.
+     * @param int $childuserid The child.
+     * @param int $now The time.
+     * @return array One card, or none.
+     */
+    public static function child_card(int $adultuserid, int $childuserid, int $now): array {
+        $component = 'local_oksigeniafamily';
+        $items = [];
+        foreach (consent::for_user($adultuserid, $now) as $item) {
+            if (!in_array($childuserid, $item['children'], true)) {
+                continue;
+            }
+            $request = $item['request'];
+            $deadline = (int) $request->deadline;
+            $until = page::date($deadline);
+            $mine = consent::last_answers((int) $request->id, [$childuserid])[$childuserid][(int) $item['adult']->id] ?? null;
+            $detail = $mine
+                ? get_string($mine->answer === consent::YES ? 'consent:aty:yes' : 'consent:aty:no', $component, $until)
+                : get_string('consent:aty:missing', $component, $until);
+            $items[] = [
+                'title' => format_string($request->title, true, ['context' => \context_system::instance()]),
+                'detail' => $detail,
+                'date' => $deadline,
+                'urgent' => !$mine && $deadline - $now <= 2 * DAYSECS,
+                'url' => (new \moodle_url('/local/oksigeniafamily/consent.php', ['id' => $request->id]))->out(false),
+            ];
+        }
+        if (!$items) {
+            return [];
+        }
+
+        return [['heading' => get_string('consent:aty:heading', $component), 'items' => $items]];
+    }
 }

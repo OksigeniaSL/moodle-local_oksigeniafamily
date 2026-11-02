@@ -184,7 +184,7 @@ final class consent_test extends \advanced_testcase {
      * that need every adult; and the pages render, for the school, for an adult and behind the key.
      */
     public function test_pending_for_child_and_pages(): void {
-        global $OUTPUT, $PAGE;
+        global $DB, $OUTPUT, $PAGE;
         $this->resetAfterTest();
         $data = $this->setup_family();
         $everyone = consent::create(\context_system::instance(), [
@@ -211,10 +211,11 @@ final class consent_test extends \advanced_testcase {
             'canaddnew' => false, 'cancancel' => true, 'csvurl' => '#', 'pdfurl' => '#',
         ]);
         $this->assertStringContainsString('Pilar Sanz', $html);
-        $adult = \core\di::get(\moodle_database::class)->get_record('local_oksigeniafamily_adult', ['id' => $data->adultid]);
+        $adult = $DB->get_record('local_oksigeniafamily_adult', ['id' => $data->adultid]);
         $url = new \moodle_url('/local/oksigeniafamily/consent.php', ['id' => $data->requestid]);
         $view = consent_view::answer($request, $adult, [(int) $data->ana->id], $now, $url, ['adultid' => $data->adultid]);
-        $this->assertStringContainsString('name="answer"', $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view));
+        $html = $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view);
+        $this->assertStringContainsString('name="answer"', $html);
         $adults = [];
         foreach (\local_oksigeniafamily\api::adults_of_child((int) $data->ana->id) as $one) {
             $adults[(int) $one->id] = $one;
@@ -225,7 +226,8 @@ final class consent_test extends \advanced_testcase {
         $this->assertStringContainsString('Pilar Sanz', $html);
         // A request that needs every adult cannot be answered behind the key.
         $view = consent_view::answer_by_key(consent::get($everyone), (int) $data->ana->id, $adults, $now, $url, ['t' => 'x']);
-        $this->assertStringNotContainsString('name="answer"', $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view));
+        $html = $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view);
+        $this->assertStringNotContainsString('name="answer"', $html);
     }
 
     /**
@@ -300,6 +302,17 @@ final class consent_test extends \advanced_testcase {
         $this->assertCount(1, $mine);
         $this->assertSame([(int) $data->ana->id], $mine[0]['children']);
         $this->assertSame([], consent::for_user((int) $data->teacher->id, $now));
+
+        // The card on Ana's page in Aty: missing, and once answered, what was said.
+        $card = consent_view::child_card((int) $data->parent->id, (int) $data->ana->id, $now);
+        $this->assertCount(1, $card[0]['items']);
+        $this->assertStringContainsString('consent.php?id=' . $data->requestid, $card[0]['items'][0]['url']);
+        $until = page::date((int) consent::get($data->requestid)->deadline);
+        $this->assertSame(get_string('consent:aty:missing', 'local_oksigeniafamily', $until), $card[0]['items'][0]['detail']);
+        consent::answer($data->requestid, (int) $data->ana->id, $data->adultid, consent::YES, 'app');
+        $card = consent_view::child_card((int) $data->parent->id, (int) $data->ana->id, $now);
+        $this->assertSame(get_string('consent:aty:yes', 'local_oksigeniafamily', $until), $card[0]['items'][0]['detail']);
+        $this->assertSame([], consent_view::child_card((int) $data->parent->id, (int) $data->leo->id, $now));
 
         // Made more than a day ago, with the deadline less than a day away: the reminder is due.
         $DB->update_record('local_oksigeniafamily_request', (object) [

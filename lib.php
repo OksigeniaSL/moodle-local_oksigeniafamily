@@ -156,3 +156,15 @@ function local_oksigeniafamily_pluginfile($course, $cm, $context, $filearea, $ar
     }
     send_stored_file($file, 0, 0, $forcedownload, $options);
 }
+
+/**
+ * For Oksigenia Aty: on a child's page in the app of an adult of their family, the open requests for consent about the
+ * child, with what this adult answered; each row opens the request to answer it or change the answer.
+ *
+ * @param int $adultuserid The adult's account (their own or the account of Aty).
+ * @param int $childuserid The child.
+ * @return array One card, or none.
+ */
+function local_oksigeniafamily_oksigeniaaty_child_cards(int $adultuserid, int $childuserid): array {
+    return \local_oksigeniafamily\local\consent_view::child_card($adultuserid, $childuserid, time());
+}

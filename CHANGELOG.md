@@ -20,6 +20,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   such as the canteen's link with its PIN: the requests still waiting for that student, each with a signed link. The key
   is the student's, so the page asks which of the student's adults is answering, and keeps the key's id (never the key);
   a request that needs every adult is not answered there.
+- On a child's page in Oksigenia Aty, a card with the open requests about the child and what the adult answered, each
+  opening the request (`local_oksigeniafamily_oksigeniaaty_child_cards()`, 0.3.1-dev).
 
 ### Fixed
 
