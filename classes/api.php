@@ -493,9 +493,14 @@ class api {
     }
 
     /**
-     * Claim a student's code: the adult joins the student's family. An adult already known (by their account or their
-     * phone) brings the student into their own family; a new one starts a family of their own, so two parents who live
-     * apart each have theirs. The student's other adults and the school are told.
+     * Claim a student's code: the adult joins the student's family. An adult already known brings the student into their
+     * own family; a new one starts a family of their own, so two parents who live apart each have theirs. The student's
+     * other adults and the school are told.
+     *
+     * An adult is known by their account, which the caller has to have checked, or by their phone only when `$phoneverified`
+     * says that someone vouches for the number, as WhatsApp does for who writes from it. A phone that was only typed proves
+     * nothing: anyone with a code who knows another parent's number would get into that adult's family. So it never joins
+     * an adult who is already there, nor changes anything of theirs: it is kept with a new adult, in a new family.
      *
      * It does not slow down guessing by itself: the claim page does, by the visitor's address. A caller that gets codes
      * from a shared address, such as WhatsApp (everything comes from Meta's addresses), slows down by its own key, such
@@ -503,10 +508,11 @@ class api {
      *
      * @param string $code The code, as typed (spaces, dashes and case do not matter).
      * @param array $adult Any of firstname, lastname, email, phone (E.164) and userid of who claims it.
+     * @param bool $phoneverified Whether the phone is proved to belong to who claims.
      * @return stdClass The adult record, with `childuserid` and `childid` of the student joined.
      * @throws \moodle_exception When the code does not exist, has expired or was revoked.
      */
-    public static function claim(string $code, array $adult): stdClass {
+    public static function claim(string $code, array $adult, bool $phoneverified = false): stdClass {
         global $DB;
 
         $code = strtoupper(preg_replace('/[\s-]+/', '', $code));
@@ -524,7 +530,7 @@ class api {
                 IGNORE_MULTIPLE
             );
         }
-        if (!$known && !empty($adult['phone'])) {
+        if (!$known && $phoneverified && !empty($adult['phone'])) {
             $known = self::adult_by_phone($adult['phone']);
         }
         $isnew = !$known;

@@ -73,8 +73,9 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
-     * Claiming a student's code: a new adult starts a family of their own, the same adult again (by phone) stays in it,
-     * another adult starts another; the student's other adults are told; a wrong, revoked or expired code fails.
+     * Claiming a student's code: a new adult starts a family of their own, the same adult again (by a phone someone vouches
+     * for) stays in it, another adult starts another; the student's other adults are told; a wrong, revoked or expired code
+     * fails.
      */
     public function test_claim(): void {
         $this->resetAfterTest();
@@ -98,8 +99,8 @@ final class api_test extends \advanced_testcase {
         // The mother hears of the new adult.
         $this->assertContains((int) $mother->id, array_map('intval', array_column($messages->get_messages(), 'useridto')));
 
-        // The father again, by his phone: same adult, same family.
-        $again = api::claim($code, ['phone' => '+34600000002']);
+        // The father again, by his phone, which WhatsApp vouches for: same adult, same family.
+        $again = api::claim($code, ['phone' => '+34600000002'], true);
         $this->assertSame((int) $second->id, (int) $again->id);
 
         foreach (['WRONGCOD', ''] as $wrong) {
@@ -113,6 +114,68 @@ final class api_test extends \advanced_testcase {
         api::revoke_claim_codes((int) $ana->id);
         $this->expectException(\moodle_exception::class);
         api::claim($code, ['phone' => '+34600000004']);
+    }
+
+    /**
+     * A phone that was only typed proves nothing. With a valid code and another parent's number, nobody gets into that
+     * parent's family: a new adult in a new family keeps the number, and that parent stays exactly as they were. Only
+     * when someone vouches for the number does it join them. An account still joins by itself, and keeps the phone it
+     * gives.
+     */
+    public function test_claim_by_phone_only_when_verified(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $own = $generator->create_user();
+        $stranger = $generator->create_user();
+        $number = '+14155550101';
+        $familyid = api::create_family('csv', 'F1');
+        $parent = api::add_adult($familyid, ['firstname' => 'Marta', 'lastname' => 'Gil', 'phone' => $number]);
+        api::add_child($familyid, (int) $own->id);
+        $before = $DB->get_record('local_oksigeniafamily_adult', ['id' => $parent]);
+
+        // Somebody holding the code of another student types Marta's number.
+        $code = api::issue_claim_code((int) $stranger->id);
+        $sink = $this->redirectEvents();
+        $joined = api::claim($code, ['firstname' => 'Someone', 'phone' => $number]);
+        $updates = array_filter($sink->get_events(), fn($event) => $event instanceof event\adult_updated);
+        $sink->close();
+
+        $this->assertNotSame($parent, (int) $joined->id);
+        $this->assertNotSame($familyid, (int) $joined->familyid);
+        $this->assertSame($number, $joined->phone);
+        $this->assertSame([], $updates);
+        $this->assertEquals($before, $DB->get_record('local_oksigeniafamily_adult', ['id' => $parent]));
+        $this->assertFalse(api::adult_has_child($parent, (int) $stranger->id));
+        $this->assertSame([(int) $own->id], array_map(
+            fn($child) => (int) $child->userid,
+            array_values(api::children_of_adult($parent))
+        ));
+        $this->assertSame(1, $DB->count_records('local_oksigeniafamily_child', ['familyid' => $familyid]));
+
+        // Saying nothing is the same as saying it is not verified, whatever the code.
+        $other = api::claim(api::issue_claim_code((int) $own->id), ['phone' => $number]);
+        $this->assertNotSame($parent, (int) $other->id);
+        $this->assertNotSame($familyid, (int) $other->familyid);
+
+        // With the number vouched for, it is Marta: she gets the student, in her family.
+        $verified = api::claim($code, ['phone' => $number], true);
+        $this->assertSame($parent, (int) $verified->id);
+        $this->assertSame($familyid, (int) $verified->familyid);
+        $this->assertTrue(api::adult_has_child($parent, (int) $stranger->id));
+
+        // A new number, vouched for or not, is a new adult.
+        $fresh = api::claim($code, ['phone' => '+14155550109'], true);
+        $this->assertNotSame($parent, (int) $fresh->id);
+
+        // An account joins by itself, and it is its own phone that it changes.
+        $mother = $generator->create_user();
+        $withaccount = api::add_adult(api::create_family(), ['firstname' => 'Ana', 'userid' => $mother->id]);
+        $signedin = api::claim($code, ['firstname' => 'Ana', 'userid' => $mother->id, 'phone' => '+14155550108']);
+        $this->assertSame($withaccount, (int) $signedin->id);
+        $this->assertSame('+14155550108', $signedin->phone);
+        $this->assertSame($number, $DB->get_field('local_oksigeniafamily_adult', 'phone', ['id' => $parent]));
     }
 
     /**

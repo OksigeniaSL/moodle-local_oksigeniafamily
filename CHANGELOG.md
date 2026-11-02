@@ -30,6 +30,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Security
 
+- `api::claim()` joins an adult by phone only with its new `$phoneverified` set to true, as for a number WhatsApp vouches
+  for. A phone that was only typed, as on the claim page, used to get whoever held a valid code and knew another parent's
+  number into that parent's family. Now it is kept with a new adult in a new family, and nothing of the other adult
+  changes. Joining by the account of who is signed in stays as it was. Callers that vouch for the number have to pass
+  `true`.
 - The letter's QR brings the code after the `#` of the claim page's address, which browsers do not send: it stays out of
   the server's logs. A code exists in the clear only in the page that issues the letters, which is not cached and
   answers only once; a lost letter is replaced by a new code.
@@ -53,7 +58,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   a student's key in a source, and the changes (start a family, add an adult or a child, give an adult an account,
   a child or an adult leaving, closing a family).
 - Claim codes: eight characters that are not read wrong, kept only as a hash, that join a family to a student; a
-  known adult (by account or phone) brings the student into their family, a new one starts their own. The
+  known adult (by account or by a phone someone vouches for) brings the student into their family, a new one starts
+  their own. The
   student's other adults and the school's managers are told when a new adult joins.
 - Keeping up to date on its own (a daily task and an observer): children whose account is deleted or suspended
   leave, families with no children left close after a grace period, and closed families are erased after their

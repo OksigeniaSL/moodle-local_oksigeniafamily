@@ -60,6 +60,7 @@ if ($data = $form->get_data()) {
             $adult['userid'] = (int) $USER->id;
         }
         try {
+            // A phone typed here proves nothing, so it is not passed as verified: it never joins an adult already there.
             $done = \local_oksigeniafamily\api::claim((string) $data->code, $adult);
         } catch (moodle_exception $e) {
             if ($e->errorcode !== 'claiminvalid') {
