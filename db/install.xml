@@ -94,7 +94,7 @@
         <FIELD NAME="message" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="messageformat" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="deadline" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The last second families can answer"/>
-        <FIELD NAME="scope" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="Who it went to: course, group or cohort; empty for students one by one"/>
+        <FIELD NAME="scope" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Who it went to: course, group or cohort; empty for students one by one"/>
         <FIELD NAME="scopeid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The course, group or cohort"/>
         <FIELD NAME="needall" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 if every adult of a student has to say yes; 0 if one is enough"/>
         <FIELD NAME="keepdays" TYPE="int" LENGTH="5" NOTNULL="true" DEFAULT="365" SEQUENCE="false" COMMENT="Days after the deadline before it is erased with its answers"/>
@@ -134,7 +134,7 @@
         <FIELD NAME="requestid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="childuserid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The student"/>
         <FIELD NAME="adultid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The adult of the family records; 0 for a paper answer from someone who is not in them"/>
-        <FIELD NAME="adultname" TYPE="char" LENGTH="255" NOTNULL="true" DEFAULT="" SEQUENCE="false" COMMENT="Who answered, as they were called then, so the record outlives the adult"/>
+        <FIELD NAME="adultname" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Who answered, as they were called then, so the record outlives the adult"/>
         <FIELD NAME="answer" TYPE="char" LENGTH="3" NOTNULL="true" SEQUENCE="false" COMMENT="yes or no"/>
         <FIELD NAME="comment" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="channel" TYPE="char" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="app, web, email, link, whatsapp, telegram or school"/>

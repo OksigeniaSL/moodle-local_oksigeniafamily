@@ -173,7 +173,7 @@ class consent_view {
         $open = consent::is_open($request, $now);
         $rows = [];
         foreach ($children as $childuserid) {
-            $child = \core_user::get_user($childuserid, 'id, firstname, lastname, deleted');
+            $child = \core_user::get_user($childuserid);
             if (!$child || !empty($child->deleted)) {
                 continue;
             }
@@ -209,6 +209,84 @@ class consent_view {
             'haschildren' => (bool) $rows,
             'open' => $open,
         ];
+    }
+
+    /**
+     * The page behind another plugin's key of a student: the key is the student's, so whoever answers says which of the
+     * student's adults they are, and sees what the others answered.
+     *
+     * @param \stdClass $request The request.
+     * @param int $childuserid The student.
+     * @param \stdClass[] $adults The student's adults in the records, by id.
+     * @param int $now The time.
+     * @param \moodle_url $action Where the answers go.
+     * @param array $hidden What else goes with them (the link).
+     * @return array For local_oksigeniafamily/consent_answer.
+     */
+    public static function answer_by_key(
+        \stdClass $request,
+        int $childuserid,
+        array $adults,
+        int $now,
+        \moodle_url $action,
+        array $hidden
+    ): array {
+        $component = 'local_oksigeniafamily';
+        $child = \core_user::get_user($childuserid);
+        $view = self::request($request, $now, (string) ($hidden['t'] ?? '')) + [
+            'action' => $action->out(false),
+            'as' => '',
+            'children' => [],
+            'haschildren' => false,
+            'note' => '',
+        ];
+        if (!$child || !empty($child->deleted)) {
+            return $view;
+        }
+        if (!$adults) {
+            $view['note'] = get_string('consent:key:noadults', $component);
+            $view['open'] = false;
+        } else if (!empty($request->needall)) {
+            $view['note'] = get_string('consent:key:needall', $component);
+            $view['open'] = false;
+        }
+
+        $last = consent::last_answers((int) $request->id, [$childuserid])[$childuserid] ?? [];
+        $options = [];
+        $answers = [];
+        foreach ($adults as $adultid => $adult) {
+            $name = consent::adult_name($adult);
+            $options[] = ['id' => (int) $adultid, 'name' => $name];
+            if (isset($last[$adultid])) {
+                $answers[] = get_string('consent:key:said', $component, (object) [
+                    'adult' => $name,
+                    'answer' => get_string($last[$adultid]->answer === consent::YES ? 'consent:yes' : 'consent:no', $component),
+                    'when' => self::datetime((int) $last[$adultid]->timecreated),
+                ]);
+            }
+        }
+        $fields = [];
+        foreach ($hidden + ['childuserid' => $childuserid, 'sesskey' => sesskey()] as $name => $value) {
+            $fields[] = ['name' => $name, 'value' => $value];
+        }
+        $first = format_string($child->firstname);
+        $view['haschildren'] = true;
+        $view['children'][] = [
+            'name' => $first,
+            'fullname' => fullname($child),
+            'answered' => false,
+            'hasanswers' => (bool) $answers,
+            'answers' => $answers,
+            'chooser' => $adults ? ['selectid' => 'okf-who-' . $childuserid, 'options' => $options] : null,
+            'yeslabel' => get_string('consent:yes', $component),
+            'nolabel' => get_string('consent:no', $component),
+            'yesaria' => get_string('consent:yesfor', $component, $first),
+            'noaria' => get_string('consent:nofor', $component, $first),
+            'hidden' => $fields,
+            'commentid' => 'okf-comment-' . $childuserid,
+        ];
+
+        return $view;
     }
 
     /**

@@ -122,7 +122,9 @@ function local_oksigeniafamily_pluginfile($course, $cm, $context, $filearea, $ar
     $allowed = false;
     $link = \local_oksigeniafamily\local\consent_link::read(optional_param('t', '', PARAM_ALPHANUMEXT));
     if ($link && $link['requestid'] === $requestid) {
-        $allowed = (bool) \local_oksigeniafamily\local\consent::children_for_adult($request, $link['adultid']);
+        $allowed = $link['source'] === 'key'
+            ? in_array($link['childuserid'], \local_oksigeniafamily\local\consent::students($requestid), true)
+            : (bool) \local_oksigeniafamily\local\consent::children_for_adult($request, $link['adultid']);
     }
     if (!$allowed && isloggedin() && !isguestuser()) {
         $requestcontext = context::instance_by_id((int) $request->contextid, IGNORE_MISSING);

@@ -603,4 +603,18 @@ class api {
 
         return $count;
     }
+
+    /**
+     * For a plugin that gives a student's family a key of its own (the canteen's link with its PIN): the requests for
+     * consent about that student still waiting for an answer, each with a signed link to answer them that dies with the
+     * request. Show them only behind the key. The page asks who answers, from the student's adults in the records; a
+     * request that needs every adult is not in the list.
+     *
+     * @param int $childuserid The student.
+     * @param int $keyid The id of your key (never the key itself): it is kept with the answer as what it was answered with.
+     * @return array Each with requestid, title (plain text), deadline (a time) and url (a moodle_url), soonest first.
+     */
+    public static function pending_consents(int $childuserid, int $keyid): array {
+        return local\consent::pending_for_child($childuserid, $keyid, time());
+    }
 }

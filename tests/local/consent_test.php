@@ -29,6 +29,7 @@ use local_oksigeniafamily\api;
  * @covers \local_oksigeniafamily\local\consent_link
  * @covers \local_oksigeniafamily\local\consent_notices
  * @covers \local_oksigeniafamily\local\consent_marandu
+ * @covers \local_oksigeniafamily\local\consent_view
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(consent::class)]
 final class consent_test extends \advanced_testcase {
@@ -171,6 +172,60 @@ final class consent_test extends \advanced_testcase {
         $this->assertNull(consent_link::read(substr($token, 0, -1) . (substr($token, -1) === '0' ? '1' : '0')));
         $this->assertNull(consent_link::read('nonsense'));
         $this->assertSame(consent_link::token(12, 34, 'email'), $token);
+
+        // Behind a student's key: the student and the key, signed too.
+        $key = consent_link::key_url(12, 56, 78)->get_param('t');
+        $this->assertSame(['requestid' => 12, 'source' => 'key', 'childuserid' => 56, 'keyid' => 78], consent_link::read($key));
+        $this->assertNull(consent_link::read(str_replace('-key78-', '-key79-', $key)));
+    }
+
+    /**
+     * What another plugin shows behind a student's key: the open requests still waiting for the family, without those
+     * that need every adult; and the pages render, for the school, for an adult and behind the key.
+     */
+    public function test_pending_for_child_and_pages(): void {
+        global $OUTPUT, $PAGE;
+        $this->resetAfterTest();
+        $data = $this->setup_family();
+        $everyone = consent::create(\context_system::instance(), [
+            'title' => 'Fotos del curso',
+            'deadline' => time() + 5 * DAYSECS,
+            'needall' => 1,
+        ], [(int) $data->ana->id], (int) $data->teacher->id);
+        $now = time();
+
+        $pending = consent::pending_for_child((int) $data->ana->id, 7, $now);
+        $this->assertCount(1, $pending);
+        $this->assertSame($data->requestid, $pending[0]['requestid']);
+        $link = consent_link::read($pending[0]['url']->get_param('t'));
+        $this->assertSame((int) $data->ana->id, $link['childuserid']);
+        $this->assertSame(7, $link['keyid']);
+        consent::answer($data->requestid, (int) $data->ana->id, $data->mailid, consent::YES, 'key', ['address' => 'key:7']);
+        $this->assertSame([], consent::pending_for_child((int) $data->ana->id, 7, $now));
+        $this->assertCount(1, \local_oksigeniafamily\api::pending_consents((int) $data->leo->id, 7));
+
+        $PAGE->set_url('/local/oksigeniafamily/answer.php');
+        $request = consent::get($data->requestid);
+        $html = $OUTPUT->render_from_template('local_oksigeniafamily/consent_report', consent_view::report($request, $now) + [
+            'listurl' => '#', 'actionurl' => '#', 'sesskey' => 'x', 'canremind' => true, 'remindlabel' => 'x',
+            'canaddnew' => false, 'cancancel' => true, 'csvurl' => '#', 'pdfurl' => '#',
+        ]);
+        $this->assertStringContainsString('Pilar Sanz', $html);
+        $adult = \core\di::get(\moodle_database::class)->get_record('local_oksigeniafamily_adult', ['id' => $data->adultid]);
+        $url = new \moodle_url('/local/oksigeniafamily/consent.php', ['id' => $data->requestid]);
+        $view = consent_view::answer($request, $adult, [(int) $data->ana->id], $now, $url, ['adultid' => $data->adultid]);
+        $this->assertStringContainsString('name="answer"', $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view));
+        $adults = [];
+        foreach (\local_oksigeniafamily\api::adults_of_child((int) $data->ana->id) as $one) {
+            $adults[(int) $one->id] = $one;
+        }
+        $view = consent_view::answer_by_key($request, (int) $data->ana->id, $adults, $now, $url, ['t' => 'x']);
+        $html = $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view);
+        $this->assertStringContainsString('name="adultid"', $html);
+        $this->assertStringContainsString('Pilar Sanz', $html);
+        // A request that needs every adult cannot be answered behind the key.
+        $view = consent_view::answer_by_key(consent::get($everyone), (int) $data->ana->id, $adults, $now, $url, ['t' => 'x']);
+        $this->assertStringNotContainsString('name="answer"', $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', $view));
     }
 
     /**

@@ -43,7 +43,7 @@ class consent {
     public const CANCELLED = 'cancelled';
 
     /** @var string[] Where an answer came from. */
-    public const CHANNELS = ['app', 'web', 'email', 'link', 'whatsapp', 'telegram', 'school'];
+    public const CHANNELS = ['app', 'web', 'email', 'link', 'key', 'whatsapp', 'telegram', 'school'];
 
     /** @var int Days a request is kept after its deadline, unless the school says otherwise. */
     public const KEEPDAYS = 365;
@@ -447,6 +447,40 @@ class consent {
         }
 
         return array_values($list);
+    }
+
+    /**
+     * The open requests about a student that are still waiting for their family, each with the link to answer behind
+     * another plugin's key of the student (see consent_link::key_url()). A request that needs every adult is left out:
+     * the key is the student's, so it cannot speak for each adult.
+     *
+     * @param int $childuserid The student.
+     * @param int $keyid The id of the key in the plugin that shows the links.
+     * @param int $now The time.
+     * @return array Each with requestid, title (plain text), deadline and url, the soonest deadline first.
+     */
+    public static function pending_for_child(int $childuserid, int $keyid, int $now): array {
+        global $DB;
+
+        $sql = "SELECT r.*
+                  FROM {local_oksigeniafamily_request} r
+                  JOIN {local_oksigeniafamily_target} t ON t.requestid = r.id AND t.userid = :userid
+                 WHERE r.status = :open AND r.deadline >= :now AND r.needall = 0
+              ORDER BY r.deadline, r.id";
+        $pending = [];
+        foreach ($DB->get_records_sql($sql, ['userid' => $childuserid, 'open' => self::OPEN, 'now' => $now]) as $request) {
+            if (self::student_state($request, $childuserid)->status !== self::PENDING) {
+                continue;
+            }
+            $pending[] = [
+                'requestid' => (int) $request->id,
+                'title' => format_string($request->title, true, ['context' => \context_system::instance()]),
+                'deadline' => (int) $request->deadline,
+                'url' => consent_link::key_url((int) $request->id, $childuserid, $keyid),
+            ];
+        }
+
+        return $pending;
     }
 
     /**

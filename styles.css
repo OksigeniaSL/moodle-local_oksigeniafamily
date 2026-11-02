@@ -730,6 +730,16 @@
     font-weight: 600;
 }
 
+.local-oksigeniafamily .okf-who {
+    display: grid;
+    gap: .35rem;
+    margin-bottom: .75rem;
+}
+
+.local-oksigeniafamily .okf-who label {
+    font-weight: 600;
+}
+
 .local-oksigeniafamily .okf-comment summary {
     color: var(--okf-accent-text);
     cursor: pointer;

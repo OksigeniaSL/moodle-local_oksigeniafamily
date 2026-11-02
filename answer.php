@@ -44,19 +44,35 @@ $now = time();
 
 $link = consent_link::read($token);
 $request = $link ? consent::get($link['requestid']) : null;
-$adult = $link ? $DB->get_record('local_oksigeniafamily_adult', ['id' => $link['adultid'], 'status' => api::ACTIVE]) : null;
-$children = $request && $adult ? consent::children_for_adult($request, (int) $adult->id) : [];
+$bykey = $link && $link['source'] === 'key';
+$adult = null;
+$children = [];
+$keyadults = [];
+if ($request && $bykey) {
+    // Behind a key of the student: whoever answers says which of the student's adults they are.
+    if (in_array($link['childuserid'], consent::students((int) $request->id), true)) {
+        foreach (api::adults_of_child($link['childuserid']) as $one) {
+            $keyadults[(int) $one->id] = $one;
+        }
+        $children = [$link['childuserid']];
+    }
+} else if ($request && $link) {
+    $adult = $DB->get_record('local_oksigeniafamily_adult', ['id' => $link['adultid'], 'status' => api::ACTIVE]) ?: null;
+    $children = $adult ? consent::children_for_adult($request, (int) $adult->id) : [];
+}
 
-if ($request && $adult && optional_param('answer', '', PARAM_ALPHA) !== '') {
+if ($request && $children && optional_param('answer', '', PARAM_ALPHA) !== '') {
     require_sesskey();
     $childuserid = required_param('childuserid', PARAM_INT);
     $answer = required_param('answer', PARAM_ALPHA);
     $message = get_string('consent:notsaved', $component);
     $type = \core\output\notification::NOTIFY_ERROR;
-    if (in_array($answer, [consent::YES, consent::NO], true)) {
+    $who = $bykey ? ($keyadults[optional_param('adultid', 0, PARAM_INT)] ?? null) : $adult;
+    $keyok = !$bykey || ($childuserid === $link['childuserid'] && empty($request->needall));
+    if ($who && $keyok && in_array($answer, [consent::YES, consent::NO], true)) {
         try {
-            consent::answer((int) $request->id, $childuserid, (int) $adult->id, $answer, $link['source'], [
-                'address' => $link['source'] === 'email' ? $adult->email : null,
+            consent::answer((int) $request->id, $childuserid, (int) $who->id, $answer, $link['source'], [
+                'address' => $bykey ? 'key:' . $link['keyid'] : ($link['source'] === 'email' ? $who->email : null),
                 'comment' => optional_param('comment', '', PARAM_TEXT),
             ]);
             $child = core_user::get_user($childuserid);
@@ -73,9 +89,19 @@ if ($request && $adult && optional_param('answer', '', PARAM_ALPHA) !== '') {
 }
 
 echo $OUTPUT->header();
-if (!$request || !$adult || !$children) {
+if (!$request || !$children) {
     echo $OUTPUT->heading(get_string('consent:title', $component));
     echo $OUTPUT->notification(get_string('consent:linkinvalid', $component), \core\output\notification::NOTIFY_WARNING);
+} else if ($bykey) {
+    echo $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', consent_view::answer_by_key(
+        $request,
+        $link['childuserid'],
+        $keyadults,
+        $now,
+        $url,
+        ['t' => $token]
+    ));
+    page::once_answers();
 } else {
     echo $OUTPUT->render_from_template('local_oksigeniafamily/consent_answer', consent_view::answer(
         $request,

@@ -16,6 +16,14 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   changed, only added; a «no» from any adult counts as a no, and whoever made the request is told when two adults
   disagree. A reminder the day before the deadline, and erasing after the retention, by a new scheduled task. Tables
   `local_oksigeniafamily_request`, `_target` and `_answer`, in the privacy provider.
+- `api::pending_consents($childuserid, $keyid)` (0.3.1-dev), for a plugin that gives a student's family a key of its own,
+  such as the canteen's link with its PIN: the requests still waiting for that student, each with a signed link. The key
+  is the student's, so the page asks which of the student's adults is answering, and keeps the key's id (never the key);
+  a request that needs every adult is not answered there.
+
+### Fixed
+
+- The two text columns of the requests without an empty default, which Moodle warns about on installing (0.3.1-dev).
 - The school's side, with the accounts of the site (*Site administration ▸ Users ▸ Accounts ▸ Families*), for anyone
   with `local/oksigeniafamily:manage`, without needing to be a site administrator:
   - The list of families, with a search by name, mobile phone, e-mail or key, and each family's page: its adults and
