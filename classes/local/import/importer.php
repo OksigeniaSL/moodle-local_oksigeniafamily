@@ -32,8 +32,14 @@ use local_oksigeniafamily\local\phone;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class importer {
-    /** How long each field of an adult can be, as the table has it. */
+    /** How long each field can be, as the tables have it. */
     private const LENGTHS = ['firstname' => 100, 'lastname' => 100, 'email' => 100, 'family' => 255, 'key' => 255];
+
+    /** What the column of the type can say, in lower case, besides adult and child. */
+    private const TYPES = [
+        'adult' => 'adult', 'adulto' => 'adult', 'parent' => 'adult', 'guardian' => 'adult', 'tutor' => 'adult',
+        'child' => 'child', 'hijo' => 'child', 'student' => 'child', 'alumno' => 'child',
+    ];
 
     /**
      * What some rows would change.
@@ -57,6 +63,7 @@ class importer {
             if ($values['key'] !== '') {
                 $keys[$values['key']] = true;
             }
+            $values['type'] = self::TYPES[\core_text::strtolower($values['type'] ?? '')] ?? ($values['type'] ?? '');
             $error = self::row_error($row, $values);
             if ($error === null) {
                 $family = $values['family'];
@@ -162,8 +169,8 @@ class importer {
         if (($values['family'] ?? '') === '') {
             return get_string('import:error:family', 'local_oksigeniafamily');
         }
-        if (!in_array($values['type'] ?? '', ['adult', 'child'], true)) {
-            return get_string('import:error:type', 'local_oksigeniafamily', $values['type'] ?? '');
+        if (!in_array($values['type'], ['adult', 'child'], true)) {
+            return get_string('import:error:type', 'local_oksigeniafamily', $values['type']);
         }
         foreach (self::LENGTHS as $field => $length) {
             if (\core_text::strlen($values[$field] ?? '') > $length) {

@@ -68,9 +68,9 @@ final class importer_test extends \advanced_testcase {
         $marta = $generator->create_user(['username' => 'marta.gil']);
         set_config('phoneprefix', '+1', 'local_oksigeniafamily');
         $rows = $this->rows([
-            'F1,adult,Marta,Gil,MARTA@example.com,415 555 0101,marta.gil,,',
-            'F1,adult,Juan,Ruiz,,4155550102,,,J-7',
-            'F1,child,,,,,ana.ruiz,,',
+            'F1,Adult,Marta,Gil,MARTA@example.com,415 555 0101,marta.gil,,',
+            'F1,adulto,Juan,Ruiz,,4155550102,,,J-7',
+            'F1,hijo,,,,,ana.ruiz,,',
             'F1,child,,,,,,20412,S-20412',
             'F1,child,,,,,,,S-3082',
             'F2,adult,Carlos,Vega,,,,,',

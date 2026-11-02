@@ -149,7 +149,7 @@ if ($preview) {
             $changes = $changes || empty($child['id']) || $child['changes'];
             $children[] = [
                 'name' => isset($users[$child['userid']]) ? fullname($users[$child['userid']]) : $child['sourcekey'],
-                'nokey' => !$child['userid'],
+                'noaccount' => !$child['userid'],
                 'chip' => $chip($child, $family),
             ];
         }

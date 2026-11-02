@@ -42,14 +42,14 @@ class adult_form extends \moodleform {
         $form->addElement('text', 'phone', get_string('adult:phone', 'local_oksigeniafamily'), ['autocomplete' => 'off']);
         $form->setType('phone', PARAM_NOTAGS);
         $form->addElement('text', 'email', get_string('adult:email', 'local_oksigeniafamily'), ['autocomplete' => 'off']);
-        $form->setType('email', PARAM_EMAIL);
+        $form->setType('email', PARAM_RAW_TRIMMED);
         $form->addElement('text', 'username', get_string('adult:username', 'local_oksigeniafamily'), ['autocomplete' => 'off']);
         $form->setType('username', PARAM_NOTAGS);
         $this->add_action_buttons(true, get_string('adult:save', 'local_oksigeniafamily'));
     }
 
     /**
-     * A phone has to be a phone, and an account has to exist.
+     * A phone has to be a phone, an e-mail an e-mail, and an account has to exist.
      *
      * @param array $data The data.
      * @param array $files The files.
@@ -63,6 +63,10 @@ class adult_form extends \moodleform {
         $phone = trim($data['phone'] ?? '');
         if ($phone !== '' && \local_oksigeniafamily\local\phone::normalise($phone, $prefix) === '') {
             $errors['phone'] = get_string('claim:badphone', 'local_oksigeniafamily');
+        }
+        $email = trim($data['email'] ?? '');
+        if ($email !== '' && !validate_email($email)) {
+            $errors['email'] = get_string('import:error:email', 'local_oksigeniafamily', $email);
         }
         $username = \core_text::strtolower(trim($data['username'] ?? ''));
         if ($username !== '' && !$DB->record_exists('user', ['username' => $username, 'deleted' => 0])) {

@@ -37,6 +37,11 @@ if ($hassiteconfig) {
     $ADMIN->add('localplugins', $settings);
 
     if ($ADMIN->fulltree) {
+        $settings->add(new admin_setting_description(
+            'local_oksigeniafamily/where',
+            '',
+            get_string('settings:where', 'local_oksigeniafamily', (new moodle_url('/local/oksigeniafamily/index.php'))->out(false))
+        ));
         // The role given to each adult with an account over each of their children (Moodle's parent or mentor role).
         $roles = [0 => new lang_string('none')];
         foreach (get_roles_for_contextlevels(CONTEXT_USER) as $roleid) {

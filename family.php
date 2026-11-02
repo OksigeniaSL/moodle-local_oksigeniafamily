@@ -165,7 +165,7 @@ foreach ($children as $one) {
         'name' => $name,
         'url' => $userid ? (new moodle_url('/user/profile.php', ['id' => $userid]))->out(false) : '',
         'key' => $userid ? $one->sourcekey : '',
-        'nokey' => !$userid,
+        'noaccount' => !$userid,
         'codeline' => !$userid ? '' : ($code['expires'] > 0 ? get_string('code:until', $component, (object) [
             'date' => page::date($code['expires']), 'claims' => $code['claims'],
         ]) : get_string('codes:nocode', $component)),

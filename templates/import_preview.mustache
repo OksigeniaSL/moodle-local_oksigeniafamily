@@ -24,7 +24,7 @@
     * stats - Each with value, label and bad.
     * unknown - The columns left aside, if any.
     * errors, haserrors - Each with line and message.
-    * families, hasfamilies - Each with key, isnew, adults (name, phone, email, chip) and children (name, nokey, chip).
+    * families, hasfamilies - Each with key, isnew, adults (name, phone, email, chip) and children (name, noaccount, chip).
     * quiet - How many families do not change, if any.
     * leaving, hasleaving - Each with key and family.
     * haswork - Whether there is anything to apply.
@@ -37,7 +37,7 @@
         "unknown": "", "errors": [{"line": 4, "message": "There is no account with the username ana."}], "haserrors": true,
         "families": [{"key": "F-1001", "isnew": true,
             "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "", "chip": {"label": "New", "kind": "new"} }],
-            "children": [{"name": "Ana Ruiz", "nokey": false, "chip": {"label": "New", "kind": "new"} }] }],
+            "children": [{"name": "Ana Ruiz", "noaccount": false, "chip": {"label": "New", "kind": "new"} }] }],
         "hasfamilies": true, "quiet": "", "leaving": [], "hasleaving": false, "haswork": true,
         "action": "#", "sesskey": "abc", "draft": 1, "complete": 0
     }
@@ -115,7 +115,7 @@
                 <li class="okf-person okf-person-child">
                     <div>
                         <div class="okf-strong">{{name}}</div>
-                        <div class="okf-line">{{#nokey}}{{#str}} family:noaccount, local_oksigeniafamily {{/str}}{{/nokey}}{{^nokey}}{{#str}} import:child, local_oksigeniafamily {{/str}}{{/nokey}}</div>
+                        <div class="okf-line">{{#noaccount}}{{#str}} family:noaccount, local_oksigeniafamily {{/str}}{{/noaccount}}{{^noaccount}}{{#str}} import:child, local_oksigeniafamily {{/str}}{{/noaccount}}</div>
                     </div>
                     {{#chip}}<span class="okf-chip okf-chip-{{kind}}">{{label}}</span>{{/chip}}
                 </li>

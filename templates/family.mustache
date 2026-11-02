@@ -27,7 +27,7 @@
       (name and value).
     * action, cancelurl, sesskey - For the question.
     * adults, hasadults - Each with name, phone, email, account, accounturl, editurl and removeurl.
-    * children, haschildren - Each with name, url, key, nokey, codeline, letterurl, revokeurl and removeurl.
+    * children, haschildren - Each with name, url, key, noaccount, codeline, letterurl, revokeurl and removeurl.
     * addadulturl, addchildurl - To add more, unless closed.
     * gone, hasgone - Who left, each with name and when.
 
@@ -38,7 +38,7 @@
         "question": null, "action": "#", "cancelurl": "#", "sesskey": "abc",
         "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "marta@example.com", "account": "", "accounturl": "", "editurl": "#", "removeurl": "#"}],
         "hasadults": true,
-        "children": [{"name": "Ana Ruiz", "url": "#", "key": "", "nokey": false, "codeline": "Code in use until 2 January 2027 · uses: 1", "letterurl": "#", "revokeurl": "#", "removeurl": "#"}],
+        "children": [{"name": "Ana Ruiz", "url": "#", "key": "", "noaccount": false, "codeline": "Code in use until 2 January 2027 · uses: 1", "letterurl": "#", "revokeurl": "#", "removeurl": "#"}],
         "haschildren": true,
         "addadulturl": "#", "addchildurl": "#",
         "gone": [{"name": "Luis Sanz", "when": "1 November 2026"}], "hasgone": true
@@ -56,7 +56,7 @@
         <span>{{#str}} family:since, local_oksigeniafamily {{/str}} {{since}}</span>
     </p>
     {{#question}}
-    <section class="okf-card okf-question" role="alertdialog" aria-labelledby="okf-question-title">
+    <section class="okf-card okf-question" aria-labelledby="okf-question-title">
         <h3 id="okf-question-title">{{title}}</h3>
         <p>{{text}}</p>
         {{#text2}}<p>{{text2}}</p>{{/text2}}
@@ -109,7 +109,7 @@
                 <li class="okf-person">
                     <div>
                         <div class="okf-strong">{{#url}}<a href="{{url}}">{{name}}</a>{{/url}}{{^url}}{{name}}{{/url}}</div>
-                        {{#nokey}}<div class="okf-line">{{#str}} family:noaccount, local_oksigeniafamily {{/str}}</div>{{/nokey}}
+                        {{#noaccount}}<div class="okf-line">{{#str}} family:noaccount, local_oksigeniafamily {{/str}}</div>{{/noaccount}}
                         {{#key}}<div class="okf-line">{{key}}</div>{{/key}}
                         {{#codeline}}<div class="okf-line">{{codeline}}</div>{{/codeline}}
                     </div>
