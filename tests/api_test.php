@@ -264,7 +264,11 @@ final class api_test extends \advanced_testcase {
 
         $sink = $this->redirectEvents();
         $this->assertFalse(api::update_adult($first, ['phone' => '+34600000001']));
-        $this->assertTrue(api::update_adult($first, ['phone' => '+34600000009', 'email' => 'pilar@example.com']));
+        $this->assertTrue(api::update_adult($first, [
+            'phone' => '+34600000009',
+            'phoneverified' => true,
+            'email' => 'pilar@example.com',
+        ]));
         $events = array_values(array_filter($sink->get_events(), fn($event) => $event instanceof event\adult_updated));
         $this->assertCount(1, $events);
         $this->assertSame('+34600000001', $events[0]->other['oldphone']);
