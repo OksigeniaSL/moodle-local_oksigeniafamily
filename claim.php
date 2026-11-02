@@ -71,6 +71,21 @@ if ($data = $form->get_data()) {
     }
 }
 
+// The letter's QR brings the code after the # of the address, which browsers never send: it stays out of the logs of the
+// server and of the address other sites see. It only fills the box, and it leaves the address at once.
+$PAGE->requires->js_amd_inline("
+    require([], function() {
+        var found = /[#&]code=([0-9A-Za-z-]+)/.exec(window.location.hash);
+        var box = document.getElementById('id_code');
+        if (found && box) {
+            box.value = found[1].toUpperCase();
+        }
+        if (found) {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    });
+");
+
 echo $OUTPUT->header();
 if ($done) {
     $child = core_user::get_user($done->childuserid);

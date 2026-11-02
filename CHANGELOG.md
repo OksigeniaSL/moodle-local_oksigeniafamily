@@ -7,6 +7,33 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- The school's side, with the accounts of the site (*Site administration ▸ Users ▸ Accounts ▸ Families*), for anyone
+  with `local/oksigeniafamily:manage`, without needing to be a site administrator:
+  - The list of families, with a search by name, mobile phone, e-mail or key, and each family's page: its adults and
+    children with how they stand, removing either, changing an adult's details, and a new family by hand. Lists show
+    only names; phones, e-mails and codes stay in each family's page.
+  - Importing families from a CSV file: one row per person, separator and encoding found on their own, headings in
+    English or Spanish. A preview says what would change, with what is wrong in each row by its line. Repeating a file
+    changes nothing: a family is known by its key, an adult within it by their key, account or name, and a child by
+    their account or key. An empty cell wipes nothing. Optionally, the file is the complete list, and children without
+    an account who are no longer in it leave. The importer works on rows, so the management programs' readers can feed
+    it later with their own source and keys.
+  - Codes and letters: one search for a student, a group, a course or a cohort; how each one stands; one letter per
+    student and per sheet, with the code and its QR, for those with no family and no code, for those with no code, or
+    for everyone with a new code; withdrawing codes, by student or for all of them.
+- Events `code_issued` and `codes_revoked`: who issued or withdrew a student's code, never the code.
+- `api::add_child()` gives a known child what they lacked: the account of one known by key, or the key of one known by
+  account. `api::revoke_claim_codes()` says how many it stopped.
+- The daily task also erases adults and children who left a family that goes on, and codes that no longer work, after
+  the retention period.
+- The notice of a new adult takes those who manage the families to the family's page, where they can remove them.
+
+### Security
+
+- The letter's QR brings the code after the `#` of the claim page's address, which browsers do not send: it stays out of
+  the server's logs. A code exists in the clear only in the page that issues the letters, which is not cached and
+  answers only once; a lost letter is replaced by a new code.
+
 - The notice that a new adult joined a child also reaches the phone, in the Moodle app or Oksigenia Aty.
 - For Oksigenia Marandu's list of numbers: who each adult is (`local_oksigeniafamily_oksigeniamarandu_label()`, such
   as "Lucía Sanz (family of Ana)") and the string `marandu:item`.

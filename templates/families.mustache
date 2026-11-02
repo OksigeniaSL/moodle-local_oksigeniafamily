@@ -1,0 +1,111 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/families
+
+    The list of families: the search, the filter and one row per family (one card on a phone), with only the names of
+    who is in each. Without any family yet, the ways for them to get in.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * newurl, importurl, codesurl - The ways in.
+    * lede - How many there are.
+    * action, q, closedfilter - The search form.
+    * filters - Each with url, label, count and current.
+    * hasany, hasrows - Whether there are families at all, and in this search.
+    * rows - Each with url, adults, children, source and closed.
+    * paging - The paging bar, as HTML.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Families", "current": true}]},
+        "newurl": "#", "importurl": "#", "codesurl": "#",
+        "lede": "Active families: 2 · Adults: 3 · Students: 3",
+        "action": "#", "q": "", "closedfilter": false,
+        "filters": [{"url": "#", "label": "Active", "count": 2, "current": true}, {"url": "#", "label": "Closed", "count": 0, "current": false}],
+        "hasany": true, "hasrows": true,
+        "rows": [{"url": "#", "adults": "Marta Gil, Juan Ruiz", "children": "Ana Ruiz, Leo Ruiz", "source": "Imported", "closed": false}],
+        "paging": ""
+    }
+}}
+<div class="local-oksigeniafamily okf-families">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        <a class="btn btn-primary" href="{{newurl}}">{{#str}} list:new, local_oksigeniafamily {{/str}}</a>
+    </div>
+    {{#hasany}}
+    <p class="okf-lede">{{lede}}</p>
+    <div class="okf-tools">
+        <form class="okf-search" method="get" action="{{action}}" role="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 L21 21"/></svg>
+            <label class="visually-hidden sr-only" for="okf-q">{{#str}} list:search, local_oksigeniafamily {{/str}}</label>
+            <input id="okf-q" type="search" name="q" value="{{q}}" placeholder="{{#str}} list:search, local_oksigeniafamily {{/str}}">
+            {{#closedfilter}}<input type="hidden" name="status" value="closed">{{/closedfilter}}
+        </form>
+        <div class="okf-filter">
+            {{#filters}}
+            <a class="nav-link" href="{{url}}" {{#current}}aria-current="true"{{/current}}>{{label}}<small>{{count}}</small></a>
+            {{/filters}}
+        </div>
+    </div>
+    {{#hasrows}}
+    <table class="okf-table table-reboot">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} list:col:adults, local_oksigeniafamily {{/str}}</th>
+                <th scope="col">{{#str}} list:col:children, local_oksigeniafamily {{/str}}</th>
+                <th scope="col">{{#str}} list:col:source, local_oksigeniafamily {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rows}}
+            <tr>
+                <td class="okf-strong"><a href="{{url}}">{{adults}}</a></td>
+                <td>{{children}}</td>
+                <td><span class="okf-chip{{#closed}} okf-chip-muted{{/closed}}">{{source}}</span></td>
+            </tr>
+            {{/rows}}
+        </tbody>
+    </table>
+    {{{paging}}}
+    {{/hasrows}}
+    {{^hasrows}}
+    <p class="okf-empty">{{#str}} list:nothing, local_oksigeniafamily {{/str}}</p>
+    {{/hasrows}}
+    {{/hasany}}
+    {{^hasany}}
+    <p class="okf-lede">{{#str}} list:none, local_oksigeniafamily {{/str}}</p>
+    <div class="okf-cards">
+        <section class="okf-card okf-way">
+            <h3>{{#str}} list:way:file, local_oksigeniafamily {{/str}}</h3>
+            <p>{{#str}} list:way:file_text, local_oksigeniafamily {{/str}}</p>
+            <a class="btn btn-primary" href="{{importurl}}">{{#str}} list:way:file_go, local_oksigeniafamily {{/str}}</a>
+        </section>
+        <section class="okf-card okf-way">
+            <h3>{{#str}} list:way:code, local_oksigeniafamily {{/str}}</h3>
+            <p>{{#str}} list:way:code_text, local_oksigeniafamily {{/str}}</p>
+            <a class="btn btn-primary" href="{{codesurl}}">{{#str}} list:way:code_go, local_oksigeniafamily {{/str}}</a>
+        </section>
+        <section class="okf-card okf-way">
+            <h3>{{#str}} list:way:hand, local_oksigeniafamily {{/str}}</h3>
+            <p>{{#str}} list:way:hand_text, local_oksigeniafamily {{/str}}</p>
+            <a class="btn btn-secondary" href="{{newurl}}">{{#str}} list:new, local_oksigeniafamily {{/str}}</a>
+        </section>
+    </div>
+    {{/hasany}}
+</div>

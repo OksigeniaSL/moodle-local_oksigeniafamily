@@ -72,4 +72,41 @@ final class lifecycle_test extends \advanced_testcase {
         delete_user($leo);
         $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_child', 'status', ['id' => $leoid]));
     }
+
+    /**
+     * In a family that goes on, who left is erased after the retention period, and so are the codes that no longer work.
+     */
+    public function test_people_who_left_are_erased(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $ana = $generator->create_user();
+        $leo = $generator->create_user();
+        $familyid = api::create_family();
+        $stays = api::add_adult($familyid, ['firstname' => 'Marta', 'phone' => '+14155550101']);
+        $goes = api::add_adult($familyid, ['firstname' => 'Luis', 'phone' => '+14155550102']);
+        api::add_child($familyid, (int) $ana->id);
+        $leoid = api::add_child($familyid, (int) $leo->id);
+        api::remove_adult($goes);
+        api::unlink_child($leoid, 'manual');
+        api::issue_claim_code((int) $ana->id);
+        api::revoke_claim_codes((int) $ana->id);
+        api::issue_claim_code((int) $ana->id);
+
+        set_config('retentiondays', 90, 'local_oksigeniafamily');
+        lifecycle::purge_left(time() + 89 * DAYSECS);
+        $this->assertTrue($DB->record_exists('local_oksigeniafamily_adult', ['id' => $goes]));
+        $this->assertTrue($DB->record_exists('local_oksigeniafamily_child', ['id' => $leoid]));
+        $this->assertSame(2, $DB->count_records('local_oksigeniafamily_claim', ['userid' => $ana->id]));
+
+        lifecycle::purge_left(time() + 91 * DAYSECS);
+        $this->assertFalse($DB->record_exists('local_oksigeniafamily_adult', ['id' => $goes]));
+        $this->assertFalse($DB->record_exists('local_oksigeniafamily_child', ['id' => $leoid]));
+        $this->assertTrue($DB->record_exists('local_oksigeniafamily_adult', ['id' => $stays]));
+        // The withdrawn code has gone; the other one lasts its 60 days, and its retention starts when it expires.
+        $this->assertSame(1, $DB->count_records('local_oksigeniafamily_claim', ['userid' => $ana->id]));
+        lifecycle::purge_left(time() + 151 * DAYSECS);
+        $this->assertSame(0, $DB->count_records('local_oksigeniafamily_claim', ['userid' => $ana->id]));
+    }
 }

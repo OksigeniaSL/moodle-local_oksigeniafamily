@@ -255,7 +255,8 @@ class api {
     }
 
     /**
-     * Add a child to a family. A student already in the family keeps the record they have.
+     * Add a child to a family. A student already in the family keeps the record they have, and gains what it lacked: a
+     * child known only by their key gets their account when they have one, and the other way round.
      *
      * @param int $familyid The family.
      * @param int|null $userid The student's account, if any.
@@ -268,16 +269,35 @@ class api {
         if (empty($userid) && empty($sourcekey)) {
             throw new \coding_exception('A child needs a Moodle account or a key in the school\'s data.');
         }
-        $conditions = empty($userid) ? ['sourcekey' => $sourcekey] : ['userid' => $userid];
-        $existing = $DB->get_record('local_oksigeniafamily_child', ['familyid' => $familyid] + $conditions);
+        $existing = null;
+        if (!empty($userid)) {
+            $existing = $DB->get_record('local_oksigeniafamily_child', ['familyid' => $familyid, 'userid' => $userid]);
+        }
+        if (!$existing && !empty($sourcekey)) {
+            $select = 'familyid = :familyid AND sourcekey = :sourcekey' . (empty($userid) ? '' : ' AND userid IS NULL');
+            $existing = $DB->get_record_select(
+                'local_oksigeniafamily_child',
+                $select,
+                ['familyid' => $familyid, 'sourcekey' => $sourcekey],
+                '*',
+                IGNORE_MULTIPLE
+            );
+        }
         $now = time();
-        if ($existing && $existing->status === self::ACTIVE) {
+        $gainsaccount = $existing && !empty($userid) && empty($existing->userid);
+        if ($existing && $existing->status === self::ACTIVE && !$gainsaccount) {
+            if (!empty($sourcekey) && empty($existing->sourcekey)) {
+                $DB->update_record('local_oksigeniafamily_child', (object) [
+                    'id' => $existing->id, 'sourcekey' => $sourcekey, 'timemodified' => $now,
+                ]);
+            }
             return (int) $existing->id;
         }
         if ($existing) {
             $existing->status = self::ACTIVE;
             $existing->timeleft = null;
             $existing->timemodified = $now;
+            $existing->userid = $existing->userid ?: ($userid ?: null);
             $existing->sourcekey = $existing->sourcekey ?? $sourcekey;
             $DB->update_record('local_oksigeniafamily_child', $existing);
             $childid = (int) $existing->id;
@@ -358,7 +378,7 @@ class api {
      * A child leaves a family: the student left the school, or the school took them out of it.
      *
      * @param int $childid The child.
-     * @param string $reason Why: deleted, suspended, cohort or manual.
+     * @param string $reason Why: deleted, suspended, cohort, import (a complete list without them) or manual.
      * @return void
      */
     public static function unlink_child(int $childid, string $reason): void {
@@ -436,8 +456,9 @@ class api {
     }
 
     /**
-     * A new code for a student, for a letter, a QR at enrolment or a WhatsApp sign-up. Only its hash is kept: it is
-     * shown once, and a lost one is replaced by a new one.
+     * A new code for a student, for a letter, a QR at enrolment or a WhatsApp sign-up. Only its hash is kept: it exists
+     * in the clear only in what this returns, so whoever asks for it shows it at once, and a lost one is replaced by a
+     * new one. Do not put it in logs, events, caches or the session.
      *
      * @param int $childuserid The student's account.
      * @param int $days How long it works, or 0 for the site's setting.
@@ -457,10 +478,16 @@ class api {
         } while ($DB->record_exists('local_oksigeniafamily_claim', ['codehash' => $hash]));
 
         $now = time();
-        $DB->insert_record('local_oksigeniafamily_claim', (object) [
+        $claimid = $DB->insert_record('local_oksigeniafamily_claim', (object) [
             'userid' => $childuserid, 'codehash' => $hash, 'status' => self::ACTIVE, 'claims' => 0,
             'expires' => $now + $days * DAYSECS, 'usermodified' => (int) ($USER->id ?? 0), 'timecreated' => $now,
         ]);
+
+        event\code_issued::create([
+            'objectid' => $claimid,
+            'context' => \context_system::instance(),
+            'relateduserid' => $childuserid,
+        ])->trigger();
 
         return $code;
     }
@@ -525,15 +552,27 @@ class api {
     }
 
     /**
-     * Stop a code from joining anyone (a letter that went astray).
+     * Stop a student's codes from joining anyone (a letter that went astray). Who already joined stays.
      *
      * @param int $childuserid The student whose codes are revoked.
-     * @return void
+     * @return int How many codes it stopped.
      */
-    public static function revoke_claim_codes(int $childuserid): void {
+    public static function revoke_claim_codes(int $childuserid): int {
         global $DB;
 
         $conditions = ['userid' => $childuserid, 'status' => self::ACTIVE];
+        $count = $DB->count_records('local_oksigeniafamily_claim', $conditions);
+        if (!$count) {
+            return 0;
+        }
         $DB->set_field('local_oksigeniafamily_claim', 'status', self::REVOKED, $conditions);
+
+        event\codes_revoked::create([
+            'context' => \context_system::instance(),
+            'relateduserid' => $childuserid,
+            'other' => ['count' => $count],
+        ])->trigger();
+
+        return $count;
     }
 }

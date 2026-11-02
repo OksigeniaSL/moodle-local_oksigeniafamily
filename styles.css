@@ -1,0 +1,723 @@
+/* Oksigenia Family: the school's pages and the letters. Every rule hangs from the class of its page, so nothing changes
+   anywhere else in Moodle. */
+
+.local-oksigeniafamily {
+    /* The colours of the theme, so that the pages follow its light and dark modes (Moodle 5.3); after each comma, the
+       light value for the themes and versions that do not have them. */
+    --okf-bg: var(--bs-body-bg, #fff);
+    --okf-soft: var(--bs-tertiary-bg, #f7f8fa);
+    --okf-chip: var(--bs-secondary-bg, #eef0f3);
+    --okf-ink: var(--bs-body-color, #1d2125);
+    --okf-muted: var(--bs-secondary-color, #5f6b76);
+    --okf-line: var(--bs-border-color, #dee2e6);
+    --okf-accent: var(--bs-primary, var(--primary, #0f6cbf));
+    --okf-accent-text: var(--bs-primary-text-emphasis, #0b4f8a);
+    --okf-accent-soft: var(--bs-primary-bg-subtle, #e7f1fa);
+    --okf-ok-text: var(--bs-success-text-emphasis, #134a26);
+    --okf-ok-soft: var(--bs-success-bg-subtle, #e6f4ea);
+    --okf-warn-text: var(--bs-warning-text-emphasis, #664d03);
+    --okf-warn-soft: var(--bs-warning-bg-subtle, #fff3cd);
+    --okf-bad-text: var(--bs-danger-text-emphasis, #7a1a12);
+    --okf-bad-soft: var(--bs-danger-bg-subtle, #fdecea);
+    --okf-bad-line: var(--bs-danger-border-subtle, #e7b4ae);
+    color: var(--okf-ink);
+}
+
+.local-oksigeniafamily h3 {
+    margin: 0 0 .75rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily p:last-child {
+    margin-bottom: 0;
+}
+
+/* The top of each page. */
+.local-oksigeniafamily .okf-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+
+.local-oksigeniafamily .okf-nav {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    padding: .25rem;
+    border-radius: .75rem;
+    background: var(--okf-chip);
+}
+
+.local-oksigeniafamily .okf-nav a[href] {
+    padding: .4rem .9rem;
+    border-radius: .55rem;
+    color: var(--okf-ink);
+    text-decoration: none;
+}
+
+.local-oksigeniafamily .okf-nav a[href]:hover {
+    background: var(--okf-bg);
+}
+
+.local-oksigeniafamily .okf-nav a[href][aria-current] {
+    background: var(--okf-bg);
+    color: var(--okf-accent-text);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+}
+
+.local-oksigeniafamily .okf-lede {
+    margin-bottom: 1.25rem;
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+    color: var(--okf-muted);
+}
+
+/* Search and filters. */
+.local-oksigeniafamily .okf-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+
+.local-oksigeniafamily .okf-search {
+    display: flex;
+    flex: 1 1 18rem;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem .85rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .65rem;
+    background: var(--okf-bg);
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-search:focus-within {
+    border-color: var(--okf-accent);
+    box-shadow: 0 0 0 .15rem var(--okf-accent-soft);
+}
+
+.local-oksigeniafamily .okf-search svg {
+    flex: none;
+}
+
+.local-oksigeniafamily .okf-search input[type="search"] {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--okf-ink);
+}
+
+.local-oksigeniafamily .okf-filter {
+    display: flex;
+    gap: .35rem;
+}
+
+.local-oksigeniafamily .okf-filter a[href] {
+    padding: .45rem .8rem;
+    border: 1px solid var(--okf-line);
+    border-radius: 2rem;
+    color: var(--okf-ink);
+    text-decoration: none;
+}
+
+.local-oksigeniafamily .okf-filter a[href][aria-current] {
+    border-color: var(--okf-accent);
+    background: var(--okf-accent-soft);
+    color: var(--okf-accent-text);
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-filter small {
+    margin-left: .4rem;
+    color: var(--okf-muted);
+}
+
+/* Tables: rows on a wide page, one card each on a phone. */
+.local-oksigeniafamily .okf-table {
+    width: 100%;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--okf-line);
+    border-radius: .75rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--okf-bg);
+}
+
+.local-oksigeniafamily .okf-table th {
+    padding: .65rem 1rem;
+    border: 0;
+    border-bottom: 1px solid var(--okf-line);
+    color: var(--okf-muted);
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-table td {
+    padding: .75rem 1rem;
+    border: 0;
+    border-bottom: 1px solid var(--okf-line);
+    vertical-align: middle;
+}
+
+.local-oksigeniafamily .okf-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.local-oksigeniafamily .okf-strong {
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-line {
+    display: block;
+    color: var(--okf-muted);
+    font-size: .875rem;
+    font-weight: 400;
+}
+
+.local-oksigeniafamily .okf-note {
+    margin-top: .75rem;
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-warn {
+    padding: .6rem .85rem;
+    border-radius: .5rem;
+    background: var(--okf-warn-soft);
+    color: var(--okf-warn-text);
+}
+
+.local-oksigeniafamily .okf-bad {
+    padding: .6rem .85rem;
+    border-radius: .5rem;
+    background: var(--okf-bad-soft);
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily .okf-empty {
+    padding: 2rem 1rem;
+    color: var(--okf-muted);
+    text-align: center;
+}
+
+/* Chips. */
+.local-oksigeniafamily .okf-chip {
+    display: inline-block;
+    padding: .15rem .6rem;
+    border-radius: 2rem;
+    background: var(--okf-accent-soft);
+    color: var(--okf-accent-text);
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.local-oksigeniafamily .okf-chip-muted {
+    background: var(--okf-chip);
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-chip-ok {
+    background: var(--okf-ok-soft);
+    color: var(--okf-ok-text);
+}
+
+.local-oksigeniafamily .okf-chip-warn {
+    background: var(--okf-warn-soft);
+    color: var(--okf-warn-text);
+    white-space: normal;
+}
+
+/* Cards and columns. */
+.local-oksigeniafamily .okf-card {
+    padding: 1.25rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .75rem;
+    background: var(--okf-bg);
+}
+
+.local-oksigeniafamily .okf-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.local-oksigeniafamily .okf-way {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.local-oksigeniafamily .okf-way p {
+    flex: 1;
+    margin-bottom: 1rem;
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-two {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.local-oksigeniafamily .okf-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 26rem);
+    align-items: start;
+    gap: 1rem;
+}
+
+.local-oksigeniafamily .okf-side-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.local-oksigeniafamily .okf-side p {
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-cardhead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: .5rem;
+}
+
+.local-oksigeniafamily .okf-cardhead h3 {
+    margin: 0;
+}
+
+/* People in a family, and the lists of results. */
+.local-oksigeniafamily .okf-people,
+.local-oksigeniafamily .okf-links,
+.local-oksigeniafamily .okf-plain {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-person {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem .75rem;
+    padding: .75rem 0;
+    border-top: 1px solid var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-person:first-child {
+    border-top: 0;
+}
+
+.local-oksigeniafamily .okf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+}
+
+.local-oksigeniafamily .okf-question {
+    margin-bottom: 1rem;
+    border-color: var(--okf-bad-line);
+    background: var(--okf-bad-soft);
+}
+
+.local-oksigeniafamily .okf-gone summary {
+    color: var(--okf-muted);
+    cursor: pointer;
+}
+
+.local-oksigeniafamily .okf-gone .okf-people {
+    margin-top: .5rem;
+}
+
+.local-oksigeniafamily .okf-links li + li {
+    border-top: 1px solid var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-links a[href] {
+    display: block;
+    padding: .55rem .5rem;
+    border-radius: .4rem;
+    color: var(--okf-ink);
+    text-decoration: none;
+}
+
+.local-oksigeniafamily .okf-links a[href]:hover {
+    background: var(--okf-soft);
+}
+
+/* Forms of the pages. */
+.local-oksigeniafamily .okf-drop {
+    display: block;
+    margin-bottom: 1rem;
+    padding: 1.5rem;
+    border: 2px dashed var(--okf-line);
+    border-radius: .75rem;
+    background: var(--okf-soft);
+    cursor: pointer;
+}
+
+.local-oksigeniafamily .okf-drop:hover {
+    border-color: var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-drop input {
+    display: block;
+    width: 100%;
+    margin-top: .75rem;
+}
+
+.local-oksigeniafamily .okf-check {
+    display: flex;
+    align-items: flex-start;
+    gap: .6rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.local-oksigeniafamily .okf-check input {
+    flex: none;
+    margin-top: .3rem;
+}
+
+.local-oksigeniafamily .okf-check small {
+    margin-left: .3rem;
+    color: var(--okf-muted);
+    font-weight: 400;
+}
+
+.local-oksigeniafamily .okf-off {
+    opacity: .55;
+    cursor: default;
+}
+
+.local-oksigeniafamily .okf-choices {
+    margin: 0 0 .25rem;
+    padding: 0;
+    border: 0;
+}
+
+.local-oksigeniafamily .okf-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.local-oksigeniafamily .okf-inline input[type="text"] {
+    flex: 1 1 10rem;
+    width: auto;
+}
+
+.local-oksigeniafamily .okf-columns {
+    margin: 0 0 1rem;
+}
+
+.local-oksigeniafamily .okf-columns dt {
+    margin-top: .6rem;
+    font-weight: 400;
+}
+
+.local-oksigeniafamily .okf-columns dd {
+    margin: 0;
+    color: var(--okf-muted);
+    font-size: .875rem;
+}
+
+/* The preview of an import. */
+.local-oksigeniafamily .okf-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    gap: .75rem;
+    margin-bottom: 1rem;
+}
+
+.local-oksigeniafamily .okf-stat {
+    padding: .85rem 1rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .75rem;
+    background: var(--okf-bg);
+}
+
+.local-oksigeniafamily .okf-stat strong {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.local-oksigeniafamily .okf-stat span {
+    color: var(--okf-muted);
+    font-size: .875rem;
+}
+
+.local-oksigeniafamily .okf-stat-bad {
+    border-color: var(--okf-bad-line);
+    background: var(--okf-bad-soft);
+}
+
+.local-oksigeniafamily .okf-stat-bad strong,
+.local-oksigeniafamily .okf-stat-bad span {
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily .okf-errors {
+    margin-bottom: 1rem;
+    border-color: var(--okf-bad-line);
+}
+
+.local-oksigeniafamily .okf-rows {
+    width: 100%;
+}
+
+.local-oksigeniafamily .okf-rows th {
+    padding: .35rem 1rem .35rem 0;
+    border: 0;
+    color: var(--okf-muted);
+    width: 1%;
+    font-weight: 400;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.local-oksigeniafamily .okf-rows td {
+    padding: .35rem 0;
+    border: 0;
+}
+
+/* The letters: sheets of paper on the page, so always black on white, whatever the mode of the page. */
+.local-oksigeniafamily.okf-letters {
+    padding: 1rem;
+}
+
+.local-oksigeniafamily .okf-letters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem 1.5rem;
+    margin: 0 auto 1.25rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .75rem;
+    background: var(--okf-warn-soft);
+    color: var(--okf-warn-text);
+}
+
+.local-oksigeniafamily .okf-letters-bar p {
+    flex: 1 1 24rem;
+    margin: 0;
+}
+
+.local-oksigeniafamily .okf-letter {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 190mm;
+    margin: 0 auto 1.5rem;
+    padding: 14mm 15mm;
+    border: 1px solid #c8ccd0;
+    border-radius: 2px;
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+    line-height: 1.45;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .15);
+}
+
+.local-oksigeniafamily .okf-letter header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 10mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid #000;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-letter header img {
+    max-height: 12mm;
+    max-width: 40mm;
+}
+
+.local-oksigeniafamily .okf-letter h1 {
+    margin: 0 0 2mm;
+    color: #000;
+    font-size: 20pt;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.local-oksigeniafamily .okf-letter-group {
+    margin: 0 0 5mm;
+    color: #333;
+}
+
+.local-oksigeniafamily .okf-letter-code {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8mm;
+    margin: 8mm 0;
+    padding: 5mm;
+    border: 1.5pt solid #000;
+    border-radius: 3mm;
+}
+
+.local-oksigeniafamily .okf-letter-qr {
+    flex: none;
+    width: 40mm;
+    height: 40mm;
+    background: #fff;
+}
+
+.local-oksigeniafamily .okf-letter-qr svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.local-oksigeniafamily .okf-letter-label {
+    color: #333;
+}
+
+.local-oksigeniafamily .okf-letter-value {
+    color: #000;
+    font-family: SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 26pt;
+    font-weight: 700;
+    letter-spacing: .06em;
+    white-space: nowrap;
+}
+
+.local-oksigeniafamily .okf-letter-until {
+    color: #333;
+}
+
+.local-oksigeniafamily .okf-letter ol {
+    margin: 0 0 6mm;
+    padding-left: 6mm;
+}
+
+.local-oksigeniafamily .okf-letter ol li {
+    margin-bottom: 1.5mm;
+    overflow-wrap: anywhere;
+}
+
+.local-oksigeniafamily .okf-letter-care {
+    padding-top: 3mm;
+    border-top: 1px solid #999;
+    color: #333;
+    font-size: 10.5pt;
+}
+
+/* On a phone, tables turn into cards, and the columns stack. */
+@media (max-width: 991.98px) {
+    .local-oksigeniafamily .okf-cols {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .local-oksigeniafamily .okf-nav {
+        display: flex;
+        width: 100%;
+    }
+
+    .local-oksigeniafamily .okf-nav a[href] {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+
+    .local-oksigeniafamily .okf-table,
+    .local-oksigeniafamily .okf-table tbody,
+    .local-oksigeniafamily .okf-table tr,
+    .local-oksigeniafamily .okf-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .local-oksigeniafamily .okf-table {
+        border: 0;
+        background: transparent;
+    }
+
+    .local-oksigeniafamily .okf-table thead {
+        display: none;
+    }
+
+    .local-oksigeniafamily .okf-table tr {
+        margin-bottom: .75rem;
+        padding: .5rem 0;
+        border: 1px solid var(--okf-line);
+        border-radius: .75rem;
+        background: var(--okf-bg);
+    }
+
+    .local-oksigeniafamily .okf-table td {
+        padding: .25rem 1rem;
+        border: 0;
+    }
+
+    .local-oksigeniafamily .okf-letter {
+        padding: 6mm;
+    }
+
+    .local-oksigeniafamily .okf-letter-value {
+        font-size: 20pt;
+    }
+}
+
+/* On paper: only the letters, one per sheet. */
+@media print {
+    @page {
+        margin: 12mm;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .local-oksigeniafamily .okf-letters-bar {
+        display: none;
+    }
+
+    .local-oksigeniafamily.okf-letters {
+        padding: 0;
+    }
+
+    .local-oksigeniafamily .okf-letter {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        box-shadow: none;
+        break-after: page;
+        break-inside: avoid;
+    }
+
+    .local-oksigeniafamily .okf-letter:last-child {
+        break-after: auto;
+    }
+}

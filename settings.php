@@ -24,6 +24,14 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+// Whoever manages the families finds them with the accounts of the site, also without being a site administrator.
+$ADMIN->add('accounts', new admin_externalpage(
+    'local_oksigeniafamily_families',
+    new lang_string('families', 'local_oksigeniafamily'),
+    new moodle_url('/local/oksigeniafamily/index.php'),
+    'local/oksigeniafamily:manage'
+));
+
 if ($hassiteconfig) {
     $settings = new admin_settingpage('local_oksigeniafamily', new lang_string('pluginname', 'local_oksigeniafamily'));
     $ADMIN->add('localplugins', $settings);

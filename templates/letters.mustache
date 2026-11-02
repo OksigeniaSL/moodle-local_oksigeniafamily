@@ -1,0 +1,71 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/letters
+
+    The letters, one per student and one per sheet, with the code and its QR. It is the only place the codes ever exist in
+    the clear, and the only one with paper's colours: black on white, whatever the mode of the page.
+
+    Context variables required for this template:
+    * ready - How many, and what to do.
+    * backurl - Where to go back to.
+    * logo, site - The site, at the top of each letter.
+    * letters - Each with title, intro, group, qr (SVG), code, expires and step1.
+
+    Example context (json):
+    {
+        "ready": "2 letters ready.",
+        "backurl": "#", "logo": "", "site": "Example School",
+        "letters": [{"title": "For the family of Ana Ruiz", "intro": "With this code...", "group": "Year 5",
+            "qr": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' role='img' aria-label='QR'><path d='M0 0h1v1h-1z'/></svg>",
+            "code": "ABCD-EFGH", "expires": "It works until 2 January 2027.", "step1": "Point your camera at the code."}]
+    }
+}}
+<div class="local-oksigeniafamily okf-letters">
+    <div class="okf-letters-bar">
+        <p><strong>{{ready}}</strong> {{#str}} letters:warning, local_oksigeniafamily {{/str}}</p>
+        <div class="okf-actions">
+            <button type="button" class="btn btn-primary" data-okf-print="1">{{#str}} letters:print, local_oksigeniafamily {{/str}}</button>
+            <a class="btn btn-secondary" href="{{backurl}}">{{#str}} letters:back, local_oksigeniafamily {{/str}}</a>
+        </div>
+    </div>
+    {{#letters}}
+    <article class="okf-letter">
+        <header>
+            {{#logo}}<img src="{{logo}}" alt="">{{/logo}}
+            <span>{{site}}</span>
+        </header>
+        <h1>{{title}}</h1>
+        {{#group}}<p class="okf-letter-group">{{group}}</p>{{/group}}
+        <p>{{intro}}</p>
+        <div class="okf-letter-code">
+            <div class="okf-letter-qr">{{{qr}}}</div>
+            <div>
+                <div class="okf-letter-label">{{#str}} letter:code, local_oksigeniafamily {{/str}}</div>
+                <div class="okf-letter-value">{{code}}</div>
+                <div class="okf-letter-until">{{expires}}</div>
+            </div>
+        </div>
+        <ol>
+            <li>{{step1}}</li>
+            <li>{{#str}} letter:step2, local_oksigeniafamily {{/str}}</li>
+            <li>{{#str}} letter:step3, local_oksigeniafamily {{/str}}</li>
+        </ol>
+        <p class="okf-letter-care">{{#str}} letter:care, local_oksigeniafamily {{/str}}</p>
+    </article>
+    {{/letters}}
+</div>

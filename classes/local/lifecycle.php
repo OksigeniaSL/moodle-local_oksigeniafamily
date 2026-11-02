@@ -20,8 +20,8 @@ use local_oksigeniafamily\api;
 
 /**
  * How the family records keep up to date on their own: children who left the school leave their families, families
- * with no children left close after a grace period, and closed families are erased after their retention period. The
- * school does nothing for it: it only looks after its students, as it already does.
+ * with no children left close after a grace period, and closed families and people who left are erased after their
+ * retention period. The school does nothing for it: it only looks after its students, as it already does.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -39,6 +39,7 @@ class lifecycle {
         self::unlink_departed();
         self::close_childless($now);
         self::purge_closed($now);
+        self::purge_left($now);
         roles::sync_all();
     }
 
@@ -108,6 +109,27 @@ class lifecycle {
             $DB->delete_records('local_oksigeniafamily_child', ['familyid' => $familyid]);
             $DB->delete_records('local_oksigeniafamily_family', ['id' => $familyid]);
         }
+    }
+
+    /**
+     * The people who left a family that goes on are erased after the retention period too, and so are the codes that no
+     * longer work: nothing stays for as long as a sibling is at the school.
+     *
+     * @param int $now The time to work from.
+     * @return void
+     */
+    public static function purge_left(int $now): void {
+        global $DB;
+
+        $limit = $now - self::days('retentiondays', 90) * DAYSECS;
+        $params = ['left' => api::LEFT, 'limit' => $limit];
+        $DB->delete_records_select('local_oksigeniafamily_adult', 'status = :left AND timemodified <= :limit', $params);
+        $DB->delete_records_select('local_oksigeniafamily_child', 'status = :left AND timeleft <= :limit', $params);
+        $DB->delete_records_select(
+            'local_oksigeniafamily_claim',
+            '(status = :revoked AND timecreated <= :limit) OR expires <= :expired',
+            ['revoked' => api::REVOKED, 'limit' => $limit, 'expired' => $limit]
+        );
     }
 
     /**

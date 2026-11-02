@@ -116,6 +116,32 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * Those who manage the families get the notice with a link to the record, where they can remove the adult; the
+     * student's other adults get it without one.
+     */
+    public function test_claim_notice_links_to_the_record(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $ana = $generator->create_user();
+        $mother = $generator->create_user();
+        $manager = $generator->create_user();
+        $generator->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $manager->id);
+        $code = api::issue_claim_code((int) $ana->id);
+        api::claim($code, ['firstname' => 'Marta', 'userid' => $mother->id]);
+
+        $sink = $this->redirectMessages();
+        $joined = api::claim($code, ['firstname' => 'Juan', 'phone' => '+14155550102']);
+        $messages = [];
+        foreach ($sink->get_messages() as $message) {
+            $messages[(int) $message->useridto] = $message;
+        }
+        $this->assertStringContainsString('family.php?id=' . $joined->familyid, $messages[$manager->id]->contexturl);
+        $this->assertEmpty($messages[$mother->id]->contexturl);
+    }
+
+    /**
      * Every adult with a number, and a change of details that says which phone the adult had.
      */
     public function test_phone_and_updates(): void {

@@ -1,0 +1,136 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/family
+
+    A family: its adults and its children with how each stands, what the school can do about them, and who has left.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * backurl - The list.
+    * closed, closedsince, source, familykey, since - How the family stands.
+    * question - What is about to happen, when asked: title, text, text2 and buttons, each with label, danger and hidden
+      (name and value).
+    * action, cancelurl, sesskey - For the question.
+    * adults, hasadults - Each with name, phone, email, account, accounturl, editurl and removeurl.
+    * children, haschildren - Each with name, url, key, nokey, codeline, letterurl, revokeurl and removeurl.
+    * addadulturl, addchildurl - To add more, unless closed.
+    * gone, hasgone - Who left, each with name and when.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Families", "current": true}]},
+        "backurl": "#", "closed": false, "closedsince": "", "source": "Imported", "familykey": "F-1001", "since": "2 November 2026",
+        "question": null, "action": "#", "cancelurl": "#", "sesskey": "abc",
+        "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "marta@example.com", "account": "", "accounturl": "", "editurl": "#", "removeurl": "#"}],
+        "hasadults": true,
+        "children": [{"name": "Ana Ruiz", "url": "#", "key": "", "nokey": false, "codeline": "Code in use until 2 January 2027 · uses: 1", "letterurl": "#", "revokeurl": "#", "removeurl": "#"}],
+        "haschildren": true,
+        "addadulturl": "#", "addchildurl": "#",
+        "gone": [{"name": "Luis Sanz", "when": "1 November 2026"}], "hasgone": true
+    }
+}}
+<div class="local-oksigeniafamily okf-family">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        <a class="btn btn-secondary" href="{{backurl}}">{{#str}} family:back, local_oksigeniafamily {{/str}}</a>
+    </div>
+    <p class="okf-meta">
+        {{#closed}}<span class="okf-chip okf-chip-muted">{{#str}} family:closed, local_oksigeniafamily {{/str}}{{#closedsince}} · {{closedsince}}{{/closedsince}}</span>{{/closed}}
+        {{^closed}}<span class="okf-chip okf-chip-ok">{{#str}} family:active, local_oksigeniafamily {{/str}}</span>{{/closed}}
+        <span class="okf-chip okf-chip-muted">{{source}}{{#familykey}} · {{familykey}}{{/familykey}}</span>
+        <span>{{#str}} family:since, local_oksigeniafamily {{/str}} {{since}}</span>
+    </p>
+    {{#question}}
+    <section class="okf-card okf-question" role="alertdialog" aria-labelledby="okf-question-title">
+        <h3 id="okf-question-title">{{title}}</h3>
+        <p>{{text}}</p>
+        {{#text2}}<p>{{text2}}</p>{{/text2}}
+        <div class="okf-actions">
+            {{#buttons}}
+            <form method="post" action="{{action}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                {{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+                <button type="submit" class="btn {{#danger}}btn-danger{{/danger}}{{^danger}}btn-secondary{{/danger}}">{{label}}</button>
+            </form>
+            {{/buttons}}
+            <a class="btn btn-link" href="{{cancelurl}}">{{#str}} cancel, core {{/str}}</a>
+        </div>
+    </section>
+    {{/question}}
+    <div class="okf-two">
+        <section class="okf-card">
+            <header class="okf-cardhead">
+                <h3>{{#str}} list:col:adults, local_oksigeniafamily {{/str}}</h3>
+                {{#addadulturl}}<a class="btn btn-sm btn-secondary" href="{{addadulturl}}">{{#str}} adult:add, local_oksigeniafamily {{/str}}</a>{{/addadulturl}}
+            </header>
+            {{#hasadults}}
+            <ul class="okf-people">
+                {{#adults}}
+                <li class="okf-person">
+                    <div>
+                        <div class="okf-strong">{{name}}</div>
+                        {{#phone}}<div class="okf-line">{{phone}}</div>{{/phone}}
+                        {{#email}}<div class="okf-line">{{email}}</div>{{/email}}
+                        {{#account}}<div class="okf-line">{{#str}} family:account, local_oksigeniafamily {{/str}} <a href="{{accounturl}}">{{account}}</a></div>{{/account}}
+                    </div>
+                    <div class="okf-actions">
+                        {{#editurl}}<a class="btn btn-sm btn-secondary" href="{{editurl}}">{{#str}} family:edit, local_oksigeniafamily {{/str}}</a>{{/editurl}}
+                        {{#removeurl}}<a class="btn btn-sm btn-outline-danger" href="{{removeurl}}">{{#str}} family:remove, local_oksigeniafamily {{/str}}</a>{{/removeurl}}
+                    </div>
+                </li>
+                {{/adults}}
+            </ul>
+            {{/hasadults}}
+            {{^hasadults}}<p class="okf-empty">{{#str}} family:noadults, local_oksigeniafamily {{/str}}</p>{{/hasadults}}
+        </section>
+        <section class="okf-card">
+            <header class="okf-cardhead">
+                <h3>{{#str}} list:col:children, local_oksigeniafamily {{/str}}</h3>
+                {{#addchildurl}}<a class="btn btn-sm btn-secondary" href="{{addchildurl}}">{{#str}} child:add, local_oksigeniafamily {{/str}}</a>{{/addchildurl}}
+            </header>
+            {{#haschildren}}
+            <ul class="okf-people">
+                {{#children}}
+                <li class="okf-person">
+                    <div>
+                        <div class="okf-strong">{{#url}}<a href="{{url}}">{{name}}</a>{{/url}}{{^url}}{{name}}{{/url}}</div>
+                        {{#nokey}}<div class="okf-line">{{#str}} family:noaccount, local_oksigeniafamily {{/str}}</div>{{/nokey}}
+                        {{#key}}<div class="okf-line">{{key}}</div>{{/key}}
+                        {{#codeline}}<div class="okf-line">{{codeline}}</div>{{/codeline}}
+                    </div>
+                    <div class="okf-actions">
+                        {{#letterurl}}<a class="btn btn-sm btn-secondary" href="{{letterurl}}">{{#str}} family:letter, local_oksigeniafamily {{/str}}</a>{{/letterurl}}
+                        {{#revokeurl}}<a class="btn btn-sm btn-secondary" href="{{revokeurl}}">{{#str}} family:revoke, local_oksigeniafamily {{/str}}</a>{{/revokeurl}}
+                        {{#removeurl}}<a class="btn btn-sm btn-outline-danger" href="{{removeurl}}">{{#str}} family:remove, local_oksigeniafamily {{/str}}</a>{{/removeurl}}
+                    </div>
+                </li>
+                {{/children}}
+            </ul>
+            {{/haschildren}}
+            {{^haschildren}}<p class="okf-empty">{{#str}} family:nochildren, local_oksigeniafamily {{/str}}</p>{{/haschildren}}
+        </section>
+    </div>
+    {{#hasgone}}
+    <details class="okf-card okf-gone">
+        <summary>{{#str}} family:gonehead, local_oksigeniafamily {{/str}}</summary>
+        <ul class="okf-people">
+            {{#gone}}<li class="okf-person"><div>{{name}}</div><div class="okf-line">{{when}}</div></li>{{/gone}}
+        </ul>
+    </details>
+    {{/hasgone}}
+</div>

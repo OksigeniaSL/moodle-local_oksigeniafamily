@@ -1,0 +1,130 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/import_preview
+
+    The second step of an import: what would change, and the rows that cannot go in, before anything happens.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * stats - Each with value, label and bad.
+    * unknown - The columns left aside, if any.
+    * errors, haserrors - Each with line and message.
+    * families, hasfamilies - Each with key, isnew, adults (name, phone, email, chip) and children (name, nokey, chip).
+    * quiet - How many families do not change, if any.
+    * leaving, hasleaving - Each with key and family.
+    * haswork - Whether there is anything to apply.
+    * action, sesskey, draft, complete - For the buttons.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Import", "current": true}]},
+        "stats": [{"value": 1, "label": "New families", "bad": false}],
+        "unknown": "", "errors": [{"line": 4, "message": "There is no account with the username ana."}], "haserrors": true,
+        "families": [{"key": "F-1001", "isnew": true,
+            "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "", "chip": {"label": "New", "kind": "new"} }],
+            "children": [{"name": "Ana Ruiz", "nokey": false, "chip": {"label": "New", "kind": "new"} }] }],
+        "hasfamilies": true, "quiet": "", "leaving": [], "hasleaving": false, "haswork": true,
+        "action": "#", "sesskey": "abc", "draft": 1, "complete": 0
+    }
+}}
+<div class="local-oksigeniafamily okf-preview">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        <div class="okf-actions">
+            {{#haswork}}
+            <form method="post" action="{{action}}" data-okf-once="1">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="draft" value="{{draft}}">
+                <input type="hidden" name="complete" value="{{complete}}">
+                <input type="hidden" name="apply" value="1">
+                <button type="submit" class="btn btn-primary">{{#str}} import:apply, local_oksigeniafamily {{/str}}</button>
+            </form>
+            {{/haswork}}
+            <form method="post" action="{{action}}">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <input type="hidden" name="draft" value="{{draft}}">
+                <input type="hidden" name="cancel" value="1">
+                <button type="submit" class="btn btn-secondary">{{#str}} import:other, local_oksigeniafamily {{/str}}</button>
+            </form>
+        </div>
+    </div>
+    <p class="okf-lede">{{#str}} import:preview_lede, local_oksigeniafamily {{/str}}</p>
+    <div class="okf-stats">
+        {{#stats}}
+        <div class="okf-stat{{#bad}} okf-stat-bad{{/bad}}"><strong>{{value}}</strong><span>{{label}}</span></div>
+        {{/stats}}
+    </div>
+    {{#unknown}}<p class="okf-note okf-warn">{{unknown}}</p>{{/unknown}}
+    {{#haserrors}}
+    <section class="okf-card okf-errors">
+        <h3>{{#str}} import:errors, local_oksigeniafamily {{/str}}</h3>
+        <p>{{#str}} import:errors_text, local_oksigeniafamily {{/str}}</p>
+        <table class="okf-rows table-reboot">
+            <tbody>
+                {{#errors}}
+                <tr><th scope="row">{{#str}} import:line, local_oksigeniafamily, {{line}} {{/str}}</th><td>{{message}}</td></tr>
+                {{/errors}}
+            </tbody>
+        </table>
+    </section>
+    {{/haserrors}}
+    {{#hasleaving}}
+    <section class="okf-card">
+        <h3>{{#str}} import:leaving, local_oksigeniafamily {{/str}}</h3>
+        <ul class="okf-plain">
+            {{#leaving}}<li><span class="okf-strong">{{key}}</span> · {{family}}</li>{{/leaving}}
+        </ul>
+    </section>
+    {{/hasleaving}}
+    {{#hasfamilies}}
+    <div class="okf-cards">
+        {{#families}}
+        <section class="okf-card">
+            <header class="okf-cardhead">
+                <h3>{{key}}</h3>
+                {{#isnew}}<span class="okf-chip okf-chip-new">{{#str}} import:chip:newfamily, local_oksigeniafamily {{/str}}</span>{{/isnew}}
+                {{^isnew}}<span class="okf-chip okf-chip-muted">{{#str}} import:chip:existing, local_oksigeniafamily {{/str}}</span>{{/isnew}}
+            </header>
+            <ul class="okf-people">
+                {{#adults}}
+                <li class="okf-person">
+                    <div>
+                        <div class="okf-strong">{{name}}</div>
+                        {{#phone}}<div class="okf-line">{{phone}}</div>{{/phone}}
+                        {{#email}}<div class="okf-line">{{email}}</div>{{/email}}
+                    </div>
+                    {{#chip}}<span class="okf-chip okf-chip-{{kind}}">{{label}}</span>{{/chip}}
+                </li>
+                {{/adults}}
+                {{#children}}
+                <li class="okf-person okf-person-child">
+                    <div>
+                        <div class="okf-strong">{{name}}</div>
+                        <div class="okf-line">{{#nokey}}{{#str}} family:noaccount, local_oksigeniafamily {{/str}}{{/nokey}}{{^nokey}}{{#str}} import:child, local_oksigeniafamily {{/str}}{{/nokey}}</div>
+                    </div>
+                    {{#chip}}<span class="okf-chip okf-chip-{{kind}}">{{label}}</span>{{/chip}}
+                </li>
+                {{/children}}
+            </ul>
+        </section>
+        {{/families}}
+    </div>
+    {{/hasfamilies}}
+    {{#quiet}}<p class="okf-note">{{quiet}}</p>{{/quiet}}
+    {{^haswork}}<p class="okf-empty">{{#str}} import:nochange, local_oksigeniafamily {{/str}}</p>{{/haswork}}
+</div>

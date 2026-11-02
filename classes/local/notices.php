@@ -26,7 +26,8 @@ namespace local_oksigeniafamily\local;
 class notices {
     /**
      * A new adult joined a student with the student's code: the student's other adults (those with an account) and
-     * whoever manages the families of the school are told, so a code that went astray is found at once.
+     * whoever manages the families of the school are told, so a code that went astray is found at once. Those who manage
+     * them get a link to the record, where they can remove the adult.
      *
      * @param \stdClass $adult The adult who joined.
      * @param int $childuserid The student.
@@ -42,7 +43,7 @@ class notices {
         $recipients = [];
         foreach ($others as $other) {
             if (!empty($other->userid)) {
-                $recipients[(int) $other->userid] = true;
+                $recipients[(int) $other->userid] = false;
             }
         }
         foreach (get_users_by_capability(\context_system::instance(), 'local/oksigeniafamily:manage', 'u.id') as $manager) {
@@ -55,7 +56,8 @@ class notices {
             'adult' => $name !== '' ? $name : ($adult->phone ?? get_string('notice:someone', 'local_oksigeniafamily')),
             'child' => fullname($child),
         ];
-        foreach (array_keys($recipients) as $userid) {
+        $record = new \moodle_url('/local/oksigeniafamily/family.php', ['id' => $adult->familyid]);
+        foreach ($recipients as $userid => $manages) {
             $message = new \core\message\message();
             $message->component = 'local_oksigeniafamily';
             $message->name = 'newadult';
@@ -67,6 +69,10 @@ class notices {
             $message->fullmessagehtml = '';
             $message->smallmessage = $message->subject;
             $message->notification = 1;
+            if ($manages) {
+                $message->contexturl = $record->out(false);
+                $message->contexturlname = get_string('notice:newadult:record', 'local_oksigeniafamily');
+            }
             message_send($message);
         }
     }

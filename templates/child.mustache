@@ -1,0 +1,88 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/child
+
+    A child by hand: a student found by name, beside someone without an account, by their key.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * backurl - The family.
+    * action, familyid, sesskey - For the forms.
+    * q, searched - The search.
+    * results, hasresults - Each with id, name, who and already.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Families", "current": true}]},
+        "backurl": "#", "action": "#", "familyid": 1, "sesskey": "abc", "q": "ana", "searched": true,
+        "results": [{"id": 5, "name": "Ana Ruiz", "who": "ana.ruiz", "already": false}], "hasresults": true
+    }
+}}
+<div class="local-oksigeniafamily okf-child">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        <a class="btn btn-secondary" href="{{backurl}}">{{#str}} family:back, local_oksigeniafamily {{/str}}</a>
+    </div>
+    <div class="okf-cols">
+        <section class="okf-card">
+            <h3>{{#str}} child:student, local_oksigeniafamily {{/str}}</h3>
+            <form class="okf-search" method="get" action="{{action}}" role="search">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 L21 21"/></svg>
+                <label class="visually-hidden sr-only" for="okf-q">{{#str}} child:search, local_oksigeniafamily {{/str}}</label>
+                <input type="hidden" name="familyid" value="{{familyid}}">
+                <input id="okf-q" type="search" name="q" value="{{q}}" placeholder="{{#str}} child:search, local_oksigeniafamily {{/str}}">
+            </form>
+            {{#hasresults}}
+            <ul class="okf-people">
+                {{#results}}
+                <li class="okf-person">
+                    <div>
+                        <div class="okf-strong">{{name}}</div>
+                        <div class="okf-line">{{who}}</div>
+                    </div>
+                    <div class="okf-actions">
+                        {{#already}}<span class="okf-chip okf-chip-muted">{{#str}} child:already, local_oksigeniafamily {{/str}}</span>{{/already}}
+                        {{^already}}
+                        <form method="post" action="{{action}}">
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="adduser" value="{{id}}">
+                            <button type="submit" class="btn btn-sm btn-primary">{{#str}} child:addthis, local_oksigeniafamily {{/str}}</button>
+                        </form>
+                        {{/already}}
+                    </div>
+                </li>
+                {{/results}}
+            </ul>
+            {{/hasresults}}
+            {{^hasresults}}
+            <p class="okf-empty">{{#searched}}{{#str}} child:nothing, local_oksigeniafamily {{/str}}{{/searched}}{{^searched}}{{#str}} child:hint, local_oksigeniafamily {{/str}}{{/searched}}</p>
+            {{/hasresults}}
+        </section>
+        <aside class="okf-card okf-side">
+            <h3>{{#str}} child:nokey, local_oksigeniafamily {{/str}}</h3>
+            <p>{{#str}} child:nokey_text, local_oksigeniafamily {{/str}}</p>
+            <form method="post" action="{{action}}" class="okf-inline">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <label class="visually-hidden sr-only" for="okf-key">{{#str}} child:key, local_oksigeniafamily {{/str}}</label>
+                <input id="okf-key" class="form-control" type="text" name="addkey" maxlength="240" required placeholder="{{#str}} child:key, local_oksigeniafamily {{/str}}">
+                <button type="submit" class="btn btn-secondary">{{#str}} child:addthis, local_oksigeniafamily {{/str}}</button>
+            </form>
+        </aside>
+    </div>
+</div>

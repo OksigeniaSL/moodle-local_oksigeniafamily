@@ -1,0 +1,127 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/codes_scope
+
+    A student, a group, a course or a cohort: how each stands, beside the letters and withdrawing the codes.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * backurl - The choice.
+    * single, singlemode, singlewarning - For only one student.
+    * lede - How many.
+    * rows, hasrows, more - Each with name, who, hasfamily, adults, hascode and code.
+    * choices - The letters to issue: each with value, label, help, count, disabled and checked.
+    * canissue - Whether there is anybody.
+    * action, sesskey, ticket - For the letters.
+    * inuse, revokelabel, askrevoke, revoketext, revokeurl, cancelurl - For withdrawing the codes in use.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Codes and letters", "current": true}]},
+        "backurl": "#", "single": false, "singlemode": "", "singlewarning": "", "lede": "2 students",
+        "rows": [{"name": "Ana Ruiz", "who": "ana.ruiz", "hasfamily": true, "adults": "Adults: 2", "hascode": true, "code": "Until 2 January 2027"}],
+        "hasrows": true, "more": "",
+        "choices": [{"value": "pending", "label": "With no family and no code", "help": "", "count": 1, "disabled": false, "checked": true}],
+        "canissue": true, "action": "#", "sesskey": "abc", "ticket": "abc",
+        "inuse": 1, "revokelabel": "Withdraw the codes in use (1)", "askrevoke": false, "revoketext": "", "revokeurl": "#", "cancelurl": "#"
+    }
+}}
+<div class="local-oksigeniafamily okf-scope">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        <a class="btn btn-secondary" href="{{backurl}}">{{#str}} codes:back, local_oksigeniafamily {{/str}}</a>
+    </div>
+    {{#lede}}<p class="okf-lede">{{lede}}</p>{{/lede}}
+    <div class="okf-cols">
+        <div class="okf-main">
+            {{#hasrows}}
+            <table class="okf-table table-reboot">
+                <thead>
+                    <tr>
+                        <th scope="col">{{#str}} codes:col:student, local_oksigeniafamily {{/str}}</th>
+                        <th scope="col">{{#str}} codes:col:family, local_oksigeniafamily {{/str}}</th>
+                        <th scope="col">{{#str}} codes:col:code, local_oksigeniafamily {{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#rows}}
+                    <tr>
+                        <td><span class="okf-strong">{{name}}</span> <span class="okf-line">{{who}}</span></td>
+                        <td>{{#hasfamily}}<span class="okf-chip okf-chip-ok">{{adults}}</span>{{/hasfamily}}{{^hasfamily}}<span class="okf-chip okf-chip-muted">{{#str}} codes:nofamily, local_oksigeniafamily {{/str}}</span>{{/hasfamily}}</td>
+                        <td>{{#hascode}}{{code}}{{/hascode}}{{^hascode}}<span class="okf-line">{{#str}} codes:nocode, local_oksigeniafamily {{/str}}</span>{{/hascode}}</td>
+                    </tr>
+                    {{/rows}}
+                </tbody>
+            </table>
+            {{#more}}<p class="okf-note">{{more}}</p>{{/more}}
+            {{/hasrows}}
+            {{^hasrows}}<p class="okf-card okf-empty">{{#str}} codes:nobodyhere, local_oksigeniafamily {{/str}}</p>{{/hasrows}}
+        </div>
+        <aside class="okf-side-stack">
+            {{#canissue}}
+            <section class="okf-card">
+                <h3>{{#single}}{{#str}} family:letter, local_oksigeniafamily {{/str}}{{/single}}{{^single}}{{#str}} letters, local_oksigeniafamily {{/str}}{{/single}}</h3>
+                <form method="post" action="{{action}}" data-okf-once="1">
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="ticket" value="{{ticket}}">
+                    {{#single}}
+                    <input type="hidden" name="mode" value="{{singlemode}}">
+                    {{#singlewarning}}<p class="okf-warn">{{singlewarning}}</p>{{/singlewarning}}
+                    {{/single}}
+                    {{^single}}
+                    <fieldset class="okf-choices">
+                        <legend class="visually-hidden sr-only">{{#str}} codes:issue:many, local_oksigeniafamily {{/str}}</legend>
+                        {{#choices}}
+                        <label class="okf-check{{#disabled}} okf-off{{/disabled}}">
+                            <input type="radio" name="mode" value="{{value}}" {{#checked}}checked{{/checked}} {{#disabled}}disabled{{/disabled}}>
+                            <span>
+                                <span class="okf-strong">{{label}} <small>{{count}}</small></span>
+                                <span class="okf-line">{{help}}</span>
+                            </span>
+                        </label>
+                        {{/choices}}
+                    </fieldset>
+                    {{/single}}
+                    <button type="submit" class="btn btn-primary">{{#single}}{{#str}} codes:issue:one, local_oksigeniafamily {{/str}}{{/single}}{{^single}}{{#str}} codes:issue:many, local_oksigeniafamily {{/str}}{{/single}}</button>
+                </form>
+                <p class="okf-line okf-note">{{#str}} codes:noclear, local_oksigeniafamily {{/str}}</p>
+            </section>
+            {{/canissue}}
+            {{#inuse}}
+            <section class="okf-card">
+                <h3>{{#str}} codes:revokehead, local_oksigeniafamily {{/str}}</h3>
+                {{#askrevoke}}
+                <p>{{revoketext}}</p>
+                <div class="okf-actions">
+                    <form method="post" action="{{action}}">
+                        <input type="hidden" name="sesskey" value="{{sesskey}}">
+                        <input type="hidden" name="revoke" value="2">
+                        <button type="submit" class="btn btn-danger">{{revokelabel}}</button>
+                    </form>
+                    <a class="btn btn-link" href="{{cancelurl}}">{{#str}} cancel, core {{/str}}</a>
+                </div>
+                {{/askrevoke}}
+                {{^askrevoke}}
+                <p class="okf-line">{{#str}} codes:revoke_help, local_oksigeniafamily {{/str}}</p>
+                <a class="btn btn-outline-danger" href="{{revokeurl}}">{{revokelabel}}</a>
+                {{/askrevoke}}
+            </section>
+            {{/inuse}}
+        </aside>
+    </div>
+</div>
