@@ -47,7 +47,7 @@
         <a class="btn btn-secondary" href="{{backurl}}">{{#str}} codes:back, local_oksigeniafamily {{/str}}</a>
     </div>
     {{#lede}}<p class="okf-lede">{{lede}}</p>{{/lede}}
-    <div class="okf-cols">
+    <div class="okf-cols{{^canissue}} okf-cols-one{{/canissue}}">
         <div class="okf-main">
             {{#hasrows}}
             <table class="okf-table table-reboot">

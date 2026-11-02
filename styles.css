@@ -285,6 +285,10 @@
     gap: 1rem;
 }
 
+.local-oksigeniafamily .okf-cols-one {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .local-oksigeniafamily .okf-side-stack {
     display: grid;
     gap: 1rem;
