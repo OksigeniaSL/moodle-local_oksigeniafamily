@@ -5,8 +5,8 @@ cierra sola cuando un alumno se va.
 
 Los plugins que trabajan con familias (un comedor escolar, avisos por WhatsApp, una biblioteca escolar, una app móvil)
 leen la misma ficha en lugar de llevar cada uno su lista de quién es familia de quién. Ninguno depende de ella: cada uno
-funciona sin este plugin y lo usa si está instalado. Por sí solo no enseña nada a las familias; cada plugin enseña lo
-suyo.
+funciona sin este plugin y lo usa si está instalado. Aparte de las autorizaciones, por sí solo no enseña nada a las
+familias; cada plugin enseña lo suyo.
 
 **Estado:** primeras fases de desarrollo.
 
@@ -28,10 +28,32 @@ Todo está en *Administración del sitio ▸ Usuarios ▸ Cuentas ▸ Familias*,
 Los alumnos que se van se ocupan solos: cuando su cuenta se suspende o se borra dejan sus familias, y una familia sin
 hijos se cierra y se borra pasados los plazos de los ajustes del plugin.
 
+## Autorizaciones
+
+Una salida, las fotos del curso, irse solo a casa: el centro pide permiso a las familias de algunos alumnos y cada adulto
+contesta «Autorizo» o «No autorizo» por donde le llegue la petición.
+
+- **Quién la pide.** Quien tenga `local/oksigeniafamily:requestconsent`: el profesor en su curso (*Más ▸
+  Autorizaciones*), para todo el curso o uno de sus grupos; quien lleva el sitio, para un curso o una cohorte, en
+  *Administración del sitio ▸ Usuarios ▸ Cuentas ▸ Autorizaciones*. Una petición lleva un título, un texto, una circular
+  si se quiere y una fecha límite. Basta con un adulto de cada alumno, o se puede pedir que contesten todos; un «no» de
+  cualquiera cuenta como no.
+- **Cómo llega a las familias.** A los adultos con cuenta, una notificación de Moodle, en la app, por correo o en el
+  sitio, según haya elegido cada uno. A los que no tienen cuenta, un correo con un enlace personal, firmado por el
+  sitio, a una página donde contestan sin entrar. Con Oksigenia Marandu, además, una pregunta con dos botones por
+  WhatsApp o Telegram a quien se haya apuntado allí. La víspera de la fecha límite, a quien no ha contestado le llega un
+  recordatorio.
+- **Lo que ve el centro.** Cuántos han dicho que sí y que no y quién falta, cada alumno con lo que ha contestado cada
+  adulto, cuándo y por dónde; un botón para recordárselo a los que faltan, los alumnos nuevos del curso añadidos después,
+  las respuestas en papel anotadas y todo el historial para descargar en CSV o PDF.
+- **El registro.** Una respuesta nunca se cambia: cambiar de idea añade otra, y lo que se guarda es el historial. Una
+  petición se borra con sus respuestas un número de días después de su fecha límite (365 de serie, en cada petición).
+
 ## En la app móvil
 
-Estas páginas son para el personal del centro, en un navegador, también desde el móvil. El plugin no añade nada a la app
-de Moodle: cada plugin que trabaja con familias enseña allí lo suyo.
+Las páginas del centro son para su personal, en un navegador, también desde el móvil. Las familias contestan las
+autorizaciones en una página web que la app abre desde su notificación. Lo demás lo enseña cada plugin que trabaja con
+familias.
 
 ## Requisitos
 

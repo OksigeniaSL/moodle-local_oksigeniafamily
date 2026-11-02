@@ -1,0 +1,145 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/consent_report
+
+    A request for consent as the school sees it: the request, how many said yes and no, who is missing, and every
+    student with what each of their adults answered. Everything that changes something goes by POST with the session key.
+
+    Context variables required for this template:
+    * title, message, hasattachment, attachment (name, url), until - The request.
+    * status - label and chip of the request.
+    * tiles - Each with label, value and tone (ok, bad or empty).
+    * lede - How many students it is about.
+    * hasnofamily, nofamily - Students with no adult in the family records.
+    * hasrows, rows - Each student: name, status, chip, conflict, haspeople, people (name, answer, chip, detail, comment)
+      and recordurl.
+    * listurl - Back to the list.
+    * actionurl, sesskey - Where the buttons post.
+    * canremind, remindlabel - The reminder to those missing.
+    * canaddnew - Whether new students of its course, group or cohort can be added.
+    * cancancel - Whether it can be called off.
+    * csvurl, pdfurl - The downloads.
+
+    Example context (json):
+    {
+        "title": "Salida al Teide", "message": "<p>Salimos a las 8:30.</p>", "hasattachment": true,
+        "attachment": {"name": "circular.pdf", "url": "#"}, "until": "Se puede contestar hasta el 14 de noviembre de 2026.",
+        "status": {"label": "Abierta", "chip": ""},
+        "tiles": [{"label": "Autorizan", "value": 18, "tone": "ok"}, {"label": "No autorizan", "value": 1, "tone": "bad"},
+            {"label": "Sin contestar", "value": 6, "tone": ""}],
+        "lede": "25 alumnos.", "hasnofamily": true, "nofamily": "2 alumnos no tienen a nadie en la ficha de familias.",
+        "hasrows": true,
+        "rows": [{"name": "Lucas Pérez", "status": "Autoriza", "chip": "okf-chip-ok", "conflict": false, "haspeople": true,
+            "people": [{"name": "Pilar Sanz", "answer": "Autorizo", "chip": "okf-chip-ok", "detail": "3/11/26, 18:20 · WhatsApp", "comment": ""}],
+            "recordurl": "#"}],
+        "listurl": "#", "actionurl": "#", "sesskey": "abc", "canremind": true, "remindlabel": "Recordar a las familias de 6 alumnos",
+        "canaddnew": true, "cancancel": true, "csvurl": "#", "pdfurl": "#"
+    }
+}}
+<div class="local-oksigeniafamily okf-consent-report">
+    <div class="okf-head">
+        <a href="{{listurl}}">{{#str}} consent:backtolist, local_oksigeniafamily {{/str}}</a>
+        {{#status}}<span class="okf-chip {{chip}}">{{label}}</span>{{/status}}
+    </div>
+    <div class="okf-cols">
+        <div>
+            <div class="okf-tiles">
+                {{#tiles}}
+                <div class="okf-tile okf-tile-{{tone}}">
+                    <span class="okf-tile-value">{{value}}</span>
+                    <span class="okf-tile-label">{{label}}</span>
+                </div>
+                {{/tiles}}
+            </div>
+            <p class="okf-lede">{{lede}}</p>
+            {{#hasnofamily}}<p class="okf-warn">{{nofamily}}</p>{{/hasnofamily}}
+            {{#hasrows}}
+            <table class="okf-table table-reboot">
+                <thead>
+                    <tr>
+                        <th scope="col">{{#str}} consent:col:student, local_oksigeniafamily {{/str}}</th>
+                        <th scope="col">{{#str}} consent:col:status, local_oksigeniafamily {{/str}}</th>
+                        <th scope="col">{{#str}} consent:col:family, local_oksigeniafamily {{/str}}</th>
+                        <th scope="col"><span class="visually-hidden sr-only">{{#str}} consent:col:actions, local_oksigeniafamily {{/str}}</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#rows}}
+                    <tr>
+                        <td class="okf-strong">{{name}}</td>
+                        <td>
+                            <span class="okf-chip {{chip}}">{{status}}</span>
+                            {{#conflict}}<span class="okf-line">{{#str}} consent:conflictnote, local_oksigeniafamily {{/str}}</span>{{/conflict}}
+                        </td>
+                        <td>
+                            {{#haspeople}}
+                            <ul class="okf-plain">
+                                {{#people}}
+                                <li>
+                                    {{name}} · <span class="okf-chip {{chip}}">{{answer}}</span>
+                                    {{#detail}}<span class="okf-line">{{detail}}</span>{{/detail}}
+                                    {{#comment}}<span class="okf-line">«{{comment}}»</span>{{/comment}}
+                                </li>
+                                {{/people}}
+                            </ul>
+                            {{/haspeople}}
+                            {{^haspeople}}<span class="okf-line">{{#str}} consent:nobody, local_oksigeniafamily {{/str}}</span>{{/haspeople}}
+                        </td>
+                        <td>{{#recordurl}}<a href="{{recordurl}}">{{#str}} consent:record, local_oksigeniafamily {{/str}}</a>{{/recordurl}}</td>
+                    </tr>
+                    {{/rows}}
+                </tbody>
+            </table>
+            {{/hasrows}}
+        </div>
+        <div class="okf-side-stack">
+            <section class="okf-card okf-side">
+                <h3>{{title}}</h3>
+                <p>{{until}}</p>
+                <div class="okf-message">{{{message}}}</div>
+                {{#hasattachment}}{{#attachment}}<p><a href="{{url}}">{{name}}</a></p>{{/attachment}}{{/hasattachment}}
+            </section>
+            <section class="okf-card okf-side okf-actions">
+                {{#canremind}}
+                <form method="post" action="{{actionurl}}" data-okf-once>
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="do" value="remind">
+                    <button type="submit" class="btn btn-primary">{{remindlabel}}</button>
+                </form>
+                {{/canremind}}
+                {{#canaddnew}}
+                <form method="post" action="{{actionurl}}" data-okf-once>
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="do" value="addnew">
+                    <button type="submit" class="btn btn-secondary">{{#str}} consent:addnew, local_oksigeniafamily {{/str}}</button>
+                </form>
+                {{/canaddnew}}
+                <p class="okf-downloads">
+                    <a href="{{csvurl}}">{{#str}} consent:download:csv, local_oksigeniafamily {{/str}}</a>
+                    · <a href="{{pdfurl}}">{{#str}} consent:download:pdf, local_oksigeniafamily {{/str}}</a>
+                </p>
+                {{#cancancel}}
+                <form method="get" action="{{actionurl}}">
+                    <input type="hidden" name="ask" value="cancel">
+                    <button type="submit" class="btn btn-link okf-danger-link">{{#str}} consent:cancel, local_oksigeniafamily {{/str}}</button>
+                </form>
+                {{/cancancel}}
+            </section>
+        </div>
+    </div>
+</div>

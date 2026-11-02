@@ -31,6 +31,13 @@ $ADMIN->add('accounts', new admin_externalpage(
     new moodle_url('/local/oksigeniafamily/index.php'),
     'local/oksigeniafamily:manage'
 ));
+// The requests for consent of the whole site; teachers find those of their course in the course.
+$ADMIN->add('accounts', new admin_externalpage(
+    'local_oksigeniafamily_consents',
+    new lang_string('consent:title', 'local_oksigeniafamily'),
+    new moodle_url('/local/oksigeniafamily/consents.php'),
+    'local/oksigeniafamily:requestconsent'
+));
 
 if ($hassiteconfig) {
     $settings = new admin_settingpage('local_oksigeniafamily', new lang_string('pluginname', 'local_oksigeniafamily'));
@@ -80,6 +87,13 @@ if ($hassiteconfig) {
             new lang_string('settings:retentiondays', 'local_oksigeniafamily'),
             new lang_string('settings:retentiondays_desc', 'local_oksigeniafamily'),
             90,
+            PARAM_INT
+        ));
+        $settings->add(new admin_setting_configtext(
+            'local_oksigeniafamily/consentkeepdays',
+            new lang_string('settings:consentkeepdays', 'local_oksigeniafamily'),
+            new lang_string('settings:consentkeepdays_desc', 'local_oksigeniafamily'),
+            365,
             PARAM_INT
         ));
     }

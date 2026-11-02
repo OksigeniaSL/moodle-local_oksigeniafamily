@@ -35,4 +35,14 @@ $tasks = [
         'month' => '*',
         'dayofweek' => '*',
     ],
+    [
+        // Requests for consent: the reminder the day before the deadline, and erasing those past their retention.
+        'classname' => 'local_oksigeniafamily\\task\\consent_round',
+        'blocking' => 0,
+        'minute' => 'R',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
 ];

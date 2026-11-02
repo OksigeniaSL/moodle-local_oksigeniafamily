@@ -40,6 +40,41 @@ class page {
     }
 
     /**
+     * Set up a page of the requests for consent for the school: inside its course for the teachers, or with the
+     * administration of the site for the requests of the whole site.
+     *
+     * @param \context $context Where the requests are: a course or the site.
+     * @param string $path The page, such as /local/oksigeniafamily/consents.php.
+     * @param array $params Its parameters.
+     * @param string $title The title.
+     * @return void
+     */
+    public static function consent_setup(\context $context, string $path, array $params, string $title): void {
+        global $CFG, $PAGE;
+
+        if ($context->contextlevel == CONTEXT_COURSE) {
+            $course = get_course($context->instanceid);
+            require_login($course);
+            require_capability('local/oksigeniafamily:requestconsent', $context);
+            $PAGE->set_url(new \moodle_url($path, $params));
+            $PAGE->set_pagelayout('incourse');
+            $PAGE->set_title($title);
+            $PAGE->set_heading(format_string($course->fullname, true, ['context' => $context]));
+            $PAGE->navbar->add(
+                get_string('consent:title', 'local_oksigeniafamily'),
+                new \moodle_url('/local/oksigeniafamily/consents.php', ['contextid' => $context->id])
+            );
+            return;
+        }
+        if ($context->contextlevel != CONTEXT_SYSTEM) {
+            throw new \moodle_exception('invalidcontext');
+        }
+        require_once($CFG->libdir . '/adminlib.php');
+        admin_externalpage_setup('local_oksigeniafamily_consents', '', $params, $path, ['nosearch' => true]);
+        self::dress($title);
+    }
+
+    /**
      * Forms marked data-okf-once do not go twice with a second click.
      *
      * @return void
@@ -59,15 +94,43 @@ class page {
     }
 
     /**
+     * The answer forms of the families (two buttons, «Yes» and «No») do not go twice either. The buttons are switched
+     * off just after the form leaves, never during: a button switched off at once would not send its answer.
+     *
+     * @return void
+     */
+    public static function once_answers(): void {
+        global $PAGE;
+
+        $PAGE->requires->js_amd_inline("
+            require([], function() {
+                document.querySelectorAll('form[data-okf-answer]').forEach(function(form) {
+                    form.addEventListener('submit', function() {
+                        setTimeout(function() {
+                            form.querySelectorAll('button[type=submit]').forEach(function(button) {
+                                button.disabled = true;
+                            });
+                        }, 0);
+                    });
+                });
+            });
+        ");
+    }
+
+    /**
      * The way between the pages.
      *
-     * @param string $current The page: families, import or codes.
+     * @param string $current The page: families, import, codes or consents.
      * @return array For the template local_oksigeniafamily/nav.
      */
     public static function nav(string $current): array {
-        $pages = ['families' => 'index.php', 'import' => 'import.php', 'codes' => 'codes.php'];
+        $pages = ['families' => 'index.php', 'import' => 'import.php', 'codes' => 'codes.php', 'consents' => 'consents.php'];
+        $caps = ['consents' => 'local/oksigeniafamily:requestconsent'];
         $items = [];
         foreach ($pages as $name => $script) {
+            if (!has_capability($caps[$name] ?? 'local/oksigeniafamily:manage', \context_system::instance())) {
+                continue;
+            }
             $items[] = [
                 'url' => (new \moodle_url('/local/oksigeniafamily/' . $script))->out(false),
                 'label' => get_string('nav:' . $name, 'local_oksigeniafamily'),

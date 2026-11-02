@@ -43,5 +43,15 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110201, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026110203) {
+        // Requests for consent: the request, the students it is about and every answer.
+        foreach (['local_oksigeniafamily_request', 'local_oksigeniafamily_target', 'local_oksigeniafamily_answer'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026110203, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

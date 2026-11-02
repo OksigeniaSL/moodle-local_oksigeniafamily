@@ -7,6 +7,15 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- Requests for consent (0.3.0-dev). The school asks the families of some students for their consent, and each adult
+  answers yes or no: from Moodle's notification (app, e-mail or site) with an account, from a signed personal link by
+  e-mail without one, or with two buttons on WhatsApp and Telegram through Oksigenia Marandu's `ask()` and its hook
+  `answer_received`. A new capability, `local/oksigeniafamily:requestconsent`, for teachers in their course and
+  managers on the site. The school's page shows who said what and who is missing, reminds those missing, adds new
+  students of the course, writes down paper answers and downloads the whole history (CSV, PDF). Answers are never
+  changed, only added; a «no» from any adult counts as a no, and whoever made the request is told when two adults
+  disagree. A reminder the day before the deadline, and erasing after the retention, by a new scheduled task. Tables
+  `local_oksigeniafamily_request`, `_target` and `_answer`, in the privacy provider.
 - The school's side, with the accounts of the site (*Site administration ▸ Users ▸ Accounts ▸ Families*), for anyone
   with `local/oksigeniafamily:manage`, without needing to be a site administrator:
   - The list of families, with a search by name, mobile phone, e-mail or key, and each family's page: its adults and

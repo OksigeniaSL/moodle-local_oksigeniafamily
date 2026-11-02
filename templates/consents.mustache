@@ -1,0 +1,77 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/consents
+
+    The requests for consent of a course or of the whole site: one row per request (one card on a phone). Without any
+    yet, what they are for and how to make the first.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav; only on the page of the whole site.
+    * newurl - Where a new request is made.
+    * hasrows - Whether there are any.
+    * wherecolumn - Whether to say where each was made.
+    * rows - Each with url, title, deadline, status (label, chip), counts and where.
+
+    Example context (json):
+    {
+        "nav": null,
+        "newurl": "#",
+        "hasrows": true,
+        "wherecolumn": false,
+        "rows": [{"url": "#", "title": "Salida al Teide", "deadline": "14 de noviembre de 2026",
+            "status": {"label": "Abierta", "chip": ""}, "counts": "18 sí · 1 no · 6 sin contestar", "where": ""}]
+    }
+}}
+<div class="local-oksigeniafamily okf-consents">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        {{#hasrows}}<a class="btn btn-primary" href="{{newurl}}">{{#str}} consent:new, local_oksigeniafamily {{/str}}</a>{{/hasrows}}
+    </div>
+    {{#hasrows}}
+    <table class="okf-table table-reboot">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} consent:col:request, local_oksigeniafamily {{/str}}</th>
+                {{#wherecolumn}}<th scope="col">{{#str}} consent:col:where, local_oksigeniafamily {{/str}}</th>{{/wherecolumn}}
+                <th scope="col">{{#str}} consent:col:deadline, local_oksigeniafamily {{/str}}</th>
+                <th scope="col">{{#str}} consent:col:answers, local_oksigeniafamily {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rows}}
+            <tr>
+                <td>
+                    <a class="okf-strong" href="{{url}}">{{title}}</a>
+                    {{#status}}<span class="okf-chip {{chip}}">{{label}}</span>{{/status}}
+                </td>
+                {{#wherecolumn}}<td>{{where}}</td>{{/wherecolumn}}
+                <td>{{deadline}}</td>
+                <td class="okf-num">{{counts}}</td>
+            </tr>
+            {{/rows}}
+        </tbody>
+    </table>
+    {{/hasrows}}
+    {{^hasrows}}
+    <section class="okf-card okf-start">
+        <h3>{{#str}} consent:empty:title, local_oksigeniafamily {{/str}}</h3>
+        <p>{{#str}} consent:empty:text, local_oksigeniafamily {{/str}}</p>
+        <a class="btn btn-primary" href="{{newurl}}">{{#str}} consent:new, local_oksigeniafamily {{/str}}</a>
+    </section>
+    {{/hasrows}}
+</div>

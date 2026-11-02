@@ -1,0 +1,74 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/consent_answer
+
+    Where an adult answers a request for consent, for each of their children: two buttons that say what they do, a
+    comment if they want, and what they answered before, which they can change until the deadline.
+
+    Context variables required for this template:
+    * title, message, hasattachment, attachment (name, url), until, open - The request.
+    * as - Who is answering.
+    * action - Where the answers go.
+    * haschildren, children - Each with name, fullname, answered, saidyes, saidno, answertext, yeslabel, nolabel, yesaria,
+      noaria, hidden (name, value) and commentid.
+
+    Example context (json):
+    {
+        "title": "Salida al Teide", "message": "<p>Salimos a las 8:30 y volvemos a las 14:00.</p>", "hasattachment": false,
+        "attachment": null, "until": "Puedes contestar hasta el 14 de noviembre de 2026.", "open": true,
+        "as": "Contestas como Pilar Sanz.", "action": "#", "haschildren": true,
+        "children": [{"name": "Lucas", "fullname": "Lucas Pérez", "answered": true, "saidyes": true, "saidno": false,
+            "answertext": "Has autorizado a Lucas el 3/11/26, 18:20.", "yeslabel": "Autorizo", "nolabel": "No autorizo",
+            "yesaria": "Autorizo a Lucas", "noaria": "No autorizo a Lucas",
+            "hidden": [{"name": "sesskey", "value": "abc"}], "commentid": "okf-comment-3"}]
+    }
+}}
+<div class="local-oksigeniafamily okf-answer">
+    <h2 class="okf-answer-title">{{title}}</h2>
+    <p class="okf-lede">{{until}}</p>
+    <div class="okf-card okf-message">
+        {{{message}}}
+        {{#hasattachment}}{{#attachment}}<p class="okf-note"><a href="{{url}}">{{name}}</a></p>{{/attachment}}{{/hasattachment}}
+    </div>
+    {{#haschildren}}
+    <p class="okf-note">{{as}}</p>
+    {{#children}}
+    <section class="okf-card okf-answer-child" aria-label="{{fullname}}">
+        <h3>{{fullname}}</h3>
+        {{#answered}}<p class="{{#saidyes}}okf-said-yes{{/saidyes}}{{#saidno}}okf-said-no{{/saidno}}" role="status">{{answertext}}</p>{{/answered}}
+        {{#open}}
+        <form method="post" action="{{action}}" data-okf-answer>
+            {{#hidden}}<input type="hidden" name="{{name}}" value="{{value}}">{{/hidden}}
+            <details class="okf-comment">
+                <summary>{{#str}} consent:addcomment, local_oksigeniafamily {{/str}}</summary>
+                <label class="visually-hidden sr-only" for="{{commentid}}">{{#str}} consent:comment, local_oksigeniafamily {{/str}}</label>
+                <textarea class="form-control" id="{{commentid}}" name="comment" rows="2" maxlength="1000"></textarea>
+            </details>
+            <div class="okf-answer-buttons">
+                <button type="submit" name="answer" value="yes" class="btn btn-success" aria-label="{{yesaria}}">{{yeslabel}}</button>
+                <button type="submit" name="answer" value="no" class="btn btn-outline-danger" aria-label="{{noaria}}">{{nolabel}}</button>
+            </div>
+        </form>
+        {{/open}}
+    </section>
+    {{/children}}
+    {{/haschildren}}
+    {{^haschildren}}
+    <p class="okf-warn">{{#str}} consent:nochildren, local_oksigeniafamily {{/str}}</p>
+    {{/haschildren}}
+</div>

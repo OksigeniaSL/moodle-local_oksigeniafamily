@@ -635,6 +635,126 @@
     font-size: .875rem;
 }
 
+/* Requests for consent. */
+.local-oksigeniafamily .okf-chip-bad {
+    background: var(--okf-bad-soft);
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily .okf-num {
+    font-variant-numeric: tabular-nums;
+}
+
+.local-oksigeniafamily .okf-start {
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.local-oksigeniafamily .okf-start p {
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .75rem;
+    margin-bottom: 1rem;
+}
+
+.local-oksigeniafamily .okf-tile {
+    display: flex;
+    flex-direction: column;
+    padding: .9rem 1rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .75rem;
+    background: var(--okf-bg);
+}
+
+.local-oksigeniafamily .okf-tile-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.local-oksigeniafamily .okf-tile-label {
+    color: var(--okf-muted);
+    font-size: .875rem;
+}
+
+.local-oksigeniafamily .okf-tile-ok .okf-tile-value {
+    color: var(--okf-ok-text);
+}
+
+.local-oksigeniafamily .okf-tile-bad .okf-tile-value {
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily .okf-message {
+    overflow-wrap: anywhere;
+}
+
+.local-oksigeniafamily .okf-actions form {
+    margin-bottom: .75rem;
+}
+
+.local-oksigeniafamily .okf-actions .btn-primary,
+.local-oksigeniafamily .okf-actions .btn-secondary {
+    width: 100%;
+}
+
+.local-oksigeniafamily .okf-danger-link {
+    padding: 0;
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily.okf-answer .okf-answer-title {
+    margin-bottom: .25rem;
+    text-wrap: balance;
+}
+
+.local-oksigeniafamily.okf-answer .okf-card {
+    margin-bottom: 1rem;
+}
+
+.local-oksigeniafamily .okf-answer-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    margin-top: .75rem;
+}
+
+.local-oksigeniafamily .okf-answer-buttons .btn {
+    flex: 1 1 10rem;
+    min-height: 2.75rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-comment summary {
+    color: var(--okf-accent-text);
+    cursor: pointer;
+}
+
+.local-oksigeniafamily .okf-comment textarea {
+    margin-top: .5rem;
+}
+
+.local-oksigeniafamily .okf-said-yes,
+.local-oksigeniafamily .okf-said-no {
+    padding: .6rem .85rem;
+    border-radius: .5rem;
+}
+
+.local-oksigeniafamily .okf-said-yes {
+    background: var(--okf-ok-soft);
+    color: var(--okf-ok-text);
+}
+
+.local-oksigeniafamily .okf-said-no {
+    background: var(--okf-bad-soft);
+    color: var(--okf-bad-text);
+}
+
 /* On a phone, tables turn into cards, and the columns stack. */
 @media (max-width: 991.98px) {
     .local-oksigeniafamily .okf-cols {
@@ -651,6 +771,14 @@
     .local-oksigeniafamily .okf-nav {
         display: flex;
         width: 100%;
+    }
+
+    .local-oksigeniafamily .okf-tiles {
+        gap: .5rem;
+    }
+
+    .local-oksigeniafamily .okf-tile {
+        padding: .6rem .75rem;
     }
 
     .local-oksigeniafamily .okf-nav a[href] {

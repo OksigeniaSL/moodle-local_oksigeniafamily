@@ -65,6 +65,22 @@ class provider implements
             'usermodified' => 'privacy:metadata:claim:usermodified',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:claim');
+        $collection->add_database_table('local_oksigeniafamily_request', [
+            'usercreated' => 'privacy:metadata:request:usercreated',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:request');
+        $collection->add_database_table('local_oksigeniafamily_target', [
+            'userid' => 'privacy:metadata:target:userid',
+        ], 'privacy:metadata:target');
+        $collection->add_database_table('local_oksigeniafamily_answer', [
+            'childuserid' => 'privacy:metadata:answer:childuserid',
+            'adultname' => 'privacy:metadata:answer:adultname',
+            'answer' => 'privacy:metadata:answer:answer',
+            'comment' => 'privacy:metadata:answer:comment',
+            'userid' => 'privacy:metadata:answer:userid',
+            'address' => 'privacy:metadata:answer:address',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:answer');
 
         return $collection;
     }
@@ -84,6 +100,10 @@ class provider implements
             || $DB->record_exists('local_oksigeniafamily_child', ['userid' => $userid])
             || $DB->record_exists('local_oksigeniafamily_claim', ['userid' => $userid])
             || $DB->record_exists('local_oksigeniafamily_claim', ['usermodified' => $userid])
+            || $DB->record_exists('local_oksigeniafamily_request', ['usercreated' => $userid])
+            || $DB->record_exists('local_oksigeniafamily_target', ['userid' => $userid])
+            || $DB->record_exists('local_oksigeniafamily_answer', ['childuserid' => $userid])
+            || $DB->record_exists('local_oksigeniafamily_answer', ['userid' => $userid])
         ) {
             $contextlist->add_system_context();
         }
@@ -106,6 +126,12 @@ class provider implements
         $userlist->add_from_sql('userid', 'SELECT userid FROM {local_oksigeniafamily_claim}', []);
         $sql = 'SELECT usermodified FROM {local_oksigeniafamily_claim} WHERE usermodified > 0';
         $userlist->add_from_sql('usermodified', $sql, []);
+        $sql = 'SELECT usercreated FROM {local_oksigeniafamily_request} WHERE usercreated > 0';
+        $userlist->add_from_sql('usercreated', $sql, []);
+        $userlist->add_from_sql('userid', 'SELECT userid FROM {local_oksigeniafamily_target}', []);
+        $userlist->add_from_sql('childuserid', 'SELECT childuserid FROM {local_oksigeniafamily_answer}', []);
+        $sql = 'SELECT userid FROM {local_oksigeniafamily_answer} WHERE userid IS NOT NULL';
+        $userlist->add_from_sql('userid', $sql, []);
     }
 
     /**
@@ -137,6 +163,19 @@ class provider implements
                 '',
                 'id, status, claims, expires, timecreated'
             )),
+            'consentrequests' => array_values($DB->get_records(
+                'local_oksigeniafamily_request',
+                ['usercreated' => $userid],
+                '',
+                'id, title, deadline, status, timecreated'
+            )),
+            'consentanswers' => array_values($DB->get_records_select(
+                'local_oksigeniafamily_answer',
+                'childuserid = :child OR userid = :user',
+                ['child' => $userid, 'user' => $userid],
+                'id',
+                'id, requestid, childuserid, adultname, answer, comment, channel, address, timecreated'
+            )),
         ];
         writer::with_context($context)->export_data([get_string('pluginname', 'local_oksigeniafamily')], $data);
     }
@@ -153,7 +192,7 @@ class provider implements
         if ($context->contextlevel != CONTEXT_SYSTEM) {
             return;
         }
-        foreach (['adult', 'child', 'claim', 'family'] as $table) {
+        foreach (['adult', 'child', 'claim', 'family', 'answer', 'target', 'request'] as $table) {
             $DB->delete_records('local_oksigeniafamily_' . $table);
         }
     }
@@ -198,5 +237,17 @@ class provider implements
         $DB->delete_records('local_oksigeniafamily_child', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_claim', ['userid' => $userid]);
         $DB->set_field('local_oksigeniafamily_claim', 'usermodified', 0, ['usermodified' => $userid]);
+
+        // Requests for consent: what is about the student, and what the person answered, goes; a paper answer the person
+        // only wrote down for the school stays, without who wrote it.
+        $DB->delete_records('local_oksigeniafamily_answer', ['childuserid' => $userid]);
+        $DB->delete_records('local_oksigeniafamily_target', ['userid' => $userid]);
+        $DB->delete_records_select(
+            'local_oksigeniafamily_answer',
+            'userid = :userid AND channel <> :school',
+            ['userid' => $userid, 'school' => 'school']
+        );
+        $DB->set_field('local_oksigeniafamily_answer', 'userid', null, ['userid' => $userid]);
+        $DB->set_field('local_oksigeniafamily_request', 'usercreated', 0, ['usercreated' => $userid]);
     }
 }

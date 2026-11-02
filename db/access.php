@@ -34,4 +34,15 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+    // Ask the families of some students for their consent (a trip, the photos of the year, going home alone), and see
+    // and write down their answers: in a course, its teachers; on the whole site, whoever runs it.
+    'local/oksigeniafamily:requestconsent' => [
+        'riskbitmask' => RISK_PERSONAL | RISK_SPAM,
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+    ],
 ];
