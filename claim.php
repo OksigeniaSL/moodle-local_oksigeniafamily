@@ -49,7 +49,7 @@ if ($data = $form->get_data()) {
     if (throttle::blocked($address)) {
         $error = get_string('claim:toomany', 'local_oksigeniafamily');
     } else {
-        $prefix = (string) (get_config('local_oksigeniafamily', 'phoneprefix') ?: '+34');
+        $prefix = (string) get_config('local_oksigeniafamily', 'phoneprefix');
         $adult = [
             'firstname' => $data->firstname,
             'lastname' => $data->lastname,

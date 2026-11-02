@@ -58,7 +58,7 @@ class claim_form extends \moodleform {
      */
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
-        $prefix = (string) (get_config('local_oksigeniafamily', 'phoneprefix') ?: '+34');
+        $prefix = (string) get_config('local_oksigeniafamily', 'phoneprefix');
         if (trim($data['phone'] ?? '') !== '' && \local_oksigeniafamily\local\phone::normalise($data['phone'], $prefix) === '') {
             $errors['phone'] = get_string('claim:badphone', 'local_oksigeniafamily');
         }

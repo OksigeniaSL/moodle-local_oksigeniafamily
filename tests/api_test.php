@@ -40,7 +40,7 @@ final class api_test extends \advanced_testcase {
 
         $familyid = api::create_family('csv', 'household:7');
         $adultid = api::add_adult($familyid, [
-            'firstname' => 'Pilar', 'lastname' => 'Gil', 'phone' => '+34600000001', 'userid' => $parent->id,
+            'firstname' => 'Pilar', 'lastname' => 'Gil', 'phone' => '+34600000001', 'phoneverified' => true, 'userid' => $parent->id,
         ]);
         $anaid = api::add_child($familyid, (int) $ana->id, 'cifra:11');
         $leoid = api::add_child($familyid, (int) $leo->id);
@@ -99,9 +99,11 @@ final class api_test extends \advanced_testcase {
         // The mother hears of the new adult.
         $this->assertContains((int) $mother->id, array_map('intval', array_column($messages->get_messages(), 'useridto')));
 
-        // The father again, by his phone, which WhatsApp vouches for: same adult, same family.
+        // The father by his phone, which WhatsApp vouches for, twice: the second time he is the same adult, in the same family.
+        $vouched = api::claim($code, ['phone' => '+34600000002'], true);
+        $this->assertNotSame((int) $second->id, (int) $vouched->id);
         $again = api::claim($code, ['phone' => '+34600000002'], true);
-        $this->assertSame((int) $second->id, (int) $again->id);
+        $this->assertSame((int) $vouched->id, (int) $again->id);
 
         foreach (['WRONGCOD', ''] as $wrong) {
             try {
@@ -114,6 +116,51 @@ final class api_test extends \advanced_testcase {
         api::revoke_claim_codes((int) $ana->id);
         $this->expectException(\moodle_exception::class);
         api::claim($code, ['phone' => '+34600000004']);
+    }
+
+    /**
+     * A number typed first by someone else does not catch its owner: when WhatsApp vouches for it later, they get their own
+     * record, and only theirs answers to that number.
+     */
+    public function test_a_typed_number_does_not_catch_its_owner(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $number = '+14155550142';
+        $hers = $generator->create_user();
+        $his = $generator->create_user();
+
+        $impostor = api::claim(api::issue_claim_code((int) $his->id), ['firstname' => 'Someone', 'phone' => $number]);
+        $this->assertNull(api::adult_by_phone($number));
+        $this->assertSame([], api::adults_by_phone($number));
+
+        $owner = api::claim(api::issue_claim_code((int) $hers->id), ['firstname' => 'Owner', 'phone' => $number], true);
+        $this->assertNotSame((int) $impostor->id, (int) $owner->id);
+        $this->assertNotSame((int) $impostor->familyid, (int) $owner->familyid);
+        $this->assertSame((int) $owner->id, (int) api::adult_by_phone($number)->id);
+        $this->assertSame([(int) $hers->id], array_values(array_map(
+            fn($child) => (int) $child->userid,
+            api::children_of_adult((int) $owner->id)
+        )));
+        $this->assertSame(0, (int) $impostor->phoneverified);
+    }
+
+    /**
+     * A number stops counting as theirs when it changes, unless whoever changes it vouches for the new one.
+     */
+    public function test_a_changed_number_is_not_vouched_for(): void {
+        $this->resetAfterTest();
+        $familyid = api::create_family();
+        $adultid = api::add_adult($familyid, ['firstname' => 'Ana', 'phone' => '+14155550143', 'phoneverified' => true]);
+        $this->assertSame($adultid, (int) api::adult_by_phone('+14155550143')->id);
+
+        api::update_adult($adultid, ['firstname' => 'Ana María']);
+        $this->assertSame($adultid, (int) api::adult_by_phone('+14155550143')->id);
+
+        api::update_adult($adultid, ['phone' => '+14155550144']);
+        $this->assertNull(api::adult_by_phone('+14155550144'));
+
+        api::update_adult($adultid, ['phone' => '+14155550145', 'phoneverified' => true]);
+        $this->assertSame($adultid, (int) api::adult_by_phone('+14155550145')->id);
     }
 
     /**
@@ -131,7 +178,7 @@ final class api_test extends \advanced_testcase {
         $stranger = $generator->create_user();
         $number = '+14155550101';
         $familyid = api::create_family('csv', 'F1');
-        $parent = api::add_adult($familyid, ['firstname' => 'Marta', 'lastname' => 'Gil', 'phone' => $number]);
+        $parent = api::add_adult($familyid, ['firstname' => 'Marta', 'lastname' => 'Gil', 'phone' => $number, 'phoneverified' => true]);
         api::add_child($familyid, (int) $own->id);
         $before = $DB->get_record('local_oksigeniafamily_adult', ['id' => $parent]);
 
@@ -210,8 +257,9 @@ final class api_test extends \advanced_testcase {
     public function test_phone_and_updates(): void {
         $this->resetAfterTest();
 
-        $first = api::add_adult(api::create_family(), ['firstname' => 'Pilar', 'phone' => '+34600000001']);
-        $second = api::add_adult(api::create_family(), ['firstname' => 'Pilar', 'phone' => '+34600000001']);
+        $vouched = ['firstname' => 'Pilar', 'phone' => '+34600000001', 'phoneverified' => true];
+        $first = api::add_adult(api::create_family(), $vouched);
+        $second = api::add_adult(api::create_family(), $vouched);
         $this->assertEqualsCanonicalizing([$first, $second], array_map('intval', array_keys(api::adults_by_phone('+34600000001'))));
 
         $sink = $this->redirectEvents();

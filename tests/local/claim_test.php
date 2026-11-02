@@ -29,10 +29,12 @@ namespace local_oksigeniafamily\local;
 #[\PHPUnit\Framework\Attributes\CoversClass(links::class)]
 final class claim_test extends \advanced_testcase {
     /**
-     * Phones in one form: spaces and signs out, 00 as +, the site's country code when there is none.
+     * Phones in one form: spaces and signs out, 00 as +, the site's country code when there is none, and no guess when the
+     * site has none set.
      */
     public function test_phone(): void {
-        $this->assertSame('+34600123456', phone::normalise('600 12 34 56'));
+        $this->assertSame('+34600123456', phone::normalise('600 12 34 56', '+34'));
+        $this->assertSame('', phone::normalise('600 12 34 56'));
         $this->assertSame('+34600123456', phone::normalise('+34 600-123-456'));
         $this->assertSame('+351912345678', phone::normalise('00351 912 345 678'));
         $this->assertSame('+595981123456', phone::normalise('981 123 456', '+595'));

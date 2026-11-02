@@ -150,7 +150,8 @@ class api {
     }
 
     /**
-     * The adult with a phone number, for WhatsApp (Marandu): who is writing.
+     * The adult with a phone number, for WhatsApp (Marandu): who is writing. Only a number known to be theirs: one just
+     * typed on the claim page identifies nobody.
      *
      * @param string $phone The number in E.164 form.
      * @return stdClass|null The adult record, or null.
@@ -161,7 +162,7 @@ class api {
         $sql = "SELECT a.*
                   FROM {local_oksigeniafamily_adult} a
                   JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
-                 WHERE a.phone = :phone AND a.status = :aactive
+                 WHERE a.phone = :phone AND a.phoneverified = 1 AND a.status = :aactive
               ORDER BY a.id ASC";
         $records = $DB->get_records_sql($sql, ['phone' => $phone, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE], 0, 1);
 
@@ -169,7 +170,8 @@ class api {
     }
 
     /**
-     * Every adult with a phone number (the same number can stand for two adults, such as two families of one person).
+     * Every adult with a phone number known to be theirs (the same number can stand for two adults, such as two families of
+     * one person).
      *
      * @param string $phone The number in E.164 form.
      * @return stdClass[] Adult records, keyed by id.
@@ -180,7 +182,7 @@ class api {
         $sql = "SELECT a.*
                   FROM {local_oksigeniafamily_adult} a
                   JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
-                 WHERE a.phone = :phone AND a.status = :aactive
+                 WHERE a.phone = :phone AND a.phoneverified = 1 AND a.status = :aactive
               ORDER BY a.id ASC";
 
         return $DB->get_records_sql($sql, ['phone' => $phone, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]);
@@ -230,7 +232,8 @@ class api {
      * Add an adult to a family.
      *
      * @param int $familyid The family.
-     * @param array $data Any of firstname, lastname, email, phone (E.164), sourcekey and userid.
+     * @param array $data Any of firstname, lastname, email, phone (E.164), phoneverified (the school or WhatsApp vouches for
+     *     the number), sourcekey and userid.
      * @return int The adult's id.
      */
     public static function add_adult(int $familyid, array $data): int {
@@ -241,6 +244,7 @@ class api {
         foreach (['firstname', 'lastname', 'email', 'phone', 'sourcekey', 'userid'] as $field) {
             $record->$field = isset($data[$field]) && $data[$field] !== '' ? $data[$field] : null;
         }
+        $record->phoneverified = !empty($data['phoneverified']) && !empty($data['phone']) ? 1 : 0;
         $record->id = $DB->insert_record('local_oksigeniafamily_adult', $record);
 
         event\adult_added::create([
@@ -340,6 +344,14 @@ class api {
             if ($value !== $adult->$field) {
                 $changes[$field] = $value;
             }
+        }
+        // A number stops counting as theirs when it changes, unless whoever changes it vouches for the new one.
+        $verified = array_key_exists('phone', $changes) ? 0 : (int) $adult->phoneverified;
+        if (!empty($data['phoneverified']) && ($data['phone'] ?? $adult->phone)) {
+            $verified = 1;
+        }
+        if ($verified !== (int) $adult->phoneverified) {
+            $changes['phoneverified'] = $verified;
         }
         if (count($changes) === 1) {
             return false;
@@ -536,13 +548,13 @@ class api {
         $isnew = !$known;
         if ($isnew) {
             $familyid = self::create_family('claim');
-            $adultid = self::add_adult($familyid, $adult);
+            $adultid = self::add_adult($familyid, ['phoneverified' => $phoneverified] + $adult);
         } else {
             $familyid = (int) $known->familyid;
             $adultid = (int) $known->id;
             // An adult known by their account who now gives a phone keeps it, so WhatsApp finds them.
             if (!empty($adult['phone']) && $adult['phone'] !== $known->phone) {
-                self::update_adult($adultid, ['phone' => $adult['phone']]);
+                self::update_adult($adultid, ['phone' => $adult['phone'], 'phoneverified' => $phoneverified]);
             }
         }
         $others = self::adults_of_child((int) $claim->userid);

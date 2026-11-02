@@ -30,6 +30,7 @@
         <FIELD NAME="lastname" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="email" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="phone" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false" COMMENT="In E.164 form"/>
+        <FIELD NAME="phoneverified" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Whether the phone is known to be theirs: from the school or WhatsApp, not just typed"/>
         <FIELD NAME="sourcekey" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The adult in its source, such as cifra:123 or oneroster:abc"/>
         <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The adult's Moodle account, if any"/>
         <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="active" SEQUENCE="false" COMMENT="active or left"/>

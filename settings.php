@@ -58,7 +58,7 @@ if ($hassiteconfig) {
             'local_oksigeniafamily/phoneprefix',
             new lang_string('settings:phoneprefix', 'local_oksigeniafamily'),
             new lang_string('settings:phoneprefix_desc', 'local_oksigeniafamily'),
-            '+34',
+            '',
             PARAM_NOTAGS
         ));
         $settings->add(new admin_setting_configtext(

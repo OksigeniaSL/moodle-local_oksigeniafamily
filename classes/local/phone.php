@@ -25,18 +25,21 @@ namespace local_oksigeniafamily\local;
  */
 class phone {
     /**
-     * A number as typed, in E.164: without spaces or signs, with its country code (the site's, when it has none).
+     * A number as typed, in E.164: without spaces or signs, with its country code (the site's, if it has one, when it has none).
      *
      * @param string $typed The number as typed.
-     * @param string $prefix The site's country code, such as +34.
+     * @param string $prefix The site's country code, or empty: then a number without its own is not a number.
      * @return string The number, or '' when it is not one.
      */
-    public static function normalise(string $typed, string $prefix = '+34'): string {
+    public static function normalise(string $typed, string $prefix = ''): string {
         $digits = preg_replace('/[^\d+]/', '', $typed);
         if (strpos($digits, '00') === 0) {
             $digits = '+' . substr($digits, 2);
         }
         if ($digits !== '' && $digits[0] !== '+') {
+            if (trim($prefix) === '') {
+                return '';
+            }
             $digits = '+' . ltrim($prefix, '+') . $digits;
         }
 

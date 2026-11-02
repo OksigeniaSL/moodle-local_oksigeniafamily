@@ -115,7 +115,7 @@ class importer {
             $familyid = $family['id'] ?: api::create_family($source, $family['key']);
             foreach ($family['adults'] as $adult) {
                 if (empty($adult['id'])) {
-                    api::add_adult($familyid, array_filter($adult['data']));
+                    api::add_adult($familyid, array_filter($adult['data']) + ['phoneverified' => true]);
                     continue;
                 }
                 $changes = array_intersect_key($adult['data'], array_flip($adult['changes']));
@@ -124,7 +124,7 @@ class importer {
                     unset($changes['userid']);
                 }
                 if ($changes) {
-                    api::update_adult((int) $adult['id'], $changes);
+                    api::update_adult((int) $adult['id'], $changes + ['phoneverified' => true]);
                 }
             }
             foreach ($family['children'] as $child) {
@@ -480,6 +480,6 @@ class importer {
      * @return string
      */
     public static function phone_prefix(): string {
-        return (string) (get_config('local_oksigeniafamily', 'phoneprefix') ?: '+34');
+        return (string) get_config('local_oksigeniafamily', 'phoneprefix');
     }
 }

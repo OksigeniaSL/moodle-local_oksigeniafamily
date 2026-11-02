@@ -46,7 +46,7 @@ $string['child:nokey_text'] = 'Para quien aún no tiene cuenta de Moodle: su cla
 $string['child:nothing'] = 'No hay nadie con ese nombre.';
 $string['child:search'] = 'Busca un alumno';
 $string['child:student'] = 'Un alumno con cuenta';
-$string['claim:badphone'] = 'Esto no parece un número de teléfono.';
+$string['claim:badphone'] = 'Esto no parece un número de teléfono. Escríbelo con el prefijo de su país, empezando por +.';
 $string['claim:code'] = 'Código';
 $string['claim:done'] = 'Ya eres familia de {$a->child} en {$a->site}.';
 $string['claim:email'] = 'Correo (opcional)';
@@ -271,7 +271,7 @@ $string['settings:gracedays_desc'] = 'Cuánto espera una familia sin hijos antes
 $string['settings:parentroleid'] = 'Rol para los adultos con cuenta';
 $string['settings:parentroleid_desc'] = 'El rol que se da a cada adulto con cuenta de Moodle sobre cada uno de sus hijos, como el rol de padre o de mentor de Moodle. Se quita solo cuando cualquiera de los dos se va. Ninguno: no se da rol.';
 $string['settings:phoneprefix'] = 'Prefijo del país para los teléfonos';
-$string['settings:phoneprefix_desc'] = 'Se añade a los números que se escriben sin él, como +34.';
+$string['settings:phoneprefix_desc'] = 'Se añade a los números que se escriben sin él. Si lo dejas vacío, hay que escribirlos con su prefijo.';
 $string['settings:retentiondays'] = 'Conservar las familias cerradas (días)';
 $string['settings:retentiondays_desc'] = 'Cuánto se guarda una familia cerrada antes de borrarla con sus adultos.';
 $string['settings:where'] = 'Las familias están en <a href="{$a}">Administración del sitio, Usuarios, Cuentas, Familias</a>.';

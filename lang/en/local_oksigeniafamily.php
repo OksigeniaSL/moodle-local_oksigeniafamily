@@ -46,7 +46,7 @@ $string['child:nokey_text'] = 'For someone who has no Moodle account yet: their 
 $string['child:nothing'] = 'Nobody by that name.';
 $string['child:search'] = 'Search for a student';
 $string['child:student'] = 'A student with an account';
-$string['claim:badphone'] = 'This does not look like a phone number.';
+$string['claim:badphone'] = 'This does not look like a phone number. Write it with its country code, starting with +.';
 $string['claim:code'] = 'Code';
 $string['claim:done'] = 'You are now family of {$a->child} at {$a->site}.';
 $string['claim:email'] = 'E-mail (optional)';
@@ -271,7 +271,7 @@ $string['settings:gracedays_desc'] = 'How long a family with no children left wa
 $string['settings:parentroleid'] = 'Role for adults with an account';
 $string['settings:parentroleid_desc'] = 'The role given to each adult with a Moodle account over each of their children, such as Moodle\'s parent or mentor role. It is taken away on its own when either leaves. None: no role is given.';
 $string['settings:phoneprefix'] = 'Country code for phones';
-$string['settings:phoneprefix_desc'] = 'Added to the phone numbers typed without one, such as +34.';
+$string['settings:phoneprefix_desc'] = 'Added to the phone numbers typed without one. If you leave it empty, they must be written with theirs.';
 $string['settings:retentiondays'] = 'Keep closed families (days)';
 $string['settings:retentiondays_desc'] = 'How long a closed family is kept before it is erased with its adults.';
 $string['settings:where'] = 'The families themselves are under <a href="{$a}">Site administration, Users, Accounts, Families</a>.';

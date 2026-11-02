@@ -77,7 +77,7 @@ if ($data = $form->get_data()) {
     $username = core_text::strtolower(trim((string) $data->username));
     $userid = $username === '' ? null : (int) $DB->get_field('user', 'id', ['username' => $username, 'deleted' => 0]);
     if ($adult) {
-        api::update_adult((int) $adult->id, $details);
+        api::update_adult((int) $adult->id, $details + ['phoneverified' => true]);
         if ((int) $adult->userid !== (int) $userid) {
             api::set_adult_user((int) $adult->id, $userid);
         }
@@ -85,7 +85,7 @@ if ($data = $form->get_data()) {
     }
     $isnew = !$family;
     $familyid = $familyid ?: api::create_family('manual');
-    api::add_adult($familyid, $details + ['userid' => $userid]);
+    api::add_adult($familyid, $details + ['userid' => $userid, 'phoneverified' => true]);
     // A new family goes on with its first child.
     redirect($isnew
         ? new moodle_url('/local/oksigeniafamily/child.php', ['familyid' => $familyid])
