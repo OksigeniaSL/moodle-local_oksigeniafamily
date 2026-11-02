@@ -277,7 +277,12 @@ class consent_view {
             'answered' => false,
             'hasanswers' => (bool) $answers,
             'answers' => $answers,
-            'chooser' => $adults ? ['selectid' => 'okf-who-' . $childuserid, 'options' => $options] : null,
+            'chooser' => $adults ? [
+                'selectid' => 'okf-who-' . $childuserid,
+                'options' => $options,
+                // With more than one adult, nobody is chosen for them: they say who they are.
+                'placeholder' => count($options) > 1 ? get_string('consent:whoareyou', $component) : '',
+            ] : null,
             'yeslabel' => get_string('consent:yes', $component),
             'nolabel' => get_string('consent:no', $component),
             'yesaria' => get_string('consent:yesfor', $component, $first),

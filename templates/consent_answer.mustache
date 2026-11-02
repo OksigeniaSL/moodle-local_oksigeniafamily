@@ -26,7 +26,7 @@
     * action - Where the answers go.
     * note - Why it cannot be answered here, if so.
     * haschildren, children - Each with name, fullname, answered, saidyes, saidno, answertext, hasanswers and answers (what
-      the student's adults said, behind a key of the student), chooser (selectid and options with id and name, to say who
+      the student's adults said, behind a key of the student), chooser (selectid, placeholder and options with id and name, to say who
       answers, behind a key of the student), yeslabel, nolabel, yesaria, noaria, hidden (name, value) and commentid.
 
     Example context (json):
@@ -65,7 +65,8 @@
             {{#chooser}}
             <div class="okf-who">
                 <label for="{{selectid}}">{{#str}} consent:who, local_oksigeniafamily {{/str}}</label>
-                <select class="form-select custom-select" id="{{selectid}}" name="adultid">
+                <select class="form-select custom-select" id="{{selectid}}" name="adultid" required>
+                    {{#placeholder}}<option value="" selected disabled>{{placeholder}}</option>{{/placeholder}}
                     {{#options}}<option value="{{id}}">{{name}}</option>{{/options}}
                 </select>
             </div>

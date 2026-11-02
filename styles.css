@@ -710,6 +710,7 @@
 
 .local-oksigeniafamily.okf-answer .okf-answer-title {
     margin-bottom: .25rem;
+    /* stylelint-disable-next-line csstree/validator */
     text-wrap: balance;
 }
 

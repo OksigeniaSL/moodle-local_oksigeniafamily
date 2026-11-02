@@ -38,7 +38,7 @@ if (isguestuser()) {
     throw new require_login_exception('guestsarenotallowed');
 }
 $url = new moodle_url('/local/oksigeniafamily/consent.php', $id ? ['id' => $id] : []);
-$PAGE->set_context(context_user::instance($USER->id));
+$PAGE->set_context(context_system::instance());
 $PAGE->set_url($url);
 $PAGE->set_pagelayout('standard');
 $PAGE->set_title(get_string('consent:title', $component));

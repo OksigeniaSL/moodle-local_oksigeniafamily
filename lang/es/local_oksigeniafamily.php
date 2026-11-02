@@ -218,6 +218,7 @@ $string['consent:student:yes'] = 'Autoriza';
 $string['consent:title'] = 'Autorizaciones';
 $string['consent:until'] = 'Se contesta hasta el {$a}.';
 $string['consent:who'] = 'Quién contesta';
+$string['consent:whoareyou'] = 'Elige quién eres';
 $string['consent:yes'] = 'Autorizo';
 $string['consent:yesfor'] = 'Autorizo a {$a}';
 $string['consent:yousaidno'] = 'No autorizaste a {$a->child} el {$a->when}.';

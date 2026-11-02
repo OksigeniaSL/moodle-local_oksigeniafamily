@@ -218,6 +218,7 @@ $string['consent:student:yes'] = 'Consents';
 $string['consent:title'] = 'Requests for consent';
 $string['consent:until'] = 'Answers until {$a}.';
 $string['consent:who'] = 'Who is answering';
+$string['consent:whoareyou'] = 'Choose who you are';
 $string['consent:yes'] = 'I consent';
 $string['consent:yesfor'] = 'I consent for {$a}';
 $string['consent:yousaidno'] = 'You did not consent for {$a->child} on {$a->when}.';
