@@ -519,7 +519,9 @@ class api {
      * as the phone number.
      *
      * @param string $code The code, as typed (spaces, dashes and case do not matter).
-     * @param array $adult Any of firstname, lastname, email, phone (E.164) and userid of who claims it.
+     * @param array $adult Any of firstname, lastname, email, phone (E.164) and userid of who claims it; and adultid, the record
+     *     of an adult the caller already knows to be them, such as a Telegram chat they have joined before. Never from anything
+     *     a visitor can type.
      * @param bool $phoneverified Whether the phone is proved to belong to who claims.
      * @return stdClass The adult record, with `childuserid` and `childid` of the student joined.
      * @throws \moodle_exception When the code does not exist, has expired or was revoked.
@@ -534,7 +536,15 @@ class api {
         }
 
         $known = null;
-        if (!empty($adult['userid'])) {
+        if (!empty($adult['adultid'])) {
+            $known = $DB->get_record(
+                'local_oksigeniafamily_adult',
+                ['id' => $adult['adultid'], 'status' => self::ACTIVE],
+                '*',
+                IGNORE_MISSING
+            ) ?: null;
+        }
+        if (!$known && !empty($adult['userid'])) {
             $known = $DB->get_record(
                 'local_oksigeniafamily_adult',
                 ['userid' => $adult['userid'], 'status' => self::ACTIVE],

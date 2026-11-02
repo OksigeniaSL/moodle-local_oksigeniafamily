@@ -145,6 +145,29 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * A caller who already knows the adult says so: a second child joins the same record, and one who has left starts anew.
+     */
+    public function test_claim_by_a_known_adult(): void {
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $first = api::claim(api::issue_claim_code((int) $generator->create_user()->id), ['firstname' => 'Ana']);
+
+        $second = api::claim(
+            api::issue_claim_code((int) $generator->create_user()->id),
+            ['firstname' => 'Ana', 'adultid' => (int) $first->id]
+        );
+        $this->assertSame((int) $first->id, (int) $second->id);
+        $this->assertCount(2, api::children_of_adult((int) $first->id));
+
+        api::remove_adult((int) $first->id);
+        $third = api::claim(
+            api::issue_claim_code((int) $generator->create_user()->id),
+            ['firstname' => 'Ana', 'adultid' => (int) $first->id]
+        );
+        $this->assertNotSame((int) $first->id, (int) $third->id);
+    }
+
+    /**
      * A number stops counting as theirs when it changes, unless whoever changes it vouches for the new one.
      */
     public function test_a_changed_number_is_not_vouched_for(): void {
