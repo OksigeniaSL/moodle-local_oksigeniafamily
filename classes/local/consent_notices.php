@@ -71,7 +71,7 @@ class consent_notices {
                 } else if (!empty($adult->email) && validate_email($adult->email)) {
                     $sent['email'] += self::to_email($request, $adult, $children, $site, $reminder) ? 1 : 0;
                 }
-                $sent['marandu'] += self::to_marandu($request, (int) $adultid, $children, $now);
+                $sent['marandu'] += self::to_marandu($request, (int) $adultid, $children, $site, $now);
             } finally {
                 force_current_language($previous);
             }
@@ -211,10 +211,11 @@ class consent_notices {
      * @param \stdClass $request The request.
      * @param int $adultid The adult.
      * @param \stdClass[] $children The students.
+     * @param string $site The name of the site, which the text of the question starts with.
      * @param int $now The time.
      * @return int How many questions were queued.
      */
-    private static function to_marandu(\stdClass $request, int $adultid, array $children, int $now): int {
+    private static function to_marandu(\stdClass $request, int $adultid, array $children, string $site, int $now): int {
         $api = '\local_oksigeniamarandu\api';
         if (!class_exists($api) || !method_exists($api, 'ask')) {
             return 0;
@@ -227,7 +228,7 @@ class consent_notices {
                 $queued += (int) $api::ask(
                     'local_oksigeniafamily',
                     self::MARANDU_NOTICE,
-                    [format_string($child->firstname), $title, page::date((int) $request->deadline)],
+                    [$site, format_string($child->firstname), $title, page::date((int) $request->deadline)],
                     $request->id . ':' . $childuserid,
                     $adultid,
                     null,

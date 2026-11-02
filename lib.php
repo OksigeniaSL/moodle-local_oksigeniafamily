@@ -50,7 +50,7 @@ function local_oksigeniafamily_oksigeniamarandu_label(int $adultid): ?string {
         return format_string($name);
     }
 
-    return get_string('marandu:label', 'local_oksigeniafamily', (object) [
+    return get_string('marandu:adultname', 'local_oksigeniafamily', (object) [
         'adult' => format_string($name),
         'children' => implode(', ', $children),
     ]);
@@ -65,7 +65,7 @@ function local_oksigeniafamily_oksigeniamarandu_label(int $adultid): ?string {
 function local_oksigeniafamily_oksigeniamarandu_notices(): array {
     return [
         \local_oksigeniafamily\local\consent_notices::MARANDU_NOTICE => [
-            'examples' => ['Lucas', 'Salida al Teide', '14 de noviembre de 2026'],
+            'examples' => ['Academia Ejemplo', 'Lucas', 'Salida al Teide', '14 de noviembre de 2026'],
             'perweek' => 0.3,
             'options' => [\local_oksigeniafamily\local\consent::YES, \local_oksigeniafamily\local\consent::NO],
         ],

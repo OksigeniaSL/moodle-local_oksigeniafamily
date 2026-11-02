@@ -25,6 +25,9 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Fixed
 
+- The label of each adult in Marandu's list of numbers moves to `marandu:adultname`: `marandu:label` is what the plugin
+  is in a few words («family records»), as Marandu reads it. The WhatsApp text of a request starts with the name of the
+  site, so any organisation can use the same approved template (0.3.2-dev).
 - The two text columns of the requests without an empty default, which Moodle warns about on installing (0.3.1-dev).
 - The school's side, with the accounts of the site (*Site administration ▸ Users ▸ Accounts ▸ Families*), for anyone
   with `local/oksigeniafamily:manage`, without needing to be a site administrator:
