@@ -1,0 +1,6 @@
+/* The page of a request for consent in the Moodle app and in Aty. The app makes every textarea without core-auto-rows 200px
+   high, which an ion-textarea cannot opt out of; a comment here is a line or two. */
+ion-textarea.okf-app-comment textarea.native-textarea {
+    height: auto;
+    min-height: 4.5rem;
+}

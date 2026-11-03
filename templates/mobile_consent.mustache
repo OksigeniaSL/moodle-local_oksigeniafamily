@@ -53,7 +53,7 @@
                 <ng-container *ngIf="CONTENT_OTHERDATA.request.open">
                     <details>
                         <summary><%#str%>consent:addcomment, local_oksigeniafamily<%/str%></summary>
-                        <ion-textarea rows="3" maxlength="1000"
+                        <ion-textarea class="okf-app-comment" rows="3" maxlength="1000"
                             aria-label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>"
                             [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
                     </details>

@@ -26,7 +26,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   buttons for each child and a comment, answered through a new web service, `local_oksigeniafamily_answer_consent`;
   «Requests for consent» in the app's menu for whoever has one to answer; and the links of the notices and of a child's
   page in Aty open that page instead of the site in a browser, where an account of Aty cannot sign in. What the school
-  wrote travels to the app as data, never inside the template it compiles.
+  wrote travels to the app as data, never inside the template it compiles. The comment folds away behind «Add a comment»,
+  as on the web, and is a few lines high, with a small sheet of the plugin's own for the app.
 
 ### Fixed
 
