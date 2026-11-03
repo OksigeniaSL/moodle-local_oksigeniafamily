@@ -59,8 +59,11 @@
     text-decoration: none;
 }
 
-.local-oksigeniafamily .okf-nav a[href]:hover {
-    background: var(--okf-bg);
+/* Only where there is a pointer that hovers: a touch would leave it stuck. */
+@media (hover: hover) {
+    .local-oksigeniafamily .okf-nav a[href]:hover {
+        background: var(--okf-bg);
+    }
 }
 
 .local-oksigeniafamily .okf-nav a[href][aria-current] {
@@ -368,8 +371,11 @@
     text-decoration: none;
 }
 
-.local-oksigeniafamily .okf-links a[href]:hover {
-    background: var(--okf-soft);
+/* Only where there is a pointer that hovers: a touch would leave it stuck. */
+@media (hover: hover) {
+    .local-oksigeniafamily .okf-links a[href]:hover {
+        background: var(--okf-soft);
+    }
 }
 
 /* Forms of the pages. */
@@ -383,8 +389,11 @@
     cursor: pointer;
 }
 
-.local-oksigeniafamily .okf-drop:hover {
-    border-color: var(--okf-accent);
+/* Only where there is a pointer that hovers: a touch would leave it stuck. */
+@media (hover: hover) {
+    .local-oksigeniafamily .okf-drop:hover {
+        border-color: var(--okf-accent);
+    }
 }
 
 .local-oksigeniafamily .okf-drop input {

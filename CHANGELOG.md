@@ -31,6 +31,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 ### Fixed
 
 - On a child's page in Aty, a request's row no longer repeats its deadline: the row's date already says it (0.3.3-dev).
+- Hover effects only where a pointer hovers, so that a touch on a tablet or a classroom board does not leave them stuck
+  (0.3.3-dev).
 - The page behind a signed link, on the site's sign-in layout, puts its heading in the middle and clear of the top, so
   that a sign-in box with arched corners does not cut it (0.3.3-dev).
 - The label of each adult in Marandu's list of numbers moves to `marandu:adultname`: `marandu:label` is what the plugin
