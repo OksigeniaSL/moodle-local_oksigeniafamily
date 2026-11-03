@@ -22,9 +22,17 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   a request that needs every adult is not answered there.
 - On a child's page in Oksigenia Aty, a card with the open requests about the child and what the adult answered, each
   opening the request (`local_oksigeniafamily_oksigeniaaty_child_cards()`, 0.3.1-dev).
+- The requests for consent inside the Moodle app and Oksigenia Aty (0.3.3-dev): the page of a request, with the two
+  buttons for each child and a comment, answered through a new web service, `local_oksigeniafamily_answer_consent`;
+  «Requests for consent» in the app's menu for whoever has one to answer; and the links of the notices and of a child's
+  page in Aty open that page instead of the site in a browser, where an account of Aty cannot sign in. What the school
+  wrote travels to the app as data, never inside the template it compiles.
 
 ### Fixed
 
+- On a child's page in Aty, a request's row no longer repeats its deadline: the row's date already says it (0.3.3-dev).
+- The page behind a signed link, on the site's sign-in layout, puts its heading in the middle and clear of the top, so
+  that a sign-in box with arched corners does not cut it (0.3.3-dev).
 - The label of each adult in Marandu's list of numbers moves to `marandu:adultname`: `marandu:label` is what the plugin
   is in a few words («family records»), as Marandu reads it. The WhatsApp text of a request starts with the name of the
   site, so any organisation can use the same approved template (0.3.2-dev).

@@ -1,0 +1,75 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/mobile_consent
+
+    One request for consent in the Moodle app and in Aty: what the school says and, for each child, what the adult
+    answered and two buttons that say what they do, with a comment if they want. It has no data of its own: request
+    (id, title, until, open, message), sections (adultid, as, children with id, key, fullname, answered, saidyes,
+    answertext, yesaria, noaria, savedyes, savedno) and comments come as the page's other data, which the app binds, so
+    that nothing the school or the family wrote is compiled as part of the template.
+
+    Example context (json):
+    {}
+}}
+{{=<% %>=}}
+<div class="local-oksigeniafamily-app" *ngIf="CONTENT_OTHERDATA.request?.id">
+    <ion-item lines="none">
+        <ion-label class="ion-text-wrap">
+            <h1>{{ CONTENT_OTHERDATA.request.title }}</h1>
+            <p>{{ CONTENT_OTHERDATA.request.until }}</p>
+        </ion-label>
+    </ion-item>
+    <ion-card>
+        <ion-card-content>
+            <core-format-text [text]="CONTENT_OTHERDATA.request.message" component="local_oksigeniafamily"
+                contextLevel="system" [contextInstanceId]="0" />
+        </ion-card-content>
+    </ion-card>
+    <ng-container *ngFor="let section of CONTENT_OTHERDATA.sections">
+        <p class="ion-padding-horizontal">{{ section.as }}</p>
+        <ion-card *ngFor="let child of section.children">
+            <ion-card-header>
+                <ion-card-title>{{ child.fullname }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+                <p *ngIf="child.answered" role="status" [class.text-success]="child.saidyes"
+                    [class.text-danger]="!child.saidyes">{{ child.answertext }}</p>
+                <ng-container *ngIf="CONTENT_OTHERDATA.request.open">
+                    <ion-textarea fill="outline" mode="md" rows="2" maxlength="1000" autoGrow="true"
+                        label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>" labelPlacement="floating"
+                        [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
+                    <ion-button expand="block" color="success" [attr.aria-label]="child.yesaria" core-site-plugins-call-ws
+                        name="local_oksigeniafamily_answer_consent"
+                        [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'yes', comment: CONTENT_OTHERDATA.comments[child.key]}"
+                        [preSets]="{getFromCache: 0, saveToCache: 0}" [successMessage]="child.savedyes"
+                        refreshOnSuccess="true"><%#str%>consent:yes, local_oksigeniafamily<%/str%></ion-button>
+                    <ion-button expand="block" fill="outline" color="danger" [attr.aria-label]="child.noaria"
+                        core-site-plugins-call-ws name="local_oksigeniafamily_answer_consent"
+                        [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'no', comment: CONTENT_OTHERDATA.comments[child.key]}"
+                        [preSets]="{getFromCache: 0, saveToCache: 0}" [successMessage]="child.savedno"
+                        refreshOnSuccess="true"><%#str%>consent:no, local_oksigeniafamily<%/str%></ion-button>
+                </ng-container>
+            </ion-card-content>
+        </ion-card>
+    </ng-container>
+</div>
+<ion-list *ngIf="!CONTENT_OTHERDATA.request?.id">
+    <ion-item lines="none">
+        <ion-label class="ion-text-wrap"><%#str%>consent:nochildren, local_oksigeniafamily<%/str%></ion-label>
+    </ion-item>
+</ion-list>

@@ -50,8 +50,10 @@ each adult answers «I consent» or «I do not consent» wherever the request re
 
 ## On the mobile app
 
-The school's pages are for its staff, in a browser, also on a phone. Families answer requests for consent on a web
-page that the app opens from its notification. Everything else each plugin that works with families shows on its own.
+The school's pages are for its staff, in a browser, also on a phone. In the Moodle app, families answer requests for
+consent on a page of the app itself, which opens from its notification, from the menu (*Requests for consent*, for
+whoever has one to answer) and, in Oksigenia Aty, from each child's page. Everything else each plugin that works with
+families shows on its own.
 
 ## Requirements
 

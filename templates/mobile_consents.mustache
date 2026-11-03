@@ -1,0 +1,41 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/mobile_consents
+
+    The requests for consent still open about the user's children, in the Moodle app and in Aty. It has no data of its
+    own: the list comes as the page's other data (items, each with id, title and detail), which the app binds, so that
+    nothing the school wrote is compiled as part of the template.
+
+    Example context (json):
+    {}
+}}
+{{=<% %>=}}
+<ion-list *ngIf="CONTENT_OTHERDATA.items?.length">
+    <ion-item *ngFor="let item of CONTENT_OTHERDATA.items" button detail="true" core-site-plugins-new-content
+        component="local_oksigeniafamily" method="mobile_consent_view" [args]="{id: item.id}" [title]="item.title">
+        <ion-label class="ion-text-wrap">
+            <h2>{{ item.title }}</h2>
+            <p>{{ item.detail }}</p>
+        </ion-label>
+    </ion-item>
+</ion-list>
+<ion-list *ngIf="!CONTENT_OTHERDATA.items?.length">
+    <ion-item lines="none">
+        <ion-label class="ion-text-wrap"><%#str%>consent:mine:none, local_oksigeniafamily<%/str%></ion-label>
+    </ion-item>
+</ion-list>

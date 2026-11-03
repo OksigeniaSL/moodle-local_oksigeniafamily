@@ -51,9 +51,10 @@ contesta «Autorizo» o «No autorizo» por donde le llegue la petición.
 
 ## En la app móvil
 
-Las páginas del centro son para su personal, en un navegador, también desde el móvil. Las familias contestan las
-autorizaciones en una página web que la app abre desde su notificación. Lo demás lo enseña cada plugin que trabaja con
-familias.
+Las páginas del centro son para su personal, en un navegador, también desde el móvil. En la app de Moodle, las familias
+contestan las autorizaciones en una página de la propia app, que se abre desde su notificación, desde el menú
+(*Autorizaciones*, para quien tenga alguna por contestar) y, en Oksigenia Aty, desde la página de cada hijo. Lo demás lo
+enseña cada plugin que trabaja con familias.
 
 ## Requisitos
 

@@ -183,6 +183,7 @@ class consent_view {
                 $fields[] = ['name' => $name, 'value' => $value];
             }
             $rows[] = [
+                'childuserid' => (int) $childuserid,
                 'name' => format_string($child->firstname),
                 'fullname' => fullname($child),
                 'answered' => (bool) $mine,
@@ -431,17 +432,20 @@ class consent_view {
             }
             $request = $item['request'];
             $deadline = (int) $request->deadline;
-            $until = page::date($deadline);
             $mine = consent::last_answers((int) $request->id, [$childuserid])[$childuserid][(int) $item['adult']->id] ?? null;
+            // The date is the row's own, beside it: the text says only where the answer stands.
             $detail = $mine
-                ? get_string($mine->answer === consent::YES ? 'consent:aty:yes' : 'consent:aty:no', $component, $until)
-                : get_string('consent:aty:missing', $component, $until);
+                ? get_string($mine->answer === consent::YES ? 'consent:aty:yes' : 'consent:aty:no', $component)
+                : get_string('consent:aty:missing', $component);
+            // The request opens inside the app: an account of Aty cannot open the site's pages in a browser.
             $items[] = [
                 'title' => format_string($request->title, true, ['context' => \context_system::instance()]),
                 'detail' => $detail,
                 'date' => $deadline,
                 'urgent' => !$mine && $deadline - $now <= 2 * DAYSECS,
-                'url' => (new \moodle_url('/local/oksigeniafamily/consent.php', ['id' => $request->id]))->out(false),
+                'method' => 'mobile_consent_view',
+                'args' => ['id' => (int) $request->id],
+                'pagetitle' => get_string('consent:title', $component),
             ];
         }
         if (!$items) {

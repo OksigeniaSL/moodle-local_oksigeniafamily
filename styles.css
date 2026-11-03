@@ -718,6 +718,17 @@
     margin-bottom: 1rem;
 }
 
+/* On the sign-in layout the page sits in the site's own sign-in box, whose top corners may be wide arches that cut into
+   whatever starts at the edge: the heading goes in the middle, as the sign-in's own does, and clear of the top. */
+.pagelayout-login .local-oksigeniafamily.okf-answer {
+    padding-top: 1rem;
+}
+
+.pagelayout-login .local-oksigeniafamily.okf-answer .okf-answer-title,
+.pagelayout-login .local-oksigeniafamily.okf-answer > .okf-lede {
+    text-align: center;
+}
+
 .local-oksigeniafamily .okf-answer-buttons {
     display: flex;
     flex-wrap: wrap;

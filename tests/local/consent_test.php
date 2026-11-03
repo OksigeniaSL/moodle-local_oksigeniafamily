@@ -306,12 +306,15 @@ final class consent_test extends \advanced_testcase {
         // The card on Ana's page in Aty: missing, and once answered, what was said.
         $card = consent_view::child_card((int) $data->parent->id, (int) $data->ana->id, $now);
         $this->assertCount(1, $card[0]['items']);
-        $this->assertStringContainsString('consent.php?id=' . $data->requestid, $card[0]['items'][0]['url']);
-        $until = page::date((int) consent::get($data->requestid)->deadline);
-        $this->assertSame(get_string('consent:aty:missing', 'local_oksigeniafamily', $until), $card[0]['items'][0]['detail']);
+        // It opens the request inside the app, with the deadline as the row's date and not again in its text.
+        $this->assertSame('mobile_consent_view', $card[0]['items'][0]['method']);
+        $this->assertSame(['id' => (int) $data->requestid], $card[0]['items'][0]['args']);
+        $this->assertArrayNotHasKey('url', $card[0]['items'][0]);
+        $this->assertSame((int) consent::get($data->requestid)->deadline, $card[0]['items'][0]['date']);
+        $this->assertSame(get_string('consent:aty:missing', 'local_oksigeniafamily'), $card[0]['items'][0]['detail']);
         consent::answer($data->requestid, (int) $data->ana->id, $data->adultid, consent::YES, 'app');
         $card = consent_view::child_card((int) $data->parent->id, (int) $data->ana->id, $now);
-        $this->assertSame(get_string('consent:aty:yes', 'local_oksigeniafamily', $until), $card[0]['items'][0]['detail']);
+        $this->assertSame(get_string('consent:aty:yes', 'local_oksigeniafamily'), $card[0]['items'][0]['detail']);
         $this->assertSame([], consent_view::child_card((int) $data->parent->id, (int) $data->leo->id, $now));
 
         // Made more than a day ago, with the deadline less than a day away: the reminder is due.
