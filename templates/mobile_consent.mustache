@@ -27,7 +27,7 @@
     {}
 }}
 {{=<% %>=}}
-<div class="local-oksigeniafamily-app" *ngIf="CONTENT_OTHERDATA.request?.id">
+<ng-container *ngIf="CONTENT_OTHERDATA.request?.id">
     <ion-item lines="none">
         <ion-label class="ion-text-wrap">
             <h1>{{ CONTENT_OTHERDATA.request.title }}</h1>
@@ -37,7 +37,7 @@
     <ion-card>
         <ion-card-content>
             <core-format-text [text]="CONTENT_OTHERDATA.request.message" component="local_oksigeniafamily"
-                contextLevel="system" [contextInstanceId]="0" />
+                contextLevel="system" [contextInstanceId]="0"></core-format-text>
         </ion-card-content>
     </ion-card>
     <ng-container *ngFor="let section of CONTENT_OTHERDATA.sections">
@@ -47,8 +47,9 @@
                 <ion-card-title>{{ child.fullname }}</ion-card-title>
             </ion-card-header>
             <ion-card-content>
-                <p *ngIf="child.answered" role="status" [class.text-success]="child.saidyes"
-                    [class.text-danger]="!child.saidyes">{{ child.answertext }}</p>
+                <ion-text *ngIf="child.answered" role="status" [color]="child.saidyes ? 'success' : 'danger'">
+                    <p>{{ child.answertext }}</p>
+                </ion-text>
                 <ng-container *ngIf="CONTENT_OTHERDATA.request.open">
                     <ion-textarea fill="outline" mode="md" rows="2" maxlength="1000" autoGrow="true"
                         label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>" labelPlacement="floating"
@@ -67,7 +68,7 @@
             </ion-card-content>
         </ion-card>
     </ng-container>
-</div>
+</ng-container>
 <ion-list *ngIf="!CONTENT_OTHERDATA.request?.id">
     <ion-item lines="none">
         <ion-label class="ion-text-wrap"><%#str%>consent:nochildren, local_oksigeniafamily<%/str%></ion-label>
