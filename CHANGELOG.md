@@ -31,6 +31,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Fixed
 
+- The OneRoster reader, up to date with Oksigenia Ayvurenda's: a zip without a manifest no longer counts as a full export,
+  so it takes no one out (0.3.3-dev).
 - On a child's page in Aty, a request's row no longer repeats its deadline: the row's date already says it (0.3.3-dev).
 - Hover effects only where a pointer hovers, so that a touch on a tablet or a classroom board does not leave them stuck
   (0.3.3-dev).

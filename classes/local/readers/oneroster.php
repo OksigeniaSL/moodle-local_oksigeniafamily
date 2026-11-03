@@ -30,7 +30,8 @@ namespace local_oksigeniafamily\local\readers;
 /**
  * OneRoster (1EdTech), the CSV files that school management programs export to share their rosters: users, their
  * roles, schools (orgs), classes and who is in each (enrollments), in a zip with a manifest. Version 1.2 keeps each
- * user's role in roles.csv; 1.1 kept it in users.csv: both are read, by the names of the columns. The group of a
+ * user's role in roles.csv; 1.1 kept it in users.csv: both are read, by the names of the columns. The same rows may
+ * come from the REST API instead of the files (oneroster_rest turns its answers into them). The group of a
  * student is their homeroom class; the teacher of a homeroom is its tutor. This turns the files into readers as the
  * lists of the library take them. Plain PHP, without Moodle.
  */
@@ -44,7 +45,7 @@ final class oneroster {
     /**
      * The readers of an export.
      *
-     * @param array $files File name (users.csv…) => its text.
+     * @param array $files File name (users.csv…) => its text, or its rows already read (from the REST API).
      * @param string $school The sourcedId of the school to take, or empty for every one.
      * @param bool $families Whether parents, guardians and relatives come as readers.
      * @param int $now
@@ -57,22 +58,22 @@ final class oneroster {
             throw new \InvalidArgumentException('users.csv');
         }
         $manifest = [];
-        foreach (self::table($files['manifest.csv'] ?? '') as $row) {
+        foreach (self::rows($files, 'manifest.csv') as $row) {
             $manifest[$row['propertyName'] ?? ''] = $row['value'] ?? '';
         }
         $schools = [];
-        foreach (self::table($files['orgs.csv'] ?? '') as $row) {
+        foreach (self::rows($files, 'orgs.csv') as $row) {
             if (in_array($row['type'] ?? '', ['school', ''], true) && ($row['sourcedId'] ?? '') !== '') {
                 $schools[$row['sourcedId']] = trim($row['name'] ?? '') ?: $row['sourcedId'];
             }
         }
-        $users = self::by_id(self::table($files['users.csv']));
+        $users = self::by_id(self::rows($files, 'users.csv'));
         $roles = self::roles($files, $users, $now);
         // The classes, and who is in each.
-        $classes = self::by_id(self::table($files['classes.csv'] ?? ''));
+        $classes = self::by_id(self::rows($files, 'classes.csv'));
         $homerooms = [];
         $taught = [];
-        foreach (self::table($files['enrollments.csv'] ?? '') as $row) {
+        foreach (self::rows($files, 'enrollments.csv') as $row) {
             $class = $classes[$row['classSourcedId'] ?? ''] ?? null;
             if (!$class || !self::alive($row, $now) || ($school !== '' && ($class['schoolSourcedId'] ?? '') !== $school)) {
                 continue;
@@ -125,7 +126,7 @@ final class oneroster {
             }
         }
         return ['readers' => $readers, 'gone' => $gone, 'tutors' => $tutors, 'schools' => $schools,
-            'mode' => $manifest['file.users'] ?? 'bulk', 'version' => $manifest['oneroster.version'] ?? ''];
+            'mode' => $manifest['file.users'] ?? 'delta', 'version' => $manifest['oneroster.version'] ?? ''];
     }
 
     /**
@@ -133,7 +134,7 @@ final class oneroster {
      * links of users.csv (agentSourcedIds) read both ways, the student's and the adult's. Only students of the school
      * given, and only who is enabled and not to be deleted.
      *
-     * @param array $files File name (users.csv…) => its text.
+     * @param array $files File name (users.csv…) => its text, or its rows already read.
      * @param string $school The sourcedId of the school to take, or empty for every one.
      * @param int $now
      * @return array[] key, firstname, lastname, email, phone (the mobile first), relation (parent, guardian or relative)
@@ -144,7 +145,7 @@ final class oneroster {
         if (!isset($files['users.csv'])) {
             throw new \InvalidArgumentException('users.csv');
         }
-        $users = self::by_id(self::table($files['users.csv']));
+        $users = self::by_id(self::rows($files, 'users.csv'));
         $roles = self::roles($files, $users, $now);
         $alive = fn(string $id) => isset($users[$id]) && ($users[$id]['status'] ?? '') !== 'tobedeleted'
             && strtolower($users[$id]['enabledUser'] ?? 'true') !== 'false';
@@ -204,7 +205,7 @@ final class oneroster {
      */
     private static function roles(array $files, array $users, int $now): array {
         $roles = [];
-        foreach (self::table($files['roles.csv'] ?? '') as $row) {
+        foreach (self::rows($files, 'roles.csv') as $row) {
             if (self::alive($row, $now) && ($row['userSourcedId'] ?? '') !== '') {
                 $roles[$row['userSourcedId']][] = ['role' => $row['role'] ?? '', 'org' => $row['orgSourcedId'] ?? '',
                     'primary' => ($row['roleType'] ?? '') === 'primary'];
@@ -249,6 +250,19 @@ final class oneroster {
             }
         }
         return $byid;
+    }
+
+    /**
+     * The rows of one of the files: its text read as CSV, or rows given as they are (what the REST API gave, in the
+     * columns of the CSV files).
+     *
+     * @param array $files
+     * @param string $name
+     * @return array[]
+     */
+    private static function rows(array $files, string $name): array {
+        $file = $files[$name] ?? '';
+        return is_array($file) ? array_values(array_filter($file, 'is_array')) : self::table((string) $file);
     }
 
     /**
