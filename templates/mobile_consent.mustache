@@ -51,9 +51,12 @@
                     <p>{{ child.answertext }}</p>
                 </ion-text>
                 <ng-container *ngIf="CONTENT_OTHERDATA.request.open">
-                    <ion-textarea fill="outline" mode="md" rows="2" maxlength="1000" autoGrow="true"
-                        label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>" labelPlacement="floating"
-                        [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
+                    <details>
+                        <summary><%#str%>consent:addcomment, local_oksigeniafamily<%/str%></summary>
+                        <ion-textarea rows="3" maxlength="1000"
+                            aria-label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>"
+                            [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
+                    </details>
                     <ion-button expand="block" color="success" [attr.aria-label]="child.yesaria" core-site-plugins-call-ws
                         name="local_oksigeniafamily_answer_consent"
                         [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'yes', comment: CONTENT_OTHERDATA.comments[child.key]}"
