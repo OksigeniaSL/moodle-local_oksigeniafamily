@@ -620,8 +620,8 @@ class api {
 
     /**
      * A student's photo, by the child in Family, for a plugin that shows children (a screen, the dining room, the
-     * library). It is only given when the student's image may be shown (photo_allowed_for_*): without that, null, as if
-     * there were none. A student with an account shows the picture of their account if it has one, and the photo the
+     * library). It is not given when the student's image may not be shown (photo_allowed_for_*): then null, as if there
+     * were none. A student with an account shows the picture of their account if it has one, and the photo the
      * school uploaded otherwise. Serving the file (and to whom) is the calling plugin's business.
      *
      * @param int $childid The child.
@@ -652,8 +652,9 @@ class api {
     }
 
     /**
-     * Whether a student's image may be shown: their family said yes and nobody said no (the school's answer counts until
-     * an adult of the family answers after it). With no answer, false. Use it to tell "no photo" from "not to be shown".
+     * Whether a student's image may be shown: yes unless a no counts, from an adult of the family or from the school
+     * (whose answer counts until an adult answers after it). With no answer, true. Use it to tell "no photo" from "not to
+     * be shown".
      *
      * @param int $childid The child.
      * @return bool

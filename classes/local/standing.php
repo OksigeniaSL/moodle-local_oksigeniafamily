@@ -22,8 +22,8 @@ namespace local_oksigeniafamily\local;
  * account or without one, under the same keys as their photo (user:45, cifra:123).
  *
  * Who decides: the last answer of each adult of the family, plus the school's (what it loaded or wrote down). Once an
- * adult answers after the school's, the school's no longer counts. It is yes only with at least one yes and no no;
- * with no answer at all, it is no.
+ * adult answers after the school's, the school's no longer counts. Any no among those is a no. For the image, a student
+ * is shown unless there is a no: with no answer at all, they are shown.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -115,13 +115,13 @@ final class standing {
     }
 
     /**
-     * Whether a student's image may be shown.
+     * Whether a student's image may be shown: unless a no counts (with no answer, it may).
      *
      * @param string[] $keys Every key of the student.
      * @return bool
      */
     public static function may_show(array $keys): bool {
-        return self::state($keys, self::IMAGE) === self::YES;
+        return self::state($keys, self::IMAGE) !== self::NO;
     }
 
     /**

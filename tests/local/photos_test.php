@@ -84,17 +84,18 @@ final class photos_test extends \advanced_testcase {
     }
 
     /**
-     * The photo is only given out with the family's yes, and the rule of who decides holds.
+     * The photo is given out unless a no counts, and the rule of who decides holds.
      */
-    public function test_photo_needs_consent(): void {
+    public function test_photo_unless_no(): void {
         $this->resetAfterTest();
         $ids = $this->family();
         photos::save('cifra:123', $this->png(50, 50));
 
-        // No answer: nothing.
-        $this->assertNull(api::photo_for_key('cifra:123'));
-        $this->assertNull(api::photo_for_child($ids['child']));
-        $this->assertFalse(api::photo_allowed_for_child($ids['child']));
+        // No answer: shown.
+        $this->assertNotNull(api::photo_for_key('cifra:123'));
+        $this->assertNotNull(api::photo_for_child($ids['child']));
+        $this->assertTrue(api::photo_allowed_for_child($ids['child']));
+        $this->assertSame('', standing::state(['cifra:123'], standing::IMAGE));
 
         // The school says yes.
         standing::record('cifra:123', standing::IMAGE, true);
@@ -117,6 +118,7 @@ final class photos_test extends \advanced_testcase {
         // A new school load saying no counts again, being the latest.
         standing::record('cifra:123', standing::IMAGE, false);
         $this->assertSame(standing::NO, standing::state(['cifra:123'], standing::IMAGE));
+        $this->assertNull(api::photo_for_key('cifra:123'));
 
         // The switch off: nothing, whatever the answers.
         standing::record('cifra:123', standing::IMAGE, true);
@@ -136,7 +138,6 @@ final class photos_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $familyid = api::create_family('test');
         $childid = api::add_child($familyid, (int) $user->id, 'cifra:7');
-        standing::record(photos::user_key((int) $user->id), standing::IMAGE, true);
 
         // Only the uploaded one, under the key in the school's data.
         photos::save('cifra:7', $this->png(40, 40));
