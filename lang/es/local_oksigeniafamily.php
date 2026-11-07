@@ -466,7 +466,7 @@ $string['settings:parentroleid_desc'] = 'El rol que se da a cada adulto con cuen
 $string['settings:phoneprefix'] = 'Prefijo del país para los teléfonos';
 $string['settings:phoneprefix_desc'] = 'Se añade a los números que se escriben sin él. Si lo dejas vacío, hay que escribirlos con su prefijo.';
 $string['settings:photos'] = 'Fotos de los alumnos';
-$string['settings:photos_desc'] = 'Guardar una foto por alumno para los plugins que muestran a los niños (pantallas, comedor, biblioteca), con el permiso de las familias para el uso de la imagen. Desactivado, esos plugins no reciben fotos de aquí.';
+$string['settings:photos_desc'] = 'Guardar una foto por alumno para los plugins que muestran a los niños (pantallas, comedor, biblioteca), salvo si una familia ha dicho que no al uso de la imagen. Desactivado, esos plugins no reciben fotos de aquí.';
 $string['settings:retentiondays'] = 'Conservar las familias cerradas (días)';
 $string['settings:retentiondays_desc'] = 'Cuánto se guarda una familia cerrada antes de borrarla con sus adultos.';
 $string['settings:where'] = 'Las familias están en <a href="{$a}">Administración del sitio, Usuarios, Cuentas, Familias</a>.';

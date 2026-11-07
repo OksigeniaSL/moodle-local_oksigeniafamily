@@ -466,7 +466,7 @@ $string['settings:parentroleid_desc'] = 'The role given to each adult with a Moo
 $string['settings:phoneprefix'] = 'Country code for phones';
 $string['settings:phoneprefix_desc'] = 'Added to the phone numbers typed without one. If you leave it empty, they must be written with theirs.';
 $string['settings:photos'] = 'Students\' photos';
-$string['settings:photos_desc'] = 'Keep one photo per student for the plugins that show children (screens, the dining room, the library), with the families\' consent to the use of the image. Turned off, those plugins get no photos from here.';
+$string['settings:photos_desc'] = 'Keep one photo per student for the plugins that show children (screens, the dining room, the library), unless a family has said no to the use of the image. Turned off, those plugins get no photos from here.';
 $string['settings:retentiondays'] = 'Keep closed families (days)';
 $string['settings:retentiondays_desc'] = 'How long a closed family is kept before it is erased with its adults.';
 $string['settings:where'] = 'The families themselves are under <a href="{$a}">Site administration, Users, Accounts, Families</a>.';
