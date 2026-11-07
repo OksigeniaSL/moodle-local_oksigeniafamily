@@ -1,0 +1,125 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/photos
+
+    The students' photos and the use of their image: upload a zip of photos, load the families' answers from a
+    spreadsheet, and, after reading it, choose its columns.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * enabled - Whether the site keeps photos.
+    * action, sesskey - For the forms.
+    * count, summary, grace - What the site holds, before any upload.
+    * kinds - Options for what the number is: value, label, selected.
+    * columns - After reading a spreadsheet: draft, rows, idoptions, answeroptions, kinds.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Photos", "current": true}]},
+        "enabled": true, "action": "#", "sesskey": "abc",
+        "count": "12 photos kept.", "summary": "Yes: 10. No: 2.", "grace": "Erased 30 days after the student leaves.",
+        "kinds": [{"value": "idnumber", "label": "The ID number of the Moodle account", "selected": true}]
+    }
+}}
+<div class="local-oksigeniafamily okf-photos">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+    </div>
+    {{^enabled}}
+    <p class="okf-lede">{{#str}} photos:off, local_oksigeniafamily {{/str}}</p>
+    {{/enabled}}
+    {{#enabled}}
+    {{#columns}}
+    <section class="okf-card">
+        <h3>{{#str}} image:columns, local_oksigeniafamily {{/str}}</h3>
+        <p class="okf-line">{{#str}} image:rows, local_oksigeniafamily, {{rows}} {{/str}} {{#str}} image:pick, local_oksigeniafamily {{/str}}</p>
+        <form method="post" action="{{action}}">
+            <input type="hidden" name="sesskey" value="{{sesskey}}">
+            <input type="hidden" name="draft" value="{{draft}}">
+            <div class="okf-two">
+                <label>
+                    <span class="okf-strong">{{#str}} image:column:id, local_oksigeniafamily {{/str}}</span>
+                    <select class="form-select custom-select" name="idcolumn" required>
+                        {{#idoptions}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/idoptions}}
+                    </select>
+                </label>
+                <label>
+                    <span class="okf-strong">{{#str}} image:column:answer, local_oksigeniafamily {{/str}}</span>
+                    <select class="form-select custom-select" name="answercolumn" required>
+                        {{#answeroptions}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/answeroptions}}
+                    </select>
+                </label>
+                <label>
+                    <span class="okf-strong">{{#str}} photos:kind, local_oksigeniafamily {{/str}}</span>
+                    <select class="form-select custom-select" name="kind">
+                        {{#kinds}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/kinds}}
+                    </select>
+                </label>
+            </div>
+            <div class="okf-actions">
+                <button type="submit" name="apply" value="1" class="btn btn-primary">{{#str}} image:apply, local_oksigeniafamily {{/str}}</button>
+                <button type="submit" name="cancel" value="1" class="btn btn-secondary" formnovalidate>{{#str}} cancel {{/str}}</button>
+            </div>
+        </form>
+    </section>
+    {{/columns}}
+    {{^columns}}
+    <p class="okf-lede">{{#str}} photos:lede, local_oksigeniafamily {{/str}}</p>
+    <p class="okf-line">{{count}} {{summary}} {{grace}}</p>
+    <div class="okf-cols">
+        <section class="okf-card">
+            <h3>{{#str}} photos:upload, local_oksigeniafamily {{/str}}</h3>
+            <form method="post" action="{{action}}" enctype="multipart/form-data">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <label class="okf-drop" for="okf-zip">
+                    <span class="okf-strong">{{#str}} photos:file, local_oksigeniafamily {{/str}}</span>
+                    <span class="okf-line">{{#str}} photos:file_help, local_oksigeniafamily {{/str}}</span>
+                    <input id="okf-zip" type="file" name="zipfile" accept=".zip,application/zip" required>
+                </label>
+                <label>
+                    <span class="okf-strong">{{#str}} photos:kind, local_oksigeniafamily {{/str}}</span>
+                    <select class="form-select custom-select" name="kind">
+                        {{#kinds}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/kinds}}
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-primary">{{#str}} photos:send, local_oksigeniafamily {{/str}}</button>
+            </form>
+        </section>
+        <section class="okf-card">
+            <h3>{{#str}} image:upload, local_oksigeniafamily {{/str}}</h3>
+            <p class="okf-line">{{#str}} image:lede, local_oksigeniafamily {{/str}}</p>
+            <form method="post" action="{{action}}" enctype="multipart/form-data">
+                <input type="hidden" name="sesskey" value="{{sesskey}}">
+                <label class="okf-drop" for="okf-csv">
+                    <span class="okf-strong">{{#str}} image:file, local_oksigeniafamily {{/str}}</span>
+                    <span class="okf-line">{{#str}} image:file_help, local_oksigeniafamily {{/str}}</span>
+                    <input id="okf-csv" type="file" name="csvfile" accept=".csv,.txt,text/csv" required>
+                </label>
+                <label>
+                    <span class="okf-strong">{{#str}} photos:kind, local_oksigeniafamily {{/str}}</span>
+                    <select class="form-select custom-select" name="kind">
+                        {{#kinds}}<option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>{{/kinds}}
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-primary">{{#str}} image:columns, local_oksigeniafamily {{/str}}</button>
+            </form>
+        </section>
+    </div>
+    {{/columns}}
+    {{/enabled}}
+</div>

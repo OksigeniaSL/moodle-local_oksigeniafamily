@@ -53,5 +53,15 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110203, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026110700) {
+        // One photo per student, and the standing consents about them (the use of their image).
+        foreach (['local_oksigeniafamily_photo', 'local_oksigeniafamily_standing'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026110700, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

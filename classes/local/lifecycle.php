@@ -40,6 +40,9 @@ class lifecycle {
         self::close_childless($now);
         self::purge_closed($now);
         self::purge_left($now);
+        // A student who is no longer here takes their photo and what their family said about it with them.
+        photos::purge($now, self::days('gracedays', 30));
+        standing::purge($now, self::days('gracedays', 30));
         roles::sync_all();
     }
 

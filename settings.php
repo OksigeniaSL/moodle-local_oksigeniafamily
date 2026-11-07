@@ -38,6 +38,13 @@ $ADMIN->add('accounts', new admin_externalpage(
     new moodle_url('/local/oksigeniafamily/consents.php'),
     'local/oksigeniafamily:requestconsent'
 ));
+// The students' photos and what the families say about the use of their image.
+$ADMIN->add('accounts', new admin_externalpage(
+    'local_oksigeniafamily_photos',
+    new lang_string('photos', 'local_oksigeniafamily'),
+    new moodle_url('/local/oksigeniafamily/photos.php'),
+    'local/oksigeniafamily:manage'
+));
 
 if ($hassiteconfig) {
     $settings = new admin_settingpage('local_oksigeniafamily', new lang_string('pluginname', 'local_oksigeniafamily'));
@@ -95,6 +102,13 @@ if ($hassiteconfig) {
             new lang_string('settings:consentkeepdays_desc', 'local_oksigeniafamily'),
             365,
             PARAM_INT
+        ));
+        // One photo per student for the plugins that show children, with the families' consent to the use of the image.
+        $settings->add(new admin_setting_configcheckbox(
+            'local_oksigeniafamily/photos',
+            new lang_string('settings:photos', 'local_oksigeniafamily'),
+            new lang_string('settings:photos_desc', 'local_oksigeniafamily'),
+            1
         ));
     }
 }

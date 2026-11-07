@@ -81,6 +81,18 @@ class provider implements
             'address' => 'privacy:metadata:answer:address',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:answer');
+        $collection->add_database_table('local_oksigeniafamily_photo', [
+            'photokey' => 'privacy:metadata:photo:photokey',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:photo');
+        $collection->add_database_table('local_oksigeniafamily_standing', [
+            'childkey' => 'privacy:metadata:standing:childkey',
+            'answer' => 'privacy:metadata:standing:answer',
+            'adultid' => 'privacy:metadata:standing:adultid',
+            'userid' => 'privacy:metadata:standing:userid',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:standing');
+        $collection->add_subsystem_link('core_files', [], 'privacy:metadata:core_files');
 
         return $collection;
     }
@@ -104,6 +116,8 @@ class provider implements
             || $DB->record_exists('local_oksigeniafamily_target', ['userid' => $userid])
             || $DB->record_exists('local_oksigeniafamily_answer', ['childuserid' => $userid])
             || $DB->record_exists('local_oksigeniafamily_answer', ['userid' => $userid])
+            || self::photo_keys($userid)
+            || self::standing_select($userid)[0] !== ''
         ) {
             $contextlist->add_system_context();
         }
@@ -118,6 +132,8 @@ class provider implements
      * @return void
      */
     public static function get_users_in_context(userlist $userlist): void {
+        global $DB;
+
         if ($userlist->get_context()->contextlevel != CONTEXT_SYSTEM) {
             return;
         }
@@ -131,6 +147,28 @@ class provider implements
         $userlist->add_from_sql('userid', 'SELECT userid FROM {local_oksigeniafamily_target}', []);
         $userlist->add_from_sql('childuserid', 'SELECT childuserid FROM {local_oksigeniafamily_answer}', []);
         $sql = 'SELECT userid FROM {local_oksigeniafamily_answer} WHERE userid IS NOT NULL';
+        $userlist->add_from_sql('userid', $sql, []);
+
+        // Photos and standing consents: the students they are about (user:45), who wrote them down, and the adults with an
+        // account who answered.
+        $photolike = $DB->sql_like('photokey', ':k');
+        $standinglike = $DB->sql_like('childkey', ':k');
+        $keys = array_merge(
+            $DB->get_fieldset_select('local_oksigeniafamily_photo', 'photokey', $photolike, ['k' => 'user:%']),
+            $DB->get_fieldset_select('local_oksigeniafamily_standing', 'childkey', $standinglike, ['k' => 'user:%'])
+        );
+        $userids = [];
+        foreach ($keys as $key) {
+            if (preg_match('/^user:(\d+)$/', (string) $key, $match)) {
+                $userids[] = (int) $match[1];
+            }
+        }
+        $userlist->add_users(array_unique($userids));
+        $userlist->add_from_sql('userid', 'SELECT userid FROM {local_oksigeniafamily_standing} WHERE userid IS NOT NULL', []);
+        $sql = 'SELECT a.userid
+                  FROM {local_oksigeniafamily_standing} s
+                  JOIN {local_oksigeniafamily_adult} a ON a.id = s.adultid
+                 WHERE a.userid IS NOT NULL';
         $userlist->add_from_sql('userid', $sql, []);
     }
 
@@ -177,7 +215,25 @@ class provider implements
                 'id, requestid, childuserid, adultname, answer, comment, channel, address, timecreated'
             )),
         ];
-        writer::with_context($context)->export_data([get_string('pluginname', 'local_oksigeniafamily')], $data);
+        [$select, $params] = self::standing_select($userid);
+        $data->standing = $select === '' ? [] : array_values($DB->get_records_select(
+            'local_oksigeniafamily_standing',
+            $select,
+            $params,
+            'id',
+            'id, childkey, topic, answer, adultid, channel, timecreated'
+        ));
+        $writer = writer::with_context($context);
+        $writer->export_data([get_string('pluginname', 'local_oksigeniafamily')], $data);
+        foreach (self::photo_keys($userid) as $key) {
+            $file = \local_oksigeniafamily\local\photos::stored($key);
+            if ($file) {
+                $writer->export_file(
+                    [get_string('pluginname', 'local_oksigeniafamily'), get_string('privacy:photo', 'local_oksigeniafamily')],
+                    $file
+                );
+            }
+        }
     }
 
     /**
@@ -192,9 +248,10 @@ class provider implements
         if ($context->contextlevel != CONTEXT_SYSTEM) {
             return;
         }
-        foreach (['adult', 'child', 'claim', 'family', 'answer', 'target', 'request'] as $table) {
+        foreach (['adult', 'child', 'claim', 'family', 'answer', 'target', 'request', 'photo', 'standing'] as $table) {
             $DB->delete_records('local_oksigeniafamily_' . $table);
         }
+        get_file_storage()->delete_area_files($context->id, 'local_oksigeniafamily', \local_oksigeniafamily\local\photos::AREA);
     }
 
     /**
@@ -233,6 +290,21 @@ class provider implements
     private static function delete_user(int $userid): void {
         global $DB;
 
+        // The photos and the standing consents about the person as a student, and what they answered as an adult; what
+        // they only wrote down for the school stays, without who wrote it.
+        foreach (self::photo_keys($userid) as $key) {
+            \local_oksigeniafamily\local\photos::delete($key);
+        }
+        $keys = \local_oksigeniafamily\local\standing::keys_for_user($userid);
+        [$in, $params] = $DB->get_in_or_equal($keys, SQL_PARAMS_NAMED);
+        $DB->delete_records_select('local_oksigeniafamily_standing', "childkey $in", $params);
+        $adultids = $DB->get_fieldset_select('local_oksigeniafamily_adult', 'id', 'userid = :userid', ['userid' => $userid]);
+        if ($adultids) {
+            [$in, $params] = $DB->get_in_or_equal($adultids, SQL_PARAMS_NAMED);
+            $DB->delete_records_select('local_oksigeniafamily_standing', "adultid $in", $params);
+        }
+        $DB->set_field('local_oksigeniafamily_standing', 'userid', null, ['userid' => $userid]);
+
         $DB->delete_records('local_oksigeniafamily_adult', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_child', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_claim', ['userid' => $userid]);
@@ -249,5 +321,43 @@ class provider implements
         );
         $DB->set_field('local_oksigeniafamily_answer', 'userid', null, ['userid' => $userid]);
         $DB->set_field('local_oksigeniafamily_request', 'usercreated', 0, ['usercreated' => $userid]);
+    }
+
+    /**
+     * The keys of the photos about a person as a student that are kept here.
+     *
+     * @param int $userid The person.
+     * @return string[]
+     */
+    private static function photo_keys(int $userid): array {
+        global $DB;
+
+        $keys = \local_oksigeniafamily\local\standing::keys_for_user($userid);
+        [$in, $params] = $DB->get_in_or_equal($keys, SQL_PARAMS_NAMED);
+
+        return $DB->get_fieldset_select('local_oksigeniafamily_photo', 'photokey', "photokey $in", $params);
+    }
+
+    /**
+     * The standing consents of a person: about them as a student, answered by them as an adult, or written down by them.
+     *
+     * @param int $userid The person.
+     * @return array The WHERE clause ('' if there are none) and its parameters.
+     */
+    private static function standing_select(int $userid): array {
+        global $DB;
+
+        $keys = \local_oksigeniafamily\local\standing::keys_for_user($userid);
+        [$keyin, $params] = $DB->get_in_or_equal($keys, SQL_PARAMS_NAMED, 'key');
+        $select = "childkey $keyin OR userid = :recorder";
+        $params['recorder'] = $userid;
+        $adultids = $DB->get_fieldset_select('local_oksigeniafamily_adult', 'id', 'userid = :userid', ['userid' => $userid]);
+        if ($adultids) {
+            [$adultin, $adultparams] = $DB->get_in_or_equal($adultids, SQL_PARAMS_NAMED, 'adult');
+            $select .= " OR adultid $adultin";
+            $params += $adultparams;
+        }
+
+        return $DB->record_exists_select('local_oksigeniafamily_standing', $select, $params) ? [$select, $params] : ['', []];
     }
 }

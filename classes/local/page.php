@@ -124,7 +124,8 @@ class page {
      * @return array For the template local_oksigeniafamily/nav.
      */
     public static function nav(string $current): array {
-        $pages = ['families' => 'index.php', 'import' => 'import.php', 'codes' => 'codes.php', 'consents' => 'consents.php'];
+        $pages = ['families' => 'index.php', 'import' => 'import.php', 'codes' => 'codes.php', 'consents' => 'consents.php',
+            'photos' => 'photos.php'];
         $caps = ['consents' => 'local/oksigeniafamily:requestconsent'];
         $items = [];
         foreach ($pages as $name => $script) {

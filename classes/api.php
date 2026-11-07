@@ -617,4 +617,104 @@ class api {
     public static function pending_consents(int $childuserid, int $keyid): array {
         return local\consent::pending_for_child($childuserid, $keyid, time());
     }
+
+    /**
+     * A student's photo, by the child in Family, for a plugin that shows children (a screen, the dining room, the
+     * library). It is only given when the student's image may be shown (photo_allowed_for_*): without that, null, as if
+     * there were none. A student with an account shows the picture of their account if it has one, and the photo the
+     * school uploaded otherwise. Serving the file (and to whom) is the calling plugin's business.
+     *
+     * @param int $childid The child.
+     * @return \stored_file|null A small JPEG or the account's picture, or null.
+     */
+    public static function photo_for_child(int $childid): ?\stored_file {
+        return local\photos::for_child($childid);
+    }
+
+    /**
+     * A student's photo by their account (see photo_for_child).
+     *
+     * @param int $userid The student's account.
+     * @return \stored_file|null
+     */
+    public static function photo_for_user(int $userid): ?\stored_file {
+        return local\photos::for_user($userid);
+    }
+
+    /**
+     * A student's photo by their key in the school's data, such as cifra:123 (see photo_for_child).
+     *
+     * @param string $sourcekey The key.
+     * @return \stored_file|null
+     */
+    public static function photo_for_key(string $sourcekey): ?\stored_file {
+        return local\photos::for_key($sourcekey);
+    }
+
+    /**
+     * Whether a student's image may be shown: their family said yes and nobody said no (the school's answer counts until
+     * an adult of the family answers after it). With no answer, false. Use it to tell "no photo" from "not to be shown".
+     *
+     * @param int $childid The child.
+     * @return bool
+     */
+    public static function photo_allowed_for_child(int $childid): bool {
+        return local\photos::enabled() && local\standing::may_show(local\standing::keys_for_child($childid));
+    }
+
+    /**
+     * Whether a student's image may be shown, by their account (see photo_allowed_for_child).
+     *
+     * @param int $userid The student's account.
+     * @return bool
+     */
+    public static function photo_allowed_for_user(int $userid): bool {
+        return local\photos::enabled() && local\standing::may_show(local\standing::keys_for_user($userid));
+    }
+
+    /**
+     * Whether a student's image may be shown, by their key in the school's data (see photo_allowed_for_child).
+     *
+     * @param string $sourcekey The key.
+     * @return bool
+     */
+    public static function photo_allowed_for_key(string $sourcekey): bool {
+        return local\photos::enabled() && local\standing::may_show(local\standing::keys_for_key($sourcekey));
+    }
+
+    /**
+     * Store a student's photo, replacing the one before: for a plugin that brings photos from elsewhere (a list it
+     * kept). The image is made small, as JPEG and without its EXIF data. It is erased when the student has not been seen
+     * here for the grace period.
+     *
+     * @param string $sourcekey The student's key in the school's data, such as cifra:123.
+     * @param string $contents The image (JPEG, PNG, GIF or WebP).
+     * @return bool False if it is not an image or the site keeps no photos.
+     */
+    public static function set_photo(string $sourcekey, string $contents): bool {
+        return local\photos::enabled() && local\photos::save($sourcekey, $contents);
+    }
+
+    /**
+     * Store the photo of a student with an account (see set_photo). It is used when their account has no picture.
+     *
+     * @param int $userid The student's account.
+     * @param string $contents The image.
+     * @return bool
+     */
+    public static function set_photo_for_user(int $userid, string $contents): bool {
+        return local\photos::enabled() && local\photos::save(local\photos::user_key($userid), $contents);
+    }
+
+    /**
+     * The key of the student a number stands for, to call the functions above with what a list or a file name says:
+     * the account with that ID number, or a child of Family with that key in a source.
+     *
+     * @param string $number The number.
+     * @param string $kind 'idnumber', or 'source:' and the source (source:cifra).
+     * @return string|null The key (user:45 or cifra:123), or null if it matches no student.
+     */
+    public static function student_key(string $number, string $kind): ?string {
+        return local\photos::key_for_number($number, $kind);
+    }
 }

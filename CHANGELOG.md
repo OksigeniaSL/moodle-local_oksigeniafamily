@@ -7,6 +7,18 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- Students' photos and the consent to the use of their image (0.3.4-dev), in one place for every plugin that shows
+  children (screens, the dining room, the library), also for students with no account. A photo is held under the
+  student's account or their key in the school's data, stored at 512 px as JPEG without its EXIF data. The school
+  uploads a zip named after each student's number (the ID number of the account, or the key in a source), or a folder
+  from the command line (`cli/import_photos.php`). A standing consent, with no deadline, holds what each family says
+  about the use of the image: the last answer of each adult counts, plus the school's until an adult answers after it,
+  and it is yes only with a yes and no no. The school loads its answers from any spreadsheet, choosing the columns.
+  `api::photo_for_child()`, `photo_for_user()` and `photo_for_key()` give the photo only with that yes (the account's
+  picture first), `photo_allowed_for_*()` tell "no photo" from "not to be shown", and `set_photo()`,
+  `set_photo_for_user()` and `student_key()` bring photos from another plugin. A photo and its answers are erased with
+  the grace period after the student leaves. A switch in the settings, on by default. Tables
+  `local_oksigeniafamily_photo` and `_standing`, in the privacy provider.
 - Requests for consent (0.3.0-dev). The school asks the families of some students for their consent, and each adult
   answers yes or no: from Moodle's notification (app, e-mail or site) with an account, from a signed personal link by
   e-mail without one, or with two buttons on WhatsApp and Telegram through Oksigenia Marandu's `ask()` and its hook
