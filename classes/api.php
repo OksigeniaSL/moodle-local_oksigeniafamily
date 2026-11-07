@@ -619,6 +619,17 @@ class api {
     }
 
     /**
+     * Whether this site keeps students' photos in Family (a switch in its settings). When it does not, the photo
+     * functions give nothing and the photo_allowed_for_* functions say false for everyone: a plugin with photos of its
+     * own keeps using those.
+     *
+     * @return bool
+     */
+    public static function photos_enabled(): bool {
+        return local\photos::enabled();
+    }
+
+    /**
      * A student's photo, by the child in Family, for a plugin that shows children (a screen, the dining room, the
      * library). It is not given when the student's image may not be shown (photo_allowed_for_*): then null, as if there
      * were none. A student with an account shows the picture of their account if it has one, and the photo the

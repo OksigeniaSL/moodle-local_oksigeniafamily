@@ -16,7 +16,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   and any no among them hides the photo; with no answer, it is shown (0.3.5-dev). The school loads its answers from any
   spreadsheet, choosing the columns. `api::photo_for_child()`, `photo_for_user()` and `photo_for_key()` give the photo
   unless that no (the account's picture first), `photo_allowed_for_*()` tell "no photo" from "not to be shown", and `set_photo()`,
-  `set_photo_for_user()` and `student_key()` bring photos from another plugin. A photo and its answers are erased with
+  `set_photo_for_user()` and `student_key()` bring photos from another plugin; `photos_enabled()` (0.3.6-dev) says
+  whether the site keeps photos in Family at all. A photo and its answers are erased with
   the grace period after the student leaves. A switch in the settings, on by default. Tables
   `local_oksigeniafamily_photo` and `_standing`, in the privacy provider.
 - Requests for consent (0.3.0-dev). The school asks the families of some students for their consent, and each adult

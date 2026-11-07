@@ -125,7 +125,9 @@ final class photos_test extends \advanced_testcase {
         standing::record('cifra:123', standing::IMAGE, true, $ids['adults'][0], 'web');
         standing::record('cifra:123', standing::IMAGE, true, $ids['adults'][1], 'web');
         $this->assertNotNull(api::photo_for_key('cifra:123'));
+        $this->assertTrue(api::photos_enabled());
         set_config('photos', 0, 'local_oksigeniafamily');
+        $this->assertFalse(api::photos_enabled());
         $this->assertNull(api::photo_for_key('cifra:123'));
         $this->assertFalse(api::photo_allowed_for_key('cifra:123'));
     }
