@@ -53,8 +53,14 @@ final class standing {
      * @param int|null $userid The account that wrote it down.
      * @return void
      */
-    public static function record(string $key, string $topic, bool $yes, int $adultid = 0, string $channel = self::SCHOOL,
-            ?int $userid = null): void {
+    public static function record(
+        string $key,
+        string $topic,
+        bool $yes,
+        int $adultid = 0,
+        string $channel = self::SCHOOL,
+        ?int $userid = null
+    ): void {
         global $DB;
 
         $now = time();
@@ -277,8 +283,14 @@ final class standing {
      * @param bool $save False to only count.
      * @return array Counts yes, no, same, unmatched and unknown, and the numbers that matched no student.
      */
-    public static function import_rows(array $rows, int $idcolumn, int $answercolumn, string $kind,
-            string $topic = self::IMAGE, bool $save = true): array {
+    public static function import_rows(
+        array $rows,
+        int $idcolumn,
+        int $answercolumn,
+        string $kind,
+        string $topic = self::IMAGE,
+        bool $save = true
+    ): array {
         global $DB, $USER;
 
         $result = ['yes' => 0, 'no' => 0, 'same' => 0, 'unmatched' => 0, 'unknown' => 0, 'names' => []];
@@ -330,8 +342,12 @@ final class standing {
         global $DB;
 
         $counts = ['yes' => 0, 'no' => 0];
-        $keys = $DB->get_fieldset_select('local_oksigeniafamily_standing', 'DISTINCT childkey', 'topic = :topic',
-            ['topic' => $topic]);
+        $keys = $DB->get_fieldset_select(
+            'local_oksigeniafamily_standing',
+            'DISTINCT childkey',
+            'topic = :topic',
+            ['topic' => $topic]
+        );
         foreach ($keys as $key) {
             $state = self::state([(string) $key], $topic);
             if ($state !== '') {

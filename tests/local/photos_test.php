@@ -266,7 +266,7 @@ final class photos_test extends \advanced_testcase {
         standing::record(photos::user_key((int) $user->id), standing::IMAGE, true);
 
         $contextlist = provider::get_contexts_for_userid((int) $user->id);
-        $this->assertContains(\context_system::instance()->id, $contextlist->get_contextids());
+        $this->assertContains((int) \context_system::instance()->id, array_map('intval', $contextlist->get_contextids()));
         $approved = new approved_contextlist($user, 'local_oksigeniafamily', [\context_system::instance()->id]);
         provider::export_user_data($approved);
         $writer = \core_privacy\local\request\writer::with_context(\context_system::instance());
