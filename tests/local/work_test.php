@@ -44,13 +44,21 @@ final class work_test extends \advanced_testcase {
         api::add_adult($familyid, ['firstname' => 'Ana', 'userid' => (int) $parent->id]);
         api::add_adult($familyid, ['firstname' => 'Luis', 'email' => 'luis@example.com']);
         api::add_child($familyid, (int) $child->id);
+        // The same student in a second household counts once; a closed household, not at all.
+        $second = api::create_family();
+        api::add_adult($second, ['firstname' => 'Marta', 'userid' => (int) $parent->id]);
+        api::add_child($second, (int) $child->id);
+        $closed = api::create_family();
+        api::add_adult($closed, ['firstname' => 'Raúl', 'userid' => (int) $generator->create_user()->id]);
+        api::add_child($closed, (int) $generator->create_user()->id);
+        api::close_family($closed);
 
         $this->assertSame([], work::for_user((int) $nobody->id, time()));
         $this->assertSame([], work::for_user((int) $parent->id, time()));
 
         $doors = work::for_user((int) $manager->id, time());
         $this->assertSame(['local_oksigeniafamily', 'local_oksigeniafamily-consents'], array_column($doors, 'key'));
-        $this->assertSame('1 family · 1 student · 1 adult with an account', $doors[0]['status']);
+        $this->assertSame('2 families · 1 student · 1 adult with an account', $doors[0]['status']);
         $this->assertSame('None open', $doors[1]['status']);
         $this->assertSame([], $doors[1]['alerts']);
     }

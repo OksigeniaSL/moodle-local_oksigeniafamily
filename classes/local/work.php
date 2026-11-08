@@ -16,6 +16,8 @@
 
 namespace local_oksigeniafamily\local;
 
+use local_oksigeniafamily\api;
+
 /**
  * The doors of Family in «Your work», the dashboard block of the Oksigenia plugins: the family records, for whoever runs
  * them, and the requests for consent, for whoever asks for them on the whole site or has some open in a course.
@@ -85,9 +87,30 @@ class work {
     private static function families(): array {
         global $DB;
 
-        $families = $DB->count_records('local_oksigeniafamily_family', ['status' => 'active']);
-        $children = $DB->count_records('local_oksigeniafamily_child', ['status' => 'active']);
-        $accounts = $DB->count_records_select('local_oksigeniafamily_adult', "status = 'active' AND userid IS NOT NULL");
+        // Only those of the families that are still open, and each student and each account once, though they may be in
+        // two households.
+        $families = $DB->count_records('local_oksigeniafamily_family', ['status' => api::ACTIVE]);
+        $params = ['active' => api::ACTIVE, 'familyactive' => api::ACTIVE];
+        $children = $DB->count_records_sql(
+            "SELECT COUNT(DISTINCT c.userid)
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :familyactive
+              WHERE c.status = :active AND c.userid IS NOT NULL",
+            $params
+        ) + $DB->count_records_sql(
+            "SELECT COUNT(DISTINCT c.sourcekey)
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :familyactive
+              WHERE c.status = :active AND c.userid IS NULL",
+            $params
+        );
+        $accounts = $DB->count_records_sql(
+            "SELECT COUNT(DISTINCT a.userid)
+               FROM {local_oksigeniafamily_adult} a
+               JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :familyactive
+              WHERE a.status = :active AND a.userid IS NOT NULL",
+            $params
+        );
 
         return [
             'key' => self::COMPONENT,
