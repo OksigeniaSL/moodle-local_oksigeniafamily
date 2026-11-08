@@ -75,10 +75,18 @@ final class work_test extends \advanced_testcase {
         $this->assertSame([], work::for_user((int) $teacher->id, $now));
 
         $this->redirectMessages();
-        $today = consent::create($context, ['title' => 'Salida al Teide', 'deadline' => consent::end_of_day($now, $teacher)],
-            [(int) $ana->id, (int) $leo->id], (int) $teacher->id);
-        consent::create($context, ['title' => 'Fotos del año', 'deadline' => $now + 5 * DAYSECS], [(int) $ana->id],
-            (int) $teacher->id);
+        $today = consent::create(
+            $context,
+            ['title' => 'Salida al Teide', 'deadline' => consent::end_of_day($now, $teacher)],
+            [(int) $ana->id, (int) $leo->id],
+            (int) $teacher->id
+        );
+        consent::create(
+            $context,
+            ['title' => 'Fotos del año', 'deadline' => $now + 5 * DAYSECS],
+            [(int) $ana->id],
+            (int) $teacher->id
+        );
 
         $doors = work::for_user((int) $teacher->id, $now);
         $this->assertCount(1, $doors);
