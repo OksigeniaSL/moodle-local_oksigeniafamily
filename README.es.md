@@ -56,6 +56,10 @@ contestan las autorizaciones en una página de la propia app, que se abre desde 
 (*Autorizaciones*, para quien tenga alguna por contestar) y, en Oksigenia Aty, desde la página de cada hijo. Lo demás lo
 enseña cada plugin que trabaja con familias.
 
+Con Oksigenia Tembiapo («Tu trabajo» en el área personal), quien lleva las fichas de familias tiene una puerta a ellas
+con sus cifras, y quien pide autorizaciones, una a las suyas, con aviso el mismo día de las que se cierran con alumnos
+todavía sin respuesta.
+
 ## Requisitos
 
 - Moodle 4.5 o posterior (con soporte: 4.5 y 5.3).

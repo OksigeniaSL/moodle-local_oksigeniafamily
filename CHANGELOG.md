@@ -7,6 +7,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- Doors in «Your work», the dashboard block of Oksigenia Tembiapo (contract version 2), from
+  `local_oksigeniafamily_oksigenia_work()` (0.3.7-dev): the family records for whoever runs them, with their figures
+  and the codes and the import at hand; the requests for consent for whoever asks for them on the site, or for a
+  teacher while one of theirs is open, with an alert on the day for each of their own that closes with students still
+  without an answer. Kept for a minute per person (cache `work`). The plugin's official logo in `pix/icon.svg`.
 - Students' photos and the consent to the use of their image (0.3.4-dev), in one place for every plugin that shows
   children (screens, the dining room, the library), also for students with no account. A photo is held under the
   student's account or their key in the school's data, stored at 512 px as JPEG without its EXIF data. The school

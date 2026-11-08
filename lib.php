@@ -168,3 +168,14 @@ function local_oksigeniafamily_pluginfile($course, $cm, $context, $filearea, $ar
 function local_oksigeniafamily_oksigeniaaty_child_cards(int $adultuserid, int $childuserid): array {
     return \local_oksigeniafamily\local\consent_view::child_card($adultuserid, $childuserid, time());
 }
+
+/**
+ * For «Your work», the dashboard block of the Oksigenia plugins: the family records, for whoever runs them, and the
+ * requests for consent, with what closes today without an answer.
+ *
+ * @param int $userid The person.
+ * @return array Its doors; none when the person runs nothing here.
+ */
+function local_oksigeniafamily_oksigenia_work(int $userid): array {
+    return \local_oksigeniafamily\local\work::for_user($userid);
+}

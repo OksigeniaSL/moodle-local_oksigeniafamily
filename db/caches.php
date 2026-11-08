@@ -32,4 +32,10 @@ $definitions = [
         'simpledata' => true,
         'ttl' => 900,
     ],
+    // What each person's doors in «Your work» say, for a minute.
+    'work' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'ttl' => 60,
+    ],
 ];

@@ -55,6 +55,10 @@ consent on a page of the app itself, which opens from its notification, from the
 whoever has one to answer) and, in Oksigenia Aty, from each child's page. Everything else each plugin that works with
 families shows on its own.
 
+With Oksigenia Tembiapo («Your work» on the dashboard), whoever runs the family records gets a door to them with their
+figures, and whoever asks for consent gets one to their requests, told on the day which close with students still
+without an answer.
+
 ## Requirements
 
 - Moodle 4.5 or later (supported: 4.5 and 5.3).
