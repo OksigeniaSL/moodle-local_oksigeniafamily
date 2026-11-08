@@ -7,6 +7,9 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- A switch for the requests for consent (0.3.8-dev), on by default, for a site that asks for consent some other way:
+  off, the school sees no requests (no page, no course link, no door in «Your work») and families have none to answer
+  in the app or on a child's page. `api::consents_enabled()` says which.
 - Doors in «Your work», the dashboard block of Oksigenia Tembiapo (contract version 2), from
   `local_oksigeniafamily_oksigenia_work()` (0.3.7-dev): the family records for whoever runs them, with their figures
   and the codes and the import at hand; the requests for consent for whoever asks for them on the site, or for a
@@ -49,6 +52,7 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Fixed
 
+- The «Consents» item of the school's menu showed its string's name: `nav:consents` was missing (0.3.8-dev).
 - The OneRoster reader, up to date with Oksigenia Ayvurenda's: a zip without a manifest no longer counts as a full export,
   so it takes no one out (0.3.3-dev).
 - On a child's page in Aty, a request's row no longer repeats its deadline: the row's date already says it (0.3.3-dev).

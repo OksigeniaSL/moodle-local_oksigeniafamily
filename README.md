@@ -48,6 +48,8 @@ each adult answers «I consent» or «I do not consent» wherever the request re
 - **The record.** An answer is never changed: changing one's mind adds a new answer, and the history is what is kept.
   A request is erased with its answers a number of days after its deadline (365 by default, per request).
 
+A site that asks for consent some other way turns the requests off in the settings: then nobody sees them.
+
 ## On the mobile app
 
 The school's pages are for its staff, in a browser, also on a phone. In the Moodle app, families answer requests for

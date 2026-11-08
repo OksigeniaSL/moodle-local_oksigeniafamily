@@ -52,6 +52,9 @@ class page {
     public static function consent_setup(\context $context, string $path, array $params, string $title): void {
         global $CFG, $PAGE;
 
+        if (!consent::enabled()) {
+            throw new \moodle_exception('consent:off', 'local_oksigeniafamily');
+        }
         if ($context->contextlevel == CONTEXT_COURSE) {
             $course = get_course($context->instanceid);
             require_login($course);
@@ -129,6 +132,9 @@ class page {
         $caps = ['consents' => 'local/oksigeniafamily:requestconsent'];
         $items = [];
         foreach ($pages as $name => $script) {
+            if ($name === 'consents' && !consent::enabled()) {
+                continue;
+            }
             if (!has_capability($caps[$name] ?? 'local/oksigeniafamily:manage', \context_system::instance())) {
                 continue;
             }

@@ -36,7 +36,8 @@ $ADMIN->add('accounts', new admin_externalpage(
     'local_oksigeniafamily_consents',
     new lang_string('consent:title', 'local_oksigeniafamily'),
     new moodle_url('/local/oksigeniafamily/consents.php'),
-    'local/oksigeniafamily:requestconsent'
+    'local/oksigeniafamily:requestconsent',
+    get_config('local_oksigeniafamily', 'consents') === '0'
 ));
 // The students' photos and what the families say about the use of their image.
 $ADMIN->add('accounts', new admin_externalpage(
@@ -102,6 +103,13 @@ if ($hassiteconfig) {
             new lang_string('settings:consentkeepdays_desc', 'local_oksigeniafamily'),
             365,
             PARAM_INT
+        ));
+        // Requests for consent: a site that asks for them some other way turns them off, and nobody sees them.
+        $settings->add(new admin_setting_configcheckbox(
+            'local_oksigeniafamily/consents',
+            new lang_string('settings:consents', 'local_oksigeniafamily'),
+            new lang_string('settings:consents_desc', 'local_oksigeniafamily'),
+            1
         ));
         // One photo per student for the plugins that show children, with the families' consent to the use of the image.
         $settings->add(new admin_setting_configcheckbox(

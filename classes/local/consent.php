@@ -49,6 +49,16 @@ class consent {
     public const KEEPDAYS = 365;
 
     /**
+     * Whether the site asks families for consent (a switch in its settings, on by default). Off, the school does not see
+     * the requests anywhere and families have nothing to answer.
+     *
+     * @return bool
+     */
+    public static function enabled(): bool {
+        return get_config('local_oksigeniafamily', 'consents') !== '0';
+    }
+
+    /**
      * Make a request for the given students. It does not send it: \local_oksigeniafamily\task\consent_send does.
      *
      * @param \context $context Where it is made: a course or the site.
@@ -417,6 +427,9 @@ class consent {
     public static function for_user(int $userid, int $now): array {
         global $DB;
 
+        if (!self::enabled()) {
+            return [];
+        }
         $sql = "SELECT t.id, t.requestid, t.userid AS childuserid, a.id AS adultid
                   FROM {local_oksigeniafamily_adult} a
                   JOIN {local_oksigeniafamily_child} c ON c.familyid = a.familyid AND c.status = :childactive
@@ -462,6 +475,9 @@ class consent {
     public static function pending_for_child(int $childuserid, int $keyid, int $now): array {
         global $DB;
 
+        if (!self::enabled()) {
+            return [];
+        }
         $sql = "SELECT r.*
                   FROM {local_oksigeniafamily_request} r
                   JOIN {local_oksigeniafamily_target} t ON t.requestid = r.id AND t.userid = :userid

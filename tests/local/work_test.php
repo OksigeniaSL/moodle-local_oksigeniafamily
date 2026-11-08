@@ -123,6 +123,38 @@ final class work_test extends \advanced_testcase {
     }
 
     /**
+     * A site that asks for consent some other way turns the requests off: no door, no page in the school's menu, and
+     * nothing for the families to answer, in the app or on a child's page.
+     */
+    public function test_consents_off(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $manager = $generator->create_user();
+        $generator->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $manager->id);
+        $parent = $generator->create_user();
+        $child = $generator->create_user();
+        $familyid = api::create_family();
+        api::add_adult($familyid, ['firstname' => 'Ana', 'userid' => (int) $parent->id]);
+        api::add_child($familyid, (int) $child->id);
+        consent::create(
+            \context_system::instance(),
+            ['title' => 'Salida al Teide', 'deadline' => time() + 3 * DAYSECS],
+            [(int) $child->id],
+            (int) $manager->id
+        );
+        $this->assertCount(1, consent::for_user((int) $parent->id, time()));
+
+        set_config('consents', 0, 'local_oksigeniafamily');
+        $this->assertFalse(api::consents_enabled());
+        $this->assertSame([], consent::for_user((int) $parent->id, time()));
+        $this->assertSame([], consent_view::child_card((int) $parent->id, (int) $child->id, time()));
+        $this->assertSame(['local_oksigeniafamily'], array_column(work::for_user((int) $manager->id, time()), 'key'));
+        $this->setUser($manager);
+        $this->assertNotContains('Consents', array_column(page::nav('families')['items'], 'label'));
+    }
+
+    /**
      * Without a time, what is worked out is kept for a minute.
      */
     public function test_kept_for_a_minute(): void {

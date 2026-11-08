@@ -49,6 +49,8 @@ contesta «Autorizo» o «No autorizo» por donde le llegue la petición.
 - **El registro.** Una respuesta nunca se cambia: cambiar de idea añade otra, y lo que se guarda es el historial. Una
   petición se borra con sus respuestas un número de días después de su fecha límite (365 de serie, en cada petición).
 
+Un sitio que pide las autorizaciones de otra manera las apaga en los ajustes, y entonces no las ve nadie.
+
 ## En la app móvil
 
 Las páginas del centro son para su personal, en un navegador, también desde el móvil. En la app de Moodle, las familias

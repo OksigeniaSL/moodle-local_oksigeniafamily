@@ -630,6 +630,16 @@ class api {
     }
 
     /**
+     * Whether this site asks families for consent through Family (a switch in its settings). When it does not, the school
+     * sees no requests and families have none to answer: a plugin that links to them offers nothing.
+     *
+     * @return bool
+     */
+    public static function consents_enabled(): bool {
+        return local\consent::enabled();
+    }
+
+    /**
      * A student's photo, by the child in Family, for a plugin that shows children (a screen, the dining room, the
      * library). It is not given when the student's image may not be shown (photo_allowed_for_*): then null, as if there
      * were none. A student with an account shows the picture of their account if it has one, and the photo the

@@ -71,6 +71,9 @@ class work {
         if (has_capability('local/oksigeniafamily:manage', $system, $userid)) {
             $doors[] = self::families();
         }
+        if (!consent::enabled()) {
+            return $doors;
+        }
         $consents = self::consents($userid, has_capability('local/oksigeniafamily:requestconsent', $system, $userid), $now);
         if ($consents) {
             $doors[] = $consents;

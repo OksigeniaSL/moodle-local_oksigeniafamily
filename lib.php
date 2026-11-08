@@ -81,7 +81,10 @@ function local_oksigeniafamily_oksigeniamarandu_notices(): array {
  * @return void
  */
 function local_oksigeniafamily_extend_navigation_course(navigation_node $navigation, stdClass $course, context $context): void {
-    if ((int) $course->id === (int) SITEID || !has_capability('local/oksigeniafamily:requestconsent', $context)) {
+    if (
+        (int) $course->id === (int) SITEID || !\local_oksigeniafamily\local\consent::enabled()
+        || !has_capability('local/oksigeniafamily:requestconsent', $context)
+    ) {
         return;
     }
     $navigation->add(
