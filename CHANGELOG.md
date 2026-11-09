@@ -7,6 +7,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- For a plugin that starts families itself, such as the admissions of Oksigenia Eguahe (0.3.9-dev):
+  `api::adults_by_email()`, the adults with an address in their record or in their account, in any case, as a hint
+  for a person to confirm (nobody vouches for an address); and `api::family_by_key()`, the open family of a household
+  by its source and key, so a sibling who comes later joins the same family without the plugin keeping its id.
 - A switch for the requests for consent (0.3.8-dev), on by default, for a site that asks for consent some other way:
   off, the school sees no requests (no page, no course link, no door in «Your work») and families have none to answer
   in the app or on a child's page. `api::consents_enabled()` says which.

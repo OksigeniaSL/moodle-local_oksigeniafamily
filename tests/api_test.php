@@ -300,6 +300,43 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * A family started by another plugin, as the admissions team does at enrolment: found again by its household's key,
+     * its adults by e-mail (in their record or in their account, in any case), and a child known only by that plugin's
+     * key who gains their account later, in the same record.
+     */
+    public function test_family_from_another_plugin(): void {
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $familyid = api::create_family('eguahe', 'eguahe:12');
+        $marta = api::add_adult($familyid, ['firstname' => 'Marta', 'email' => 'Marta.Gil@example.com', 'phone' => '+34600000002']);
+        $father = $generator->create_user(['email' => 'luis.gil@example.com']);
+        $luis = api::add_adult($familyid, ['firstname' => 'Luis', 'userid' => $father->id]);
+        $childid = api::add_child($familyid, null, 'eguahe:30');
+
+        $this->assertSame($familyid, api::family_by_key('eguahe', 'eguahe:12'));
+        $this->assertNull(api::family_by_key('csv', 'eguahe:12'));
+        $this->assertSame([$marta], array_map('intval', array_keys(api::adults_by_email(' marta.gil@EXAMPLE.com'))));
+        $this->assertSame([$luis], array_map('intval', array_keys(api::adults_by_email('Luis.Gil@example.com'))));
+        $this->assertSame([], api::adults_by_email(''));
+        // A phone typed in a form is not vouched for.
+        $this->assertSame([], api::adults_by_phone('+34600000002'));
+
+        // The student's account arrives: the same child gains it.
+        $student = $generator->create_user();
+        $this->assertSame($childid, api::add_child($familyid, (int) $student->id, 'eguahe:30'));
+        $this->assertSame([(int) $student->id], api::children_of_user((int) $father->id));
+
+        // An adult who left, and a closed family, are no longer found.
+        api::remove_adult($luis);
+        $this->assertSame([], api::adults_by_email('luis.gil@example.com'));
+        api::unlink_child($childid, 'manual');
+        api::close_family($familyid);
+        $this->assertNull(api::family_by_key('eguahe', 'eguahe:12'));
+        $this->assertSame([], api::adults_by_email('marta.gil@example.com'));
+    }
+
+    /**
      * Who an adult is, for Oksigenia Marandu's list of numbers.
      */
     public function test_marandu_label(): void {

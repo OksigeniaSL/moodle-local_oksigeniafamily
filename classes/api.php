@@ -189,6 +189,56 @@ class api {
     }
 
     /**
+     * Every adult with an e-mail address, in their record or in their account, written in any case. Nobody vouches for an
+     * address, so this is a hint for a person to confirm (such as "already a family of the school" for the admissions
+     * team), never who is writing.
+     *
+     * @param string $email The address.
+     * @return stdClass[] Adult records, keyed by id.
+     */
+    public static function adults_by_email(string $email): array {
+        global $DB;
+
+        $email = trim($email);
+        if ($email === '') {
+            return [];
+        }
+        $sql = "SELECT a.*
+                  FROM {local_oksigeniafamily_adult} a
+                  JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
+             LEFT JOIN {user} u ON u.id = a.userid AND u.deleted = 0
+                 WHERE a.status = :aactive
+                   AND (" . $DB->sql_equal('a.email', ':email', false) . "
+                        OR " . $DB->sql_equal('u.email', ':accountemail', false) . ")
+              ORDER BY a.id ASC";
+
+        return $DB->get_records_sql($sql, [
+            'email' => $email, 'accountemail' => $email, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE,
+        ]);
+    }
+
+    /**
+     * The open family of a household in its source, so the plugin that started it finds it again without keeping its id
+     * (a sibling who comes later joins the same family).
+     *
+     * @param string $source The source given to create_family(), such as `eguahe`.
+     * @param string $sourcekey The household's key in it, such as `eguahe:12`.
+     * @return int|null The family's id, or null.
+     */
+    public static function family_by_key(string $source, string $sourcekey): ?int {
+        global $DB;
+
+        $id = $DB->get_field(
+            'local_oksigeniafamily_family',
+            'id',
+            ['source' => $source, 'sourcekey' => $sourcekey, 'status' => self::ACTIVE],
+            IGNORE_MULTIPLE
+        );
+
+        return $id === false ? null : (int) $id;
+    }
+
+    /**
      * A student's key in a source of the school's data, to match readers or diners without an account.
      *
      * @param int $childuserid The student's account.
@@ -390,7 +440,8 @@ class api {
      * A child leaves a family: the student left the school, or the school took them out of it.
      *
      * @param int $childid The child.
-     * @param string $reason Why: deleted, suspended, cohort, import (a complete list without them) or manual.
+     * @param string $reason Why: deleted, suspended, cohort, import (a complete list without them) or manual (a person
+     *     took them out, here or in another plugin, such as the admissions team when a family leaves).
      * @return void
      */
     public static function unlink_child(int $childid, string $reason): void {
