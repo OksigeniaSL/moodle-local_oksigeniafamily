@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# No commit of this repository carries the signature of an AI tool.
+#
+# The rule of Oksigenia for all its repositories, applied here from the first commit. This hook stops the line before
+# the commit exists; the «no-ai-signature» CI job checks the new commits in case someone uses --no-verify.
+#
+# Turn it on in each clone (once): git config core.hooksPath .githooks
+
+message="$1"
+
+# What must not appear:
+#   Co-Authored-By: … <noreply@anthropic.com>   the tool as co-author
+#   Claude-Session: …                           the tool's session
+#   Generated with [ …                          the generated-with footer
+#   claude.ai/code/…                            a link to that session
+# Co-Authored-By is fine for a person: the address is looked at, not the label.
+forbidden='(<noreply@anthropic\.com>|^Claude-Session:|^Co-Authored-By:.*\bClaude\b|Generated with \[|claude\.ai/code/)'
+
+found=$(grep -nEi "$forbidden" "$message")
+
+if [ -n "$found" ]; then
+	printf '\n  This commit message carries the signature of an AI tool, which this repository does not take.\n\n' >&2
+	printf '%s\n' "$found" | sed 's/^/      /' >&2
+	printf '\n  Remove those lines and commit again.\n\n' >&2
+	exit 1
+fi
+exit 0
