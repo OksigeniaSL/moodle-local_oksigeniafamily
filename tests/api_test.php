@@ -354,6 +354,61 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * The roll of households: each with its children and adults, names and e-mail from the account when the record has
+     * none, a child known only by a key without a name, and the gone and the closed only when asked for.
+     */
+    public function test_households(): void {
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $parent = $generator->create_user(['firstname' => 'Marta', 'lastname' => 'Rey', 'email' => 'marta@example.com']);
+        $lucia = $generator->create_user(['firstname' => 'Lucía', 'lastname' => 'Rey']);
+        $hugo = $generator->create_user();
+
+        $familyid = api::create_family('cifra', 'H-7');
+        $martaid = api::add_adult($familyid, ['userid' => $parent->id]);
+        $pabloid = api::add_adult($familyid, [
+            'firstname' => 'Pablo', 'lastname' => 'Gil', 'email' => 'pablo@example.com',
+            'phone' => '+34600000001', 'phoneverified' => true,
+        ]);
+        $luciaid = api::add_child($familyid, (int) $lucia->id, 'cifra:11');
+        $keyonlyid = api::add_child($familyid, null, 'cifra:12');
+        $hugoid = api::add_child($familyid, (int) $hugo->id);
+        api::unlink_child($hugoid, 'manual');
+
+        $closedid = api::create_family();
+        api::add_adult($closedid, ['firstname' => 'Eva']);
+        api::close_family($closedid);
+
+        $households = api::households();
+        $this->assertSame([$familyid], array_keys($households));
+        $home = $households[$familyid];
+        $this->assertSame('cifra', $home->source);
+        $this->assertSame('H-7', $home->sourcekey);
+        $this->assertSame([$luciaid, $keyonlyid], array_column($home->children, 'childid'));
+        $this->assertSame('Lucía', $home->children[0]->firstname);
+        $this->assertSame('cifra:11', $home->children[0]->sourcekey);
+        $this->assertNull($home->children[1]->userid);
+        $this->assertNull($home->children[1]->firstname);
+
+        [$marta, $pablo] = $home->adults;
+        $this->assertSame([$martaid, $pabloid], [$marta->adultid, $pablo->adultid]);
+        $this->assertSame(['Marta', 'Rey', 'marta@example.com', null, false],
+            [$marta->firstname, $marta->lastname, $marta->email, $marta->phone, $marta->phoneverified]);
+        $this->assertSame(['Pablo', 'pablo@example.com', '+34600000001', true],
+            [$pablo->firstname, $pablo->email, $pablo->phone, $pablo->phoneverified]);
+
+        // Everyone, the gone child and the closed household included, with when.
+        $all = api::households(false);
+        $this->assertSame([$familyid, $closedid], array_keys($all));
+        $gone = array_values(array_filter($all[$familyid]->children, fn($c) => $c->childid === $hugoid))[0];
+        $this->assertSame(api::LEFT, $gone->status);
+        $this->assertNotNull($gone->timeleft);
+        $this->assertSame(api::CLOSED, $all[$closedid]->status);
+        $this->assertNotNull($all[$closedid]->timeclosed);
+    }
+
+    /**
      * Moodle's parent role follows the records: given to each adult with an account over each child, taken away when
      * the child leaves, and none at all while the site chooses no role.
      */

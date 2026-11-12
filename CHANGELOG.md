@@ -7,6 +7,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- The whole roll of households for another plugin, such as Eguahe asking every family whether each child stays next
+  school year (0.3.10-dev): `api::households()`, each household with its source and key, its children (account and
+  name, or only their key) and its adults (name, e-mail and phone, from the account when the record has none), only the
+  active ones or everyone, the gone and the closed with when.
 - For a plugin that starts families itself, such as the admissions of Oksigenia Eguahe (0.3.9-dev):
   `api::adults_by_email()`, the adults with an address in their record or in their account, in any case, as a hint
   for a person to confirm (nobody vouches for an address); and `api::family_by_key()`, the open family of a household

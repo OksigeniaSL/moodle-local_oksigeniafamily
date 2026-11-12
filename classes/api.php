@@ -150,6 +150,93 @@ class api {
     }
 
     /**
+     * The whole roll of households, to reach every family of the centre at once (such as Eguahe asking who stays next
+     * school year): each household with its children and its adults, in three queries.
+     *
+     * Names, e-mail and phone are the adult's own record; an adult with an account and none of their own takes them from
+     * the account. A child with an account carries the account's name; a child known only by a key in the school's data
+     * (cifra:123) has no name here, since Family keeps none for them.
+     *
+     * @param bool $activeonly Only active households, children and adults; false brings the closed and the gone too.
+     * @return stdClass[] Households keyed by family id, each with familyid, status, source, sourcekey, timeclosed, children
+     *     (childid, userid, sourcekey, firstname, lastname, status, timeleft) and adults (adultid, userid, firstname,
+     *     lastname, email, phone, phoneverified, status), in the order they were added.
+     */
+    public static function households(bool $activeonly = true): array {
+        global $DB;
+
+        // Moodle refuses named parameters a query does not use: each query gets only its own.
+        $family = $activeonly ? 'AND f.status = :factive' : '';
+        $fparams = $activeonly ? ['factive' => self::ACTIVE] : [];
+
+        $households = [];
+        $rows = $DB->get_records_sql(
+            "SELECT f.id, f.status, f.source, f.sourcekey, f.timeclosed
+               FROM {local_oksigeniafamily_family} f
+              WHERE 1 = 1 $family
+           ORDER BY f.id",
+            $fparams
+        );
+        foreach ($rows as $row) {
+            $households[(int) $row->id] = (object) [
+                'familyid' => (int) $row->id,
+                'status' => $row->status,
+                'source' => $row->source,
+                'sourcekey' => $row->sourcekey,
+                'timeclosed' => $row->timeclosed === null ? null : (int) $row->timeclosed,
+                'children' => [],
+                'adults' => [],
+            ];
+        }
+
+        $children = $DB->get_records_sql(
+            "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, u.firstname, u.lastname
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid $family
+          LEFT JOIN {user} u ON u.id = c.userid AND u.deleted = 0
+              WHERE " . ($activeonly ? 'c.status = :cactive' : '1 = 1') . "
+           ORDER BY c.id",
+            $activeonly ? $fparams + ['cactive' => self::ACTIVE] : []
+        );
+        foreach ($children as $child) {
+            $households[(int) $child->familyid]->children[] = (object) [
+                'childid' => (int) $child->id,
+                'userid' => $child->userid === null ? null : (int) $child->userid,
+                'sourcekey' => $child->sourcekey,
+                'firstname' => $child->firstname,
+                'lastname' => $child->lastname,
+                'status' => $child->status,
+                'timeleft' => $child->timeleft === null ? null : (int) $child->timeleft,
+            ];
+        }
+
+        $adults = $DB->get_records_sql(
+            "SELECT a.id, a.familyid, a.userid, a.firstname, a.lastname, a.email, a.phone, a.phoneverified, a.status,
+                    u.firstname AS ufirstname, u.lastname AS ulastname, u.email AS uemail
+               FROM {local_oksigeniafamily_adult} a
+               JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid $family
+          LEFT JOIN {user} u ON u.id = a.userid AND u.deleted = 0
+              WHERE " . ($activeonly ? 'a.status = :aactive' : '1 = 1') . "
+           ORDER BY a.id",
+            $activeonly ? $fparams + ['aactive' => self::ACTIVE] : []
+        );
+        foreach ($adults as $adult) {
+            $households[(int) $adult->familyid]->adults[] = (object) [
+                'adultid' => (int) $adult->id,
+                'userid' => $adult->userid === null ? null : (int) $adult->userid,
+                'firstname' => $adult->firstname ?? $adult->ufirstname,
+                'lastname' => $adult->lastname ?? $adult->ulastname,
+                'email' => $adult->email ?? $adult->uemail,
+                'phone' => $adult->phone,
+                'phoneverified' => (bool) $adult->phoneverified,
+                'status' => $adult->status,
+            ];
+        }
+
+        return $households;
+    }
+
+    /**
      * The adult with a phone number, for WhatsApp (Marandu): who is writing. Only a number known to be theirs: one just
      * typed on the claim page identifies nobody.
      *
