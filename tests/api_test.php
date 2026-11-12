@@ -393,10 +393,14 @@ final class api_test extends \advanced_testcase {
 
         [$marta, $pablo] = $home->adults;
         $this->assertSame([$martaid, $pabloid], [$marta->adultid, $pablo->adultid]);
-        $this->assertSame(['Marta', 'Rey', 'marta@example.com', null, false],
-            [$marta->firstname, $marta->lastname, $marta->email, $marta->phone, $marta->phoneverified]);
-        $this->assertSame(['Pablo', 'pablo@example.com', '+34600000001', true],
-            [$pablo->firstname, $pablo->email, $pablo->phone, $pablo->phoneverified]);
+        $this->assertSame(
+            ['Marta', 'Rey', 'marta@example.com', null, false],
+            [$marta->firstname, $marta->lastname, $marta->email, $marta->phone, $marta->phoneverified]
+        );
+        $this->assertSame(
+            ['Pablo', 'pablo@example.com', '+34600000001', true],
+            [$pablo->firstname, $pablo->email, $pablo->phone, $pablo->phoneverified]
+        );
 
         // Everyone, the gone child and the closed household included, with when.
         $all = api::households(false);
