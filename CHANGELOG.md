@@ -5,6 +5,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-11-12
+
+The first version of Family published for a site with real families: everything below, up to this point.
+
 ### Added
 
 - The name and group of a student from the school's data (0.3.11-dev): `api::set_child_details()`, for a nightly sync
