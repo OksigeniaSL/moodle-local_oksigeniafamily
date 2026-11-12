@@ -63,5 +63,21 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026110700, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026111201) {
+        // The name and group of a student from the school's data, for students without a Moodle account.
+        $table = new xmldb_table('local_oksigeniafamily_child');
+        $fields = [
+            new xmldb_field('firstname', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'timeleft'),
+            new xmldb_field('lastname', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'firstname'),
+            new xmldb_field('groupname', XMLDB_TYPE_CHAR, '100', null, null, null, null, 'lastname'),
+        ];
+        foreach ($fields as $field) {
+            if (!$dbman->field_exists($table, $field)) {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026111201, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

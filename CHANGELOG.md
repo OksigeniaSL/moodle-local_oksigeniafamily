@@ -7,6 +7,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- The name and group of a student from the school's data (0.3.11-dev): `api::set_child_details()`, for a nightly sync
+  from the school's management system, completes the students the families already have under a key (cifra:123) with
+  their name and their group this school year, as the school names it; no one and no account is created, and running
+  it again changes nothing. `api::households()` returns that name for a student without an account, and the group as
+  `group`, so the youngest students, who have no account, can be asked about too.
 - The whole roll of households for another plugin, such as Eguahe asking every family whether each child stays next
   school year (0.3.10-dev): `api::households()`, each household with its source and key, its children (account and
   name, or only their key) and its adults (name, e-mail and phone, from the account when the record has none), only the

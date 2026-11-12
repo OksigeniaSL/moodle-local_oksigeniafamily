@@ -413,6 +413,39 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * The school's data names and places the students of a key: a student without an account gets the name, one with an
+     * account keeps the account's name, both get the group, every record of the key changes (a child of two homes), and
+     * the same values again change nothing.
+     */
+    public function test_child_details_from_the_school(): void {
+        $this->resetAfterTest();
+
+        $lucia = $this->getDataGenerator()->create_user(['firstname' => 'Lucía', 'lastname' => 'Rey']);
+        $first = api::create_family();
+        $second = api::create_family();
+        api::add_child($first, null, 'cifra:21');
+        api::add_child($second, null, 'cifra:21');
+        api::add_child($first, (int) $lucia->id, 'cifra:22');
+
+        $this->assertSame(2, api::set_child_details('cifra:21', ' Hugo ', 'Gil', 'INF 3ºA'));
+        $this->assertSame(1, api::set_child_details('cifra:22', 'Otra', 'Persona', 'PRI 2ºB'));
+        $this->assertSame(0, api::set_child_details('cifra:21', 'Hugo', 'Gil', 'INF 3ºA'));
+        $this->assertSame(0, api::set_child_details('cifra:99', 'Nadie', null, null));
+
+        $households = api::households();
+        foreach ([$first, $second] as $familyid) {
+            $hugo = $households[$familyid]->children[0];
+            $this->assertSame(['Hugo', 'Gil', 'INF 3ºA'], [$hugo->firstname, $hugo->lastname, $hugo->group]);
+        }
+        $withaccount = $households[$first]->children[1];
+        $this->assertSame(['Lucía', 'Rey', 'PRI 2ºB'], [$withaccount->firstname, $withaccount->lastname, $withaccount->group]);
+
+        // An empty group clears it.
+        $this->assertSame(2, api::set_child_details('cifra:21', 'Hugo', 'Gil', ''));
+        $this->assertNull(api::households()[$first]->children[0]->group);
+    }
+
+    /**
      * Moodle's parent role follows the records: given to each adult with an account over each child, taken away when
      * the child leaves, and none at all while the site chooses no role.
      */

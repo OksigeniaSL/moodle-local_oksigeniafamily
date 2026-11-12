@@ -57,6 +57,9 @@ class provider implements
         $collection->add_database_table('local_oksigeniafamily_child', [
             'userid' => 'privacy:metadata:child:userid',
             'sourcekey' => 'privacy:metadata:sourcekey',
+            'firstname' => 'privacy:metadata:child:firstname',
+            'lastname' => 'privacy:metadata:child:lastname',
+            'groupname' => 'privacy:metadata:child:groupname',
             'status' => 'privacy:metadata:child:status',
             'timeleft' => 'privacy:metadata:child:timeleft',
         ], 'privacy:metadata:child');

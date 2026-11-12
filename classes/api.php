@@ -155,11 +155,12 @@ class api {
      *
      * Names, e-mail and phone are the adult's own record; an adult with an account and none of their own takes them from
      * the account. A child with an account carries the account's name; a child known only by a key in the school's data
-     * (cifra:123) has no name here, since Family keeps none for them.
+     * (cifra:123) carries the name the school's data gave (set_child_details()), or none. The group is the school's own
+     * name for it (INF 3ºA), when its data gave one.
      *
      * @param bool $activeonly Only active households, children and adults; false brings the closed and the gone too.
      * @return stdClass[] Households keyed by family id, each with familyid, status, source, sourcekey, timeclosed, children
-     *     (childid, userid, sourcekey, firstname, lastname, status, timeleft) and adults (adultid, userid, firstname,
+     *     (childid, userid, sourcekey, firstname, lastname, group, status, timeleft) and adults (adultid, userid, firstname,
      *     lastname, email, phone, phoneverified, status), in the order they were added.
      */
     public static function households(bool $activeonly = true): array {
@@ -190,7 +191,8 @@ class api {
         }
 
         $children = $DB->get_records_sql(
-            "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, u.firstname, u.lastname
+            "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, c.groupname,
+                    c.firstname AS cfirstname, c.lastname AS clastname, u.firstname, u.lastname
                FROM {local_oksigeniafamily_child} c
                JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid $family
           LEFT JOIN {user} u ON u.id = c.userid AND u.deleted = 0
@@ -203,8 +205,9 @@ class api {
                 'childid' => (int) $child->id,
                 'userid' => $child->userid === null ? null : (int) $child->userid,
                 'sourcekey' => $child->sourcekey,
-                'firstname' => $child->firstname,
-                'lastname' => $child->lastname,
+                'firstname' => $child->firstname ?? $child->cfirstname,
+                'lastname' => $child->lastname ?? $child->clastname,
+                'group' => $child->groupname,
                 'status' => $child->status,
                 'timeleft' => $child->timeleft === null ? null : (int) $child->timeleft,
             ];
@@ -234,6 +237,40 @@ class api {
         }
 
         return $households;
+    }
+
+    /**
+     * Give the students of a key in the school's data the name and group that data has for them: for a nightly sync from
+     * the school's management system, so that students without a Moodle account (the youngest, often) can be named and
+     * placed. It only completes students the families already have, every record with that key (a child of two homes has
+     * two); it creates no one and no account. Running it again with the same values changes nothing.
+     *
+     * @param string $sourcekey The student's key in the school's data (cifra:123).
+     * @param string|null $firstname The first name; null or '' clears it.
+     * @param string|null $lastname The last name; null or '' clears it.
+     * @param string|null $group The group this school year, as the school names it (INF 3ºA); null or '' clears it.
+     * @return int How many records changed.
+     */
+    public static function set_child_details(string $sourcekey, ?string $firstname, ?string $lastname, ?string $group): int {
+        global $DB;
+
+        $values = [];
+        foreach (['firstname' => $firstname, 'lastname' => $lastname, 'groupname' => $group] as $field => $value) {
+            $value = trim((string) $value);
+            $values[$field] = $value === '' ? null : \core_text::substr($value, 0, 100);
+        }
+
+        $changed = 0;
+        foreach ($DB->get_records('local_oksigeniafamily_child', ['sourcekey' => $sourcekey]) as $child) {
+            $update = array_filter($values, fn($value, $field) => $child->$field !== $value, ARRAY_FILTER_USE_BOTH);
+            if ($update) {
+                $record = ['id' => $child->id, 'timemodified' => time()] + $update;
+                $DB->update_record('local_oksigeniafamily_child', (object) $record);
+                $changed++;
+            }
+        }
+
+        return $changed;
     }
 
     /**
