@@ -18,7 +18,7 @@ namespace local_oksigeniafamily\task;
 
 /**
  * The daily round of the family records: children who left, families with no children left, closed families past
- * their retention, and Moodle's parent role.
+ * their retention, and Moodle's parent role; and the files of old imports, with the previews nobody applied.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -39,5 +39,6 @@ class sync extends \core\task\scheduled_task {
      */
     public function execute() {
         \local_oksigeniafamily\local\lifecycle::run();
+        \local_oksigeniafamily\local\import\job::purge(time());
     }
 }

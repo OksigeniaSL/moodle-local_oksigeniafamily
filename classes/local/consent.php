@@ -536,7 +536,7 @@ class consent {
     }
 
     /**
-     * Erase a request with its students, its answers and its file.
+     * Erase a request with its students, its answers, the marks of whom it reached and its file.
      *
      * @param int $requestid The request.
      * @return void
@@ -545,6 +545,7 @@ class consent {
         global $DB;
 
         $DB->delete_records('local_oksigeniafamily_answer', ['requestid' => $requestid]);
+        $DB->delete_records('local_oksigeniafamily_sent', ['requestid' => $requestid]);
         $DB->delete_records('local_oksigeniafamily_target', ['requestid' => $requestid]);
         $DB->delete_records('local_oksigeniafamily_request', ['id' => $requestid]);
         get_file_storage()->delete_area_files(

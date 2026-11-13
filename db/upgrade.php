@@ -106,5 +106,15 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111300, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026111304) {
+        // Imports applied in the background by batches, and the mark of each adult a sending of consent reached.
+        foreach (['local_oksigeniafamily_import', 'local_oksigeniafamily_sent'] as $name) {
+            if (!$dbman->table_exists($name)) {
+                $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', $name);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026111304, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

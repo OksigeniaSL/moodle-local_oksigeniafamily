@@ -1,0 +1,78 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/import_job
+
+    A big import going in by batches in the background, or what it did once it is over.
+
+    Context variables required for this template:
+    * nav - See local_oksigeniafamily/nav.
+    * filename, status, kind, by - The file, how it stands (its chip) and who applied it, when.
+    * busy - Whether it is still waiting or going in.
+    * finished - Whether it went in to the end.
+    * progress, hasprogress - Each bar with label and percent.
+    * stats, hasstats - What it did, each with value, label and bad.
+    * note - Why it stopped, if it did.
+    * importurl, listurl - Where to go next.
+
+    Example context (json):
+    {
+        "nav": {"items": [{"url": "#", "label": "Import", "current": true}]},
+        "filename": "families.csv", "status": "Being applied", "kind": "new", "by": "Marta Gil, 13/11/26, 10:20",
+        "busy": true, "finished": false,
+        "progress": [{"label": "Families: 1,500 of 3,000", "percent": 50}], "hasprogress": true,
+        "stats": [{"value": 120, "label": "New families", "bad": false}], "hasstats": true,
+        "note": "", "importurl": "#", "listurl": "#"
+    }
+}}
+<div class="local-oksigeniafamily okf-job">
+    <div class="okf-head">
+        {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
+        <div class="okf-actions">
+            <a class="btn btn-secondary" href="{{importurl}}">{{#str}} import:another, local_oksigeniafamily {{/str}}</a>
+            {{#finished}}<a class="btn btn-primary" href="{{listurl}}">{{#str}} import:tofamilies, local_oksigeniafamily {{/str}}</a>{{/finished}}
+        </div>
+    </div>
+    <section class="okf-card">
+        <header class="okf-cardhead">
+            <h3>{{filename}}</h3>
+            <span class="okf-chip okf-chip-{{kind}}">{{status}}</span>
+        </header>
+        <p class="okf-line">{{by}}</p>
+        {{#hasprogress}}
+        <div class="okf-bars" aria-live="polite">
+            {{#progress}}
+            <div class="okf-bar">
+                <span>{{label}}</span>
+                <div class="progress" role="progressbar" aria-label="{{label}}" aria-valuenow="{{percent}}" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: {{percent}}%"></div>
+                </div>
+            </div>
+            {{/progress}}
+        </div>
+        {{/hasprogress}}
+        {{#busy}}<p class="okf-note">{{#str}} import:job:wait, local_oksigeniafamily {{/str}}</p>{{/busy}}
+        {{#note}}<p class="okf-note okf-warn" role="alert">{{note}}</p>{{/note}}
+    </section>
+    {{#hasstats}}
+    <div class="okf-stats">
+        {{#stats}}
+        <div class="okf-stat{{#bad}} okf-stat-bad{{/bad}}"><strong>{{value}}</strong><span>{{label}}</span></div>
+        {{/stats}}
+    </div>
+    {{/hasstats}}
+</div>

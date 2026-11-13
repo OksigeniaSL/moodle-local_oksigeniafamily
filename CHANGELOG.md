@@ -23,6 +23,22 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Changed
 
+- A big import goes in in the background, by batches (0.3.16-dev). «Apply» on a file of more than 200 rows queues a
+  task that goes through the families 500 at a time, each batch in its own transaction, and then the children who
+  leave; the import page shows how far it got and what it did, and whoever applied it gets a notification of Moodle
+  (`import`) when it ends. Before, the web request did all of it at once: with 40,000 students, 100–140 s, past the
+  60 s of a common proxy. A small file still goes in at once, as before.
+- In a big import, the brake of «This file is the complete list» is checked before queueing, against what the preview
+  said, and the task looks again before applying anything: if the children leaving are no longer the number typed, it
+  stops. The file waits in the plugin's own area, not in the person's drafts, which Moodle empties after a few days, and
+  it goes once it has gone in; the daily round erases the previews nobody applied. A batch that went in stays if a later
+  one fails, and the task, run again by Moodle, goes on from there without duplicating anything. Two imports never go in
+  at the same time: the second waits its turn.
+- A request for consent, or its reminder, goes by pieces of 200 adults (0.3.16-dev), each piece a task of its own, and
+  each adult it reaches gets a mark for that sending (`local_oksigeniafamily_sent`): a piece that fails and runs again
+  reaches nobody twice, and a second reminder is another sending. Before, one task sent it to everybody and kept no
+  record, so a retry after a failure halfway sent it all again. The students and the adults' accounts are read in a
+  few queries, not one each.
 - A request for consent works out how every student stands with a few queries, not one per student: a request to a
   whole school (3,000 students) was 3,002 queries for each row of the list.
 - The suite of the CI runs with a read-only token.

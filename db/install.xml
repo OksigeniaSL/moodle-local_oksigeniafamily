@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/oksigeniafamily/db" VERSION="20261107" COMMENT="XMLDB file for local_oksigeniafamily"
+<XMLDB PATH="local/oksigeniafamily/db" VERSION="20261113" COMMENT="XMLDB file for local_oksigeniafamily"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -191,6 +191,54 @@
       <INDEXES>
         <INDEX NAME="childtopic" UNIQUE="false" FIELDS="childkey, topic"/>
         <INDEX NAME="adultid" UNIQUE="false" FIELDS="adultid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_oksigeniafamily_import" COMMENT="A file of families on its way in: looked at, waiting, being applied in the background by batches, or done">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Who loaded and applied the file; 0 once their account is gone"/>
+        <FIELD NAME="source" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="csv" SEQUENCE="false"/>
+        <FIELD NAME="filename" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The name of the file as it was loaded"/>
+        <FIELD NAME="complete" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 if the file is the complete list of its source"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="preview" SEQUENCE="false" COMMENT="preview, queued, running, done, failed or stopped"/>
+        <FIELD NAME="filerows" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The rows of people in the file"/>
+        <FIELD NAME="guarded" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="1 if the preview asked to type how many children leave"/>
+        <FIELD NAME="leaving" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The children leaving their family, as the preview said"/>
+        <FIELD NAME="confirmed" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="The number typed to apply it, when the preview asked for it"/>
+        <FIELD NAME="families" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The families of the file to go through"/>
+        <FIELD NAME="familiesdone" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="leavingtotal" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The children to take out of their family"/>
+        <FIELD NAME="leavingdone" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="counts" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="What it did, in JSON: familiesnew, adultsnew, adultschanged, childrennew, childrenchanged, childrenleaving and errors"/>
+        <FIELD NAME="error" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Why it stopped, if it did"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timestarted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="When the background task first started on it"/>
+        <FIELD NAME="timefinished" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="statustime" UNIQUE="false" FIELDS="status, timemodified"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_oksigeniafamily_sent" COMMENT="The adults a sending of a request for consent, or of its reminder, has already reached: trying it again skips them">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="requestid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="roundid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The sending: the request, a reminder or the students added later, each with its own number"/>
+        <FIELD NAME="adultid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="requestid" TYPE="foreign" FIELDS="requestid" REFTABLE="local_oksigeniafamily_request" REFFIELDS="id"/>
+        <KEY NAME="adultid" TYPE="foreign" FIELDS="adultid" REFTABLE="local_oksigeniafamily_adult" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="requestroundadult" UNIQUE="true" FIELDS="requestid, roundid, adultid"/>
       </INDEXES>
     </TABLE>
   </TABLES>
