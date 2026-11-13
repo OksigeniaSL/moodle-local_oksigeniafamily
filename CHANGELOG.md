@@ -7,6 +7,9 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- `api::adult_users_of_family()`: the accounts of the active adults of an open family, so another plugin can tell them
+  something through Moodle's messages (Eguahe's notices about a visit or the next school year).
+
 - `api::families_of_user()` (0.3.15-dev): the open families where an account is an adult, with the source and key of
   each household, so another plugin goes from a person to their households (Eguahe's cards on the app's home) without
   the whole roll.

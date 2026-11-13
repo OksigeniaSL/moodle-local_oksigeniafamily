@@ -181,6 +181,29 @@ class api {
     }
 
     /**
+     * The accounts of the active adults of an open family, to tell them something through Moodle's messages (the app,
+     * the site): Eguahe's notices about a household's visit or next school year. Adults without an account are not here.
+     *
+     * @param int $familyid The family.
+     * @return int[] User ids, in the order the adults were added; none when the family is closed or has no accounts.
+     */
+    public static function adult_users_of_family(int $familyid): array {
+        global $DB;
+
+        $userids = $DB->get_fieldset_sql(
+            "SELECT a.userid
+               FROM {local_oksigeniafamily_adult} a
+               JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
+               JOIN {user} u ON u.id = a.userid AND u.deleted = 0 AND u.suspended = 0
+              WHERE a.familyid = :familyid AND a.status = :aactive
+           ORDER BY a.id",
+            ['familyid' => $familyid, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]
+        );
+
+        return array_values(array_unique(array_map('intval', $userids)));
+    }
+
+    /**
      * The adults of many students at once, as adults_of_child() gives them for one: for a request to a whole school,
      * where one query per student would be tens of thousands.
      *

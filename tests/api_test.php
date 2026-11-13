@@ -494,6 +494,27 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * From a family to the accounts of its active adults: not those without an account, nor a suspended one, nor any
+     * once the family is closed.
+     */
+    public function test_adult_users_of_family(): void {
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $mother = $generator->create_user();
+        $father = $generator->create_user(['suspended' => 1]);
+        $familyid = api::create_family();
+        api::add_adult($familyid, ['userid' => (int) $mother->id]);
+        api::add_adult($familyid, ['userid' => (int) $father->id]);
+        api::add_adult($familyid, ['firstname' => 'Abuela', 'phone' => '+34600000077']);
+        api::add_child($familyid, null, 'cifra:77');
+
+        $this->assertSame([(int) $mother->id], api::adult_users_of_family($familyid));
+        api::close_family($familyid);
+        $this->assertSame([], api::adult_users_of_family($familyid));
+    }
+
+    /**
      * The roll one household at a time, in small batches, is the same as all at once; and without adults when only the
      * children are wanted.
      */
