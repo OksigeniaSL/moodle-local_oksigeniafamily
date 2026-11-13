@@ -35,12 +35,22 @@ class consent_notices {
      * @param int $requestid The request.
      * @param bool $reminder Whether it is the reminder: then only to those whose answer is missing.
      * @param int[]|null $childuserids Only about these students (those just added); all if null.
-     * @return array How many went: app (notifications of Moodle), email and marandu (questions queued).
+     * @param int[]|null $adultids Only to these adults (a piece of the sending); all if null.
+     * @param int $round The number of this sending: each adult it reaches gets a mark, and running it again skips them.
+     *     0 sends without marks.
+     * @return array How many went: app (notifications of Moodle), email and marandu (questions queued), and skipped (the
+     *     adults this sending had already reached).
      */
-    public static function send(int $requestid, bool $reminder = false, ?array $childuserids = null): array {
+    public static function send(
+        int $requestid,
+        bool $reminder = false,
+        ?array $childuserids = null,
+        ?array $adultids = null,
+        int $round = 0
+    ): array {
         global $CFG;
 
-        $sent = ['app' => 0, 'email' => 0, 'marandu' => 0];
+        $sent = ['app' => 0, 'email' => 0, 'marandu' => 0, 'skipped' => 0];
         $request = consent::get($requestid);
         $now = time();
         if (!$request || !consent::is_open($request, $now)) {
@@ -48,36 +58,116 @@ class consent_notices {
         }
         $site = format_string(get_site()->fullname, true, ['context' => \context_system::instance()]);
 
-        foreach (consent::recipients($request, $reminder, $childuserids) as $adultid => $recipient) {
+        $recipients = consent::recipients($request, $reminder, $childuserids);
+        if ($adultids !== null) {
+            $recipients = array_intersect_key($recipients, array_flip($adultids));
+        }
+        $reached = $round ? self::reached($requestid, $round, array_keys($recipients)) : [];
+        // The students and the accounts of the adults in a few queries, not one each.
+        $students = self::users(array_merge([], ...array_column($recipients, 'children')), 'id, firstname, lastname, deleted');
+        $accounts = self::users(array_map(fn($recipient) => (int) $recipient['adult']->userid, $recipients), '*');
+
+        foreach ($recipients as $adultid => $recipient) {
+            if (isset($reached[$adultid])) {
+                $sent['skipped']++;
+                continue;
+            }
             $adult = $recipient['adult'];
             $children = [];
             foreach ($recipient['children'] as $childuserid) {
-                $child = \core_user::get_user($childuserid, 'id, firstname, lastname, deleted');
+                $child = $students[$childuserid] ?? null;
                 if ($child && empty($child->deleted)) {
                     $children[$childuserid] = $child;
                 }
             }
-            if (!$children) {
-                continue;
-            }
-
-            $user = !empty($adult->userid) ? \core_user::get_user((int) $adult->userid) : null;
-            $usable = $user && empty($user->deleted) && empty($user->suspended);
-            $lang = $usable && !empty($user->lang) ? $user->lang : $CFG->lang;
-            $previous = force_current_language($lang);
-            try {
-                if ($usable) {
-                    $sent['app'] += self::to_user($request, $user, $children, $site, $reminder) ? 1 : 0;
-                } else if (!empty($adult->email) && validate_email($adult->email)) {
-                    $sent['email'] += self::to_email($request, $adult, $children, $site, $reminder) ? 1 : 0;
+            if ($children) {
+                $user = !empty($adult->userid) ? ($accounts[(int) $adult->userid] ?? null) : null;
+                $usable = $user && empty($user->deleted) && empty($user->suspended);
+                $lang = $usable && !empty($user->lang) ? $user->lang : $CFG->lang;
+                $previous = force_current_language($lang);
+                try {
+                    if ($usable) {
+                        $sent['app'] += self::to_user($request, $user, $children, $site, $reminder) ? 1 : 0;
+                    } else if (!empty($adult->email) && validate_email($adult->email)) {
+                        $sent['email'] += self::to_email($request, $adult, $children, $site, $reminder) ? 1 : 0;
+                    }
+                    $sent['marandu'] += self::to_marandu($request, (int) $adultid, $children, $site, $now);
+                } finally {
+                    force_current_language($previous);
                 }
-                $sent['marandu'] += self::to_marandu($request, (int) $adultid, $children, $site, $now);
-            } finally {
-                force_current_language($previous);
+            }
+            if ($round) {
+                self::mark($requestid, $round, (int) $adultid, $now);
             }
         }
 
         return $sent;
+    }
+
+    /**
+     * Users by id, a thousand at a time.
+     *
+     * @param int[] $userids The users; zeros are left out.
+     * @param string $fields The fields.
+     * @return \stdClass[] By id.
+     */
+    private static function users(array $userids, string $fields): array {
+        global $DB;
+
+        $users = [];
+        foreach (array_chunk(array_values(array_unique(array_filter($userids))), 1000) as $chunk) {
+            $users += $DB->get_records_list('user', 'id', $chunk, '', $fields);
+        }
+
+        return $users;
+    }
+
+    /**
+     * The adults a sending already reached.
+     *
+     * @param int $requestid The request.
+     * @param int $round The sending.
+     * @param int[] $adultids Among these adults.
+     * @return true[] By adult.
+     */
+    private static function reached(int $requestid, int $round, array $adultids): array {
+        global $DB;
+
+        $reached = [];
+        foreach (array_chunk($adultids, 1000) as $chunk) {
+            [$in, $params] = $DB->get_in_or_equal($chunk, SQL_PARAMS_NAMED);
+            $ids = $DB->get_fieldset_select(
+                'local_oksigeniafamily_sent',
+                'adultid',
+                "requestid = :requestid AND roundid = :roundid AND adultid $in",
+                $params + ['requestid' => $requestid, 'roundid' => $round]
+            );
+            foreach ($ids as $id) {
+                $reached[(int) $id] = true;
+            }
+        }
+
+        return $reached;
+    }
+
+    /**
+     * Mark an adult as reached by a sending, right after it went to them.
+     *
+     * @param int $requestid The request.
+     * @param int $round The sending.
+     * @param int $adultid The adult.
+     * @param int $now The time.
+     * @return void
+     */
+    private static function mark(int $requestid, int $round, int $adultid, int $now): void {
+        global $DB;
+
+        $DB->insert_record('local_oksigeniafamily_sent', (object) [
+            'requestid' => $requestid,
+            'roundid' => $round,
+            'adultid' => $adultid,
+            'timecreated' => $now,
+        ], false);
     }
 
     /**

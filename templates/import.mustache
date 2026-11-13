@@ -25,12 +25,16 @@
     * error - What was wrong with the file, if anything.
     * sampleurl - A file to start from.
     * columns - Each with name, help and required.
+    * jobs, hasjobs - The imports on their way in and the last that finished, each with url, filename, status, kind, by
+      and progresslabel (how far it got, while it goes in).
 
     Example context (json):
     {
         "nav": {"items": [{"url": "#", "label": "Import", "current": true}]},
         "action": "#", "sesskey": "abc", "error": "", "sampleurl": "#",
-        "columns": [{"name": "family", "help": "The family's key.", "required": true}]
+        "columns": [{"name": "family", "help": "The family's key.", "required": true}],
+        "jobs": [{"url": "#", "filename": "families.csv", "status": "Being applied", "kind": "new",
+            "by": "Marta Gil, 13/11/26, 10:20", "progresslabel": "Families: 1,500 of 3,000"}], "hasjobs": true
     }
 }}
 <div class="local-oksigeniafamily okf-import">
@@ -38,6 +42,20 @@
         {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
     </div>
     <p class="okf-lede">{{#str}} import:lede, local_oksigeniafamily {{/str}}</p>
+    {{#hasjobs}}
+    <section class="okf-card okf-jobs">
+        <h3>{{#str}} import:recent, local_oksigeniafamily {{/str}}</h3>
+        <ul class="okf-plain">
+            {{#jobs}}
+            <li class="okf-jobrow">
+                <a href="{{url}}" class="okf-strong">{{filename}}</a>
+                <span class="okf-chip okf-chip-{{kind}}">{{status}}</span>
+                <span class="okf-line">{{by}}{{#progresslabel}} · {{progresslabel}}{{/progresslabel}}</span>
+            </li>
+            {{/jobs}}
+        </ul>
+    </section>
+    {{/hasjobs}}
     <div class="okf-cols">
         <section class="okf-card">
             {{#error}}<p class="okf-bad" role="alert">{{error}}</p>{{/error}}

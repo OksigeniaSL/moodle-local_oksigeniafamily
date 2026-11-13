@@ -29,7 +29,8 @@
     * leaving, hasleaving - Each with key and family.
     * haswork - Whether there is anything to apply.
     * guarded, leavingcount - Whether so many leave that the number has to be typed to apply it, and how many.
-    * action, sesskey, draft, complete - For the buttons.
+    * background - Whether the file is big enough to go in by batches in the background.
+    * action, sesskey, job - For the buttons.
 
     Example context (json):
     {
@@ -40,7 +41,7 @@
             "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "", "chip": {"label": "New", "kind": "new"} }],
             "children": [{"name": "Ana Ruiz", "noaccount": false, "chip": {"label": "New", "kind": "new"} }] }],
         "hasfamilies": true, "quiet": "", "leaving": [], "hasleaving": false, "haswork": true, "guarded": false, "leavingcount": 0,
-        "action": "#", "sesskey": "abc", "draft": 1, "complete": 0
+        "background": false, "action": "#", "sesskey": "abc", "job": 1
     }
 }}
 <div class="local-oksigeniafamily okf-preview">
@@ -50,8 +51,7 @@
             {{#haswork}}
             <form method="post" action="{{action}}" data-okf-once="1">
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
-                <input type="hidden" name="draft" value="{{draft}}">
-                <input type="hidden" name="complete" value="{{complete}}">
+                <input type="hidden" name="job" value="{{job}}">
                 <input type="hidden" name="apply" value="1">
                 {{#guarded}}
                 <label class="okf-guard">
@@ -64,13 +64,14 @@
             {{/haswork}}
             <form method="post" action="{{action}}">
                 <input type="hidden" name="sesskey" value="{{sesskey}}">
-                <input type="hidden" name="draft" value="{{draft}}">
+                <input type="hidden" name="job" value="{{job}}">
                 <input type="hidden" name="cancel" value="1">
                 <button type="submit" class="btn btn-secondary">{{#str}} import:other, local_oksigeniafamily {{/str}}</button>
             </form>
         </div>
     </div>
     <p class="okf-lede">{{#str}} import:preview_lede, local_oksigeniafamily {{/str}}</p>
+    {{#haswork}}{{#background}}<p class="okf-note okf-info">{{#str}} import:background, local_oksigeniafamily {{/str}}</p>{{/background}}{{/haswork}}
     <div class="okf-stats">
         {{#stats}}
         <div class="okf-stat{{#bad}} okf-stat-bad{{/bad}}"><strong>{{value}}</strong><span>{{label}}</span></div>

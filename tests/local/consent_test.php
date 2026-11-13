@@ -17,6 +17,7 @@
 namespace local_oksigeniafamily\local;
 
 use local_oksigeniafamily\api;
+use local_oksigeniafamily\task\consent_send;
 
 /**
  * Tests for the requests for consent: answers, how each student stands, the personal links, what is sent, the answers
@@ -30,6 +31,7 @@ use local_oksigeniafamily\api;
  * @covers \local_oksigeniafamily\local\consent_notices
  * @covers \local_oksigeniafamily\local\consent_marandu
  * @covers \local_oksigeniafamily\local\consent_view
+ * @covers \local_oksigeniafamily\task\consent_send
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(consent::class)]
 final class consent_test extends \advanced_testcase {
@@ -339,5 +341,100 @@ final class consent_test extends \advanced_testcase {
         $this->assertSame(0, consent::purge($now + (consent::MINKEEPDAYS - 1) * DAYSECS));
         $this->assertSame(1, consent::purge($now + HOURSECS + consent::MINKEEPDAYS * DAYSECS + 1));
         $this->assertNull(consent::get($data->requestid));
+    }
+
+    /**
+     * A sending to more adults than a piece goes by pieces, each a task of its own; each adult it reaches gets a mark, so
+     * that a piece Moodle runs again reaches nobody twice.
+     */
+    public function test_send_by_pieces(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $ana = $generator->create_user(['firstname' => 'Ana']);
+        $teacher = $generator->create_user();
+        $familyid = api::create_family();
+        api::add_child($familyid, (int) $ana->id);
+        $total = 2 * consent_send::PIECE + 1;
+        for ($i = 1; $i <= $total; $i++) {
+            api::add_adult($familyid, ['firstname' => 'Adult' . $i, 'email' => "adult$i@example.com"]);
+        }
+        $requestid = consent::create(\context_system::instance(), [
+            'title' => 'Salida al Teide',
+            'deadline' => time() + 3 * DAYSECS,
+        ], [(int) $ana->id], (int) $teacher->id);
+        $emails = $this->redirectEmails();
+
+        consent_send::queue($requestid);
+        ob_start();
+        $this->runAdhocTasks(consent_send::class);
+        $pieces = \core\task\manager::get_adhoc_tasks(consent_send::class);
+        $this->assertCount(3, $pieces);
+        $this->assertSame(0, $emails->count());
+        $this->runAdhocTasks(consent_send::class);
+        ob_end_clean();
+
+        $this->assertSame($total, $emails->count());
+        $this->assertSame($total, $DB->count_records('local_oksigeniafamily_sent', ['requestid' => $requestid]));
+        $recipients = array_map(fn($email) => $email->to, $emails->get_messages());
+        $this->assertCount($total, array_unique($recipients));
+
+        // Moodle runs a piece again, as after a failure: nobody gets it twice.
+        $emails->clear();
+        $piece = reset($pieces)->get_custom_data();
+        $this->assertCount(consent_send::PIECE, $piece->adults);
+        $sent = consent_notices::send($requestid, false, null, $piece->adults, (int) $piece->round);
+        $this->assertSame(0, $sent['email']);
+        $this->assertSame(consent_send::PIECE, $sent['skipped']);
+        $this->assertSame(0, $emails->count());
+
+        // Erasing the request erases its marks.
+        consent::delete($requestid);
+        $this->assertSame(0, $DB->count_records('local_oksigeniafamily_sent'));
+    }
+
+    /**
+     * A sending that stopped halfway goes on with whoever it had not reached; another sending, such as a second reminder,
+     * has a number of its own and reaches them again.
+     */
+    public function test_retry_reaches_nobody_twice(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $data = $this->setup_family();
+        $messages = $this->redirectMessages();
+        $emails = $this->redirectEmails();
+
+        // It stopped right after the adult with an account.
+        $DB->insert_record('local_oksigeniafamily_sent', (object) [
+            'requestid' => $data->requestid, 'roundid' => 77, 'adultid' => $data->adultid, 'timecreated' => time(),
+        ]);
+        $sent = consent_notices::send($data->requestid, false, null, null, 77);
+        $this->assertSame(0, $sent['app']);
+        $this->assertSame(1, $sent['email']);
+        $this->assertSame(1, $sent['skipped']);
+        $this->assertCount(0, $messages->get_messages());
+        $this->assertSame('pilar@example.com', $emails->get_messages()[0]->to);
+
+        // Once more: nobody.
+        $emails->clear();
+        $sent = consent_notices::send($data->requestid, false, null, null, 77);
+        $this->assertSame(0, $sent['app'] + $sent['email']);
+        $this->assertSame(2, $sent['skipped']);
+        $this->assertSame(0, $emails->count());
+
+        // A reminder is another sending: it reaches both again.
+        $sent = consent_notices::send($data->requestid, true, null, null, 78);
+        $this->assertSame(1, $sent['app']);
+        $this->assertSame(1, $sent['email']);
+        $this->assertSame(0, $sent['skipped']);
+
+        // The task queued for a sending carries its own number, and a task from before the pieces uses its id.
+        consent_send::queue($data->requestid, true);
+        consent_send::queue($data->requestid, true);
+        $rounds = array_map(
+            fn($task) => (int) $task->get_custom_data()->round,
+            \core\task\manager::get_adhoc_tasks(consent_send::class)
+        );
+        $this->assertCount(2, array_unique($rounds));
     }
 }

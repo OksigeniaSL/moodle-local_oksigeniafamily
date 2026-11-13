@@ -537,6 +537,59 @@
     border: 0;
 }
 
+.local-oksigeniafamily .okf-info {
+    padding: .6rem .85rem;
+    border-radius: .5rem;
+    background: var(--okf-accent-soft);
+    color: var(--okf-accent-text);
+}
+
+/* An import going in by batches, and the recent ones. */
+.local-oksigeniafamily .okf-jobs,
+.local-oksigeniafamily.okf-job .okf-card {
+    margin-bottom: 1.25rem;
+}
+
+.local-oksigeniafamily .okf-jobrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .75rem;
+    padding: .6rem 0;
+    border-top: 1px solid var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-jobrow:first-child {
+    border-top: 0;
+}
+
+.local-oksigeniafamily .okf-jobrow .okf-line {
+    flex-basis: 100%;
+}
+
+.local-oksigeniafamily .okf-bars {
+    display: grid;
+    gap: .85rem;
+    margin-top: 1rem;
+}
+
+.local-oksigeniafamily .okf-bar > span {
+    display: block;
+    margin-bottom: .35rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-bar .progress {
+    height: .6rem;
+    border-radius: 1rem;
+    background: var(--okf-chip);
+}
+
+.local-oksigeniafamily .okf-bar .progress-bar {
+    border-radius: 1rem;
+    background: var(--okf-accent);
+}
+
 /* The letters: sheets of paper on the page, so always black on white, whatever the mode of the page. */
 .local-oksigeniafamily.okf-letters {
     padding: 1rem;

@@ -137,7 +137,7 @@ class importer {
     }
 
     /**
-     * Do what a plan says, all of it or nothing.
+     * Do what a plan says, all of it or nothing. A big file goes through job instead, by batches.
      *
      * @param array $plan From plan().
      * @param string $source The same source as the plan.
@@ -148,7 +148,20 @@ class importer {
 
         \core_php_time_limit::raise();
         $transaction = $DB->start_delegated_transaction();
-        foreach ($plan['families'] as $family) {
+        self::apply_families($plan['families'], $source);
+        self::apply_leaving($plan['leaving']);
+        $transaction->allow_commit();
+    }
+
+    /**
+     * Do what a plan says for some of its families, without a transaction of its own: whoever calls it holds one.
+     *
+     * @param array $families Families of a plan, from plan().
+     * @param string $source The same source as the plan.
+     * @return int[] What it did: familiesnew, adultsnew, adultschanged, childrennew and childrenchanged.
+     */
+    public static function apply_families(array $families, string $source = 'csv'): array {
+        foreach ($families as $family) {
             $familyid = $family['id'] ?: api::create_family($source, $family['key']);
             foreach ($family['adults'] as $adult) {
                 if (empty($adult['id'])) {
@@ -171,11 +184,27 @@ class importer {
                 }
             }
         }
-        foreach ($plan['leaving'] as $child) {
+        $counts = self::counts($families, [], 0);
+
+        return array_intersect_key($counts, array_flip(self::DONE));
+    }
+
+    /**
+     * Take some children of a plan out of their family, without a transaction of its own.
+     *
+     * @param \stdClass[] $children Children leaving, from plan().
+     * @return int How many.
+     */
+    public static function apply_leaving(array $children): int {
+        foreach ($children as $child) {
             api::unlink_child((int) $child->id, 'import');
         }
-        $transaction->allow_commit();
+
+        return count($children);
     }
+
+    /** What applying families can do, as apply_families() counts it. */
+    public const DONE = ['familiesnew', 'adultsnew', 'adultschanged', 'childrennew', 'childrenchanged'];
 
     /**
      * The key of a person in their source: as given when it says which source (`cifra:123`), or with the source in front.

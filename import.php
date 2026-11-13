@@ -16,8 +16,9 @@
 
 /**
  * Importing families from a CSV file: upload it, see what would change, and apply it. The file waits between the two
- * steps in the user's own draft area, and it is deleted when they apply it or cancel; if they just go away, Moodle clears
- * the draft area on its own after a few days.
+ * steps in the plugin's own area (see local\import\job), and it is deleted when it has gone in or the person leaves it;
+ * if they just go away, the daily round erases it the day after. A small file goes in at once; a big one, in the
+ * background by batches, and this page shows how it goes and what it did.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -30,11 +31,12 @@ require_once($CFG->libdir . '/adminlib.php');
 use local_oksigeniafamily\local\families;
 use local_oksigeniafamily\local\import\csv_file;
 use local_oksigeniafamily\local\import\importer;
+use local_oksigeniafamily\local\import\job;
 use local_oksigeniafamily\local\page;
 
 $component = 'local_oksigeniafamily';
 $sample = optional_param('sample', 0, PARAM_BOOL);
-$draft = optional_param('draft', 0, PARAM_INT);
+$jobid = optional_param('job', 0, PARAM_INT);
 $complete = optional_param('complete', 0, PARAM_BOOL);
 $scripturl = new moodle_url('/local/oksigeniafamily/import.php');
 $listurl = new moodle_url('/local/oksigeniafamily/index.php');
@@ -48,29 +50,43 @@ if ($sample) {
     exit;
 }
 
-$fs = get_file_storage();
-$usercontext = context_user::instance($USER->id);
-$area = [$usercontext->id, 'user', 'draft'];
-$filename = 'oksigeniafamily.csv';
-
 // Step three: apply it, or leave it.
-if ($draft && (optional_param('apply', 0, PARAM_BOOL) || optional_param('cancel', 0, PARAM_BOOL))) {
+if ($jobid && (optional_param('apply', 0, PARAM_BOOL) || optional_param('cancel', 0, PARAM_BOOL))) {
     require_sesskey();
-    $file = $fs->get_file($area[0], $area[1], $area[2], $draft, '/', $filename);
-    if ($file && optional_param('apply', 0, PARAM_BOOL)) {
-        $read = csv_file::read($file->get_content());
-        $plan = importer::plan($read['rows'], 'csv', (bool) $complete);
-        if ($plan['guarded'] && optional_param('confirmleaving', -1, PARAM_INT) !== count($plan['leaving'])) {
-            $fs->delete_area_files($area[0], $area[1], $area[2], $draft);
-            redirect($scripturl, get_string('import:guard:mismatch', $component), null, \core\output\notification::NOTIFY_ERROR);
-        }
-        importer::apply($plan, 'csv');
-        \core\notification::success(get_string('import:done', $component, (object) $plan['counts']));
-        $fs->delete_area_files($area[0], $area[1], $area[2], $draft);
+    if (!optional_param('apply', 0, PARAM_BOOL)) {
+        job::cancel($jobid, (int) $USER->id);
+        redirect($scripturl);
+    }
+    $typed = optional_param('confirmleaving', -1, PARAM_INT);
+    try {
+        $job = job::start($jobid, $typed >= 0 ? $typed : null, (int) $USER->id);
+    } catch (moodle_exception $e) {
+        redirect($scripturl, $e->getMessage(), null, \core\output\notification::NOTIFY_ERROR);
+    }
+    if ($job->status === job::DONE) {
+        \core\notification::success(get_string('import:done', $component, (object) job::counts($job)));
         redirect($listurl);
     }
-    $fs->delete_area_files($area[0], $area[1], $area[2], $draft);
-    redirect($scripturl);
+    redirect(new moodle_url($scripturl, ['job' => $jobid]));
+}
+
+// An import on its way in, or what it did.
+$job = $jobid ? job::get($jobid) : null;
+if ($job && $job->status !== job::PREVIEW) {
+    $view = job::export($job);
+    if ($view['busy']) {
+        // The page comes back on its own while the import goes in.
+        $PAGE->set_periodic_refresh_delay(5);
+    }
+    page::dress(get_string('import:job', $component));
+    echo $OUTPUT->header();
+    echo $OUTPUT->render_from_template('local_oksigeniafamily/import_job', $view + [
+        'nav' => page::nav('import'),
+        'importurl' => $scripturl->out(false),
+        'listurl' => $listurl->out(false),
+    ]);
+    echo $OUTPUT->footer();
+    exit;
 }
 
 // Step two: what would change.
@@ -89,12 +105,9 @@ if (!empty($_FILES['csvfile'])) {
         } else if ($read['error'] !== '') {
             $error = get_string('import:file:' . $read['error'], $component);
         } else {
-            $draft = file_get_unused_draft_itemid();
-            $fs->create_file_from_string([
-                'contextid' => $area[0], 'component' => $area[1], 'filearea' => $area[2], 'itemid' => $draft,
-                'filepath' => '/', 'filename' => $filename,
-            ], $text);
             $preview = importer::plan($read['rows'], 'csv', (bool) $complete);
+            $rows = count($read['rows']);
+            $jobid = job::prepare($text, (string) $upload['name'], (bool) $complete, $preview, $rows, (int) $USER->id);
         }
     }
 }
@@ -198,16 +211,19 @@ if ($preview) {
         'haswork' => $work > 0,
         'action' => $scripturl->out(false),
         'sesskey' => sesskey(),
-        'draft' => $draft,
-        'complete' => $complete ? 1 : 0,
+        'job' => $jobid,
+        'background' => $rows > job::NOWROWS,
     ]);
 } else {
+    $jobs = array_map(fn($one) => job::export($one), job::recent(time()));
     echo $OUTPUT->render_from_template('local_oksigeniafamily/import', [
         'nav' => page::nav('import'),
         'action' => $scripturl->out(false),
         'sesskey' => sesskey(),
         'error' => $error,
         'sampleurl' => (new moodle_url($scripturl, ['sample' => 1]))->out(false),
+        'jobs' => $jobs,
+        'hasjobs' => !empty($jobs),
         'columns' => array_map(fn($column) => [
             'name' => $column,
             'help' => get_string('import:column:' . $column, $component, importer::phone_prefix()),

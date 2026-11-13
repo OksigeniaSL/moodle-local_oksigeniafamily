@@ -95,6 +95,14 @@ class provider implements
             'userid' => 'privacy:metadata:standing:userid',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:standing');
+        $collection->add_database_table('local_oksigeniafamily_import', [
+            'userid' => 'privacy:metadata:import:userid',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:import');
+        $collection->add_database_table('local_oksigeniafamily_sent', [
+            'adultid' => 'privacy:metadata:sent:adultid',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:sent');
         $collection->add_subsystem_link('core_files', [], 'privacy:metadata:core_files');
 
         return $collection;
@@ -119,6 +127,7 @@ class provider implements
             || $DB->record_exists('local_oksigeniafamily_target', ['userid' => $userid])
             || $DB->record_exists('local_oksigeniafamily_answer', ['childuserid' => $userid])
             || $DB->record_exists('local_oksigeniafamily_answer', ['userid' => $userid])
+            || $DB->record_exists('local_oksigeniafamily_import', ['userid' => $userid])
             || self::photo_keys($userid)
             || self::standing_select($userid)[0] !== ''
         ) {
@@ -151,6 +160,7 @@ class provider implements
         $userlist->add_from_sql('childuserid', 'SELECT childuserid FROM {local_oksigeniafamily_answer}', []);
         $sql = 'SELECT userid FROM {local_oksigeniafamily_answer} WHERE userid IS NOT NULL';
         $userlist->add_from_sql('userid', $sql, []);
+        $userlist->add_from_sql('userid', 'SELECT userid FROM {local_oksigeniafamily_import} WHERE userid > 0', []);
 
         // Photos and standing consents: the students they are about (user:45), who wrote them down, and the adults with an
         // account who answered.
@@ -218,6 +228,24 @@ class provider implements
                 'id, requestid, childuserid, adultname, answer, comment, channel, address, timecreated'
             )),
         ];
+        $data->imports = array_values($DB->get_records(
+            'local_oksigeniafamily_import',
+            ['userid' => $userid],
+            'id',
+            'id, filename, status, filerows, counts, timecreated, timefinished'
+        ));
+        $adultids = $DB->get_fieldset_select('local_oksigeniafamily_adult', 'id', 'userid = :userid', ['userid' => $userid]);
+        $data->consentsent = [];
+        if ($adultids) {
+            [$in, $params] = $DB->get_in_or_equal($adultids, SQL_PARAMS_NAMED);
+            $data->consentsent = array_values($DB->get_records_select(
+                'local_oksigeniafamily_sent',
+                "adultid $in",
+                $params,
+                'id',
+                'id, requestid, timecreated'
+            ));
+        }
         [$select, $params] = self::standing_select($userid);
         $data->standing = $select === '' ? [] : array_values($DB->get_records_select(
             'local_oksigeniafamily_standing',
@@ -251,10 +279,12 @@ class provider implements
         if ($context->contextlevel != CONTEXT_SYSTEM) {
             return;
         }
-        foreach (['adult', 'child', 'claim', 'family', 'answer', 'target', 'request', 'photo', 'standing'] as $table) {
+        $tables = ['adult', 'child', 'claim', 'family', 'answer', 'target', 'request', 'photo', 'standing', 'sent', 'import'];
+        foreach ($tables as $table) {
             $DB->delete_records('local_oksigeniafamily_' . $table);
         }
         get_file_storage()->delete_area_files($context->id, 'local_oksigeniafamily', \local_oksigeniafamily\local\photos::AREA);
+        get_file_storage()->delete_area_files($context->id, 'local_oksigeniafamily', \local_oksigeniafamily\local\import\job::AREA);
     }
 
     /**
@@ -305,6 +335,7 @@ class provider implements
         if ($adultids) {
             [$in, $params] = $DB->get_in_or_equal($adultids, SQL_PARAMS_NAMED);
             $DB->delete_records_select('local_oksigeniafamily_standing', "adultid $in", $params);
+            $DB->delete_records_select('local_oksigeniafamily_sent', "adultid $in", $params);
         }
         $DB->set_field('local_oksigeniafamily_standing', 'userid', null, ['userid' => $userid]);
 
@@ -324,6 +355,9 @@ class provider implements
         );
         $DB->set_field('local_oksigeniafamily_answer', 'userid', null, ['userid' => $userid]);
         $DB->set_field('local_oksigeniafamily_request', 'usercreated', 0, ['usercreated' => $userid]);
+
+        // The imports they applied stay for the school, without who applied them.
+        $DB->set_field('local_oksigeniafamily_import', 'userid', 0, ['userid' => $userid]);
     }
 
     /**

@@ -49,4 +49,13 @@ $messageproviders = [
             'airnotifier' => MESSAGE_PERMITTED,
         ],
     ],
+    // An import of families applied in the background ends, or stops: whoever applied it is told what it did.
+    'import' => [
+        'capability' => 'local/oksigeniafamily:manage',
+        'defaults' => [
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+            'airnotifier' => MESSAGE_PERMITTED,
+        ],
+    ],
 ];
