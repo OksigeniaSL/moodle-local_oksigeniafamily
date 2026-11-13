@@ -5,7 +5,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
-## [0.3.12-dev] - 2026-11-13
+## [0.3.12] - 2026-11-13
+
+Published for the site with real families: a suspended student no longer loses their family, nor their family's
+«no» to the use of their image.
 
 From the first full review of Aty and Family: what could lose a family, or let the wrong person in, on a site with
 real families.
