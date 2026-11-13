@@ -48,6 +48,9 @@ class consent {
     /** @var int Days a request is kept after its deadline, unless the school says otherwise. */
     public const KEEPDAYS = 365;
 
+    /** The fewest days a request is kept after its deadline: the outing may come after it, and the answers are its proof. */
+    public const MINKEEPDAYS = 30;
+
     /**
      * Whether the site asks families for consent (a switch in its settings, on by default). Off, the school does not see
      * the requests anywhere and families have nothing to answer.
@@ -86,7 +89,7 @@ class consent {
             'scope' => in_array($data['scope'] ?? '', ['course', 'group', 'cohort'], true) ? $data['scope'] : '',
             'scopeid' => (int) ($data['scopeid'] ?? 0),
             'needall' => empty($data['needall']) ? 0 : 1,
-            'keepdays' => max(0, (int) ($data['keepdays'] ?? self::KEEPDAYS)),
+            'keepdays' => max(self::MINKEEPDAYS, (int) ($data['keepdays'] ?? self::KEEPDAYS)),
             'status' => self::OPEN,
             'usercreated' => $userid,
             'timecreated' => $now,
@@ -216,7 +219,8 @@ class consent {
         $name = trim((string) ($by['name'] ?? ''));
         if ($adultid > 0) {
             $adult = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid, 'status' => api::ACTIVE]);
-            if (!$adult || !api::adult_has_child($adultid, $childuserid)) {
+            // Nobody answers for themselves: an adult that is the student's own account is not their family.
+            if (!$adult || !api::adult_has_child($adultid, $childuserid) || (int) $adult->userid === $childuserid) {
                 throw new \moodle_exception('consentnotfamily', 'local_oksigeniafamily');
             }
             $name = self::adult_name($adult);
@@ -560,8 +564,9 @@ class consent {
         $ids = $DB->get_fieldset_select(
             'local_oksigeniafamily_request',
             'id',
-            'deadline + keepdays * :day < :now',
-            ['day' => DAYSECS, 'now' => $now]
+            // Never before the minimum, also for a request made with less before there was one.
+            'deadline + (CASE WHEN keepdays < :min THEN :min2 ELSE keepdays END) * :day < :now',
+            ['min' => self::MINKEEPDAYS, 'min2' => self::MINKEEPDAYS, 'day' => DAYSECS, 'now' => $now]
         );
         foreach ($ids as $id) {
             self::delete((int) $id);

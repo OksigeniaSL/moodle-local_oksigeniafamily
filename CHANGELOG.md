@@ -5,6 +5,41 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+## [0.3.12-dev] - 2026-11-13
+
+From the first full review of Aty and Family: what could lose a family, or let the wrong person in, on a site with
+real families.
+
+### Fixed
+
+- A student whose account was only suspended (the summer, a fee, a sync that suspended by mistake) comes back to their
+  family when the account is active again, as long as the family is still open, and the family's «no» to the use of
+  their image stays while the account exists. Before, a suspension took the student out for good: after the grace
+  period the family closed, Aty's family account was deleted and the «no» was erased, so their photo showed again. Each
+  child now keeps why they left (`leftreason`); the upgrade takes it from the log for those who already left.
+- A student signed in can no longer claim their own code (the letter goes home in their bag) and so answer the requests
+  about themselves; an adult that is the student's own account never answers for them; and an account that is a child
+  in a family is never given the parent role over anyone.
+- A phone an adult typed when claiming a code no longer becomes «vouched for» when the school changes their name or an
+  import brings their e-mail: only a change of the number, or the school's mark «The school knows this mobile is
+  theirs», vouches for it. Until then it never finds them on WhatsApp.
+- «This file is the complete list» now has a brake: when it would take more than a fifth of the children without an
+  account out of their families (and more than five), or comes with rows it did not understand, the number of children
+  leaving has to be typed to apply it.
+- Two claims at the same moment (a double tap, the app trying again) no longer make two families: one claim at a time
+  per person or code, and the claim form goes once.
+- A request for consent keeps its answers at least 30 days after the deadline: they are the outing's proof, and the
+  outing may come after the deadline. Also for one stored with fewer days before.
+- The e-mail of a request for consent opens the app for who has it: the account Aty makes for an adult never signs in
+  on the web, and its button left them at the sign-in page.
+- A plugin that fails while giving its links (canteen, library) no longer shows the adult an error once they have joined.
+
+### Changed
+
+- The event `adult_updated` carries `oldphonehash` (SHA-256 of the old number) instead of the number: the log keeps
+  events for as long as the site wants, and an adult without an account cannot have them removed.
+- The brake on guessing codes counts an IPv6 line by its /64, not each address in it.
+
 ## [0.3.11] - 2026-11-12
 
 The first version of Family published for a site with real families: everything below, up to this point.

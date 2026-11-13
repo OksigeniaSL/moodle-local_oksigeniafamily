@@ -113,6 +113,13 @@ final class api_test extends \advanced_testcase {
                 $this->assertSame('claiminvalid', $e->errorcode);
             }
         }
+        // The student, signed in, cannot join their own family as an adult.
+        try {
+            api::claim($code, ['firstname' => 'Ana', 'userid' => (int) $ana->id]);
+            $this->fail('A student must not claim their own code.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('claimself', $e->errorcode);
+        }
         api::revoke_claim_codes((int) $ana->id);
         $this->expectException(\moodle_exception::class);
         api::claim($code, ['phone' => '+34600000004']);
@@ -184,6 +191,18 @@ final class api_test extends \advanced_testcase {
 
         api::update_adult($adultid, ['phone' => '+14155550145', 'phoneverified' => true]);
         $this->assertSame($adultid, (int) api::adult_by_phone('+14155550145')->id);
+
+        // A number the adult typed is not vouched for by a change of something else (a name, an e-mail from an import),
+        // even when the caller says it vouches: only with the number itself.
+        $typed = api::add_adult($familyid, ['firstname' => 'Luis', 'phone' => '+14155550146']);
+        api::update_adult($typed, ['firstname' => 'Luis Miguel', 'phoneverified' => true]);
+        api::update_adult($typed, ['email' => 'luis@example.com']);
+        $this->assertNull(api::adult_by_phone('+14155550146'));
+        // The school marks it, with the number: then it counts. And it can say it does not.
+        api::update_adult($typed, ['phone' => '+14155550146', 'phoneverified' => true]);
+        $this->assertSame($typed, (int) api::adult_by_phone('+14155550146')->id);
+        api::update_adult($typed, ['phone' => '+14155550146', 'phoneverified' => false]);
+        $this->assertNull(api::adult_by_phone('+14155550146'));
     }
 
     /**
@@ -294,7 +313,9 @@ final class api_test extends \advanced_testcase {
         ]));
         $events = array_values(array_filter($sink->get_events(), fn($event) => $event instanceof event\adult_updated));
         $this->assertCount(1, $events);
-        $this->assertSame('+34600000001', $events[0]->other['oldphone']);
+        // The number itself does not go to the log: its hash does.
+        $this->assertSame(hash('sha256', '+34600000001'), $events[0]->other['oldphonehash']);
+        $this->assertArrayNotHasKey('oldphone', $events[0]->other);
         $this->assertSame([$second], array_map('intval', array_keys(api::adults_by_phone('+34600000001'))));
         $this->assertSame($first, (int) api::adult_by_phone('+34600000009')->id);
     }
@@ -469,6 +490,16 @@ final class api_test extends \advanced_testcase {
         local\roles::sync_all();
         $this->assertTrue(user_has_role_assignment((int) $parent->id, $roleid, $context->id));
         $this->assertTrue($DB->record_exists('role_assignments', ['component' => 'local_oksigeniafamily', 'itemid' => $familyid]));
+
+        // A student who claimed a classmate's code (an adult of that family who is a child in their own) is no parent.
+        $leo = $generator->create_user();
+        $leofamily = api::create_family();
+        api::add_adult($leofamily, ['firstname' => 'Marta']);
+        api::add_child($leofamily, (int) $leo->id);
+        api::add_adult($familyid, ['userid' => $leo->id]);
+        local\roles::sync_family($familyid);
+        $this->assertFalse(user_has_role_assignment((int) $leo->id, $roleid, $context->id));
+        $this->assertTrue(user_has_role_assignment((int) $parent->id, $roleid, $context->id));
 
         api::unlink_child($childid, 'manual');
         $this->assertFalse(user_has_role_assignment((int) $parent->id, $roleid, $context->id));

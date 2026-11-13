@@ -96,7 +96,44 @@ class importer {
             'families' => array_values($families),
             'leaving' => $leaving,
             'counts' => self::counts($families, $leaving, count($errors)),
+            'guarded' => self::guarded($source, $leaving, count($errors)),
         ];
+    }
+
+    /** Of the children without an account of a source, the share that may leave in one import without a second look. */
+    public const LEAVINGSHARE = 0.2;
+
+    /** Up to this many may always leave without a second look: a few pupils go every term. */
+    public const LEAVINGFLOOR = 5;
+
+    /**
+     * Whether a complete list takes out so many children, or comes with rows it did not understand, that whoever applies
+     * it has to type how many leave. A partial file, or a key column with another name, would otherwise take a whole
+     * school's children out of their families, and their families would close a few days later.
+     *
+     * @param string $source The source.
+     * @param array $leaving The children who would leave.
+     * @param int $errors Rows not understood.
+     * @return bool
+     */
+    private static function guarded(string $source, array $leaving, int $errors): bool {
+        global $DB;
+
+        if (!$leaving) {
+            return false;
+        }
+        if ($errors > 0) {
+            return true;
+        }
+        $active = (int) $DB->count_records_sql(
+            "SELECT COUNT(1)
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid
+              WHERE c.status = :cactive AND c.userid IS NULL AND f.status = :factive AND f.source = :source",
+            ['cactive' => api::ACTIVE, 'factive' => api::ACTIVE, 'source' => $source]
+        );
+
+        return count($leaving) > max(self::LEAVINGFLOOR, (int) ceil(self::LEAVINGSHARE * $active));
     }
 
     /**
@@ -124,7 +161,8 @@ class importer {
                     unset($changes['userid']);
                 }
                 if ($changes) {
-                    api::update_adult((int) $adult['id'], $changes + ['phoneverified' => true]);
+                    // The school's file vouches for a number it brings, not for one it leaves as it was.
+                    api::update_adult((int) $adult['id'], $changes + (isset($changes['phone']) ? ['phoneverified' => true] : []));
                 }
             }
             foreach ($family['children'] as $child) {

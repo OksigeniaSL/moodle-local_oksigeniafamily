@@ -146,7 +146,13 @@ class consent_notices {
      */
     private static function to_user(\stdClass $request, \stdClass $user, array $children, string $site, bool $reminder): bool {
         $url = new \moodle_url('/local/oksigeniafamily/consent.php', ['id' => $request->id]);
-        $texts = self::compose($request, $children, $site, $reminder, $url);
+        // The e-mail's button opens the app for who has it (Aty's link in between): the account Aty makes for an adult
+        // never signs in on the web, and would be left at the sign-in page. The notice in the app opens the page itself.
+        $button = $url;
+        if (class_exists('\local_oksigeniaaty\api') && method_exists('\local_oksigeniaaty\api', 'app_link')) {
+            $button = new \moodle_url(\local_oksigeniaaty\api::app_link((int) $user->id, $url->out(false)));
+        }
+        $texts = self::compose($request, $children, $site, $reminder, $button);
 
         $message = new \core\message\message();
         $message->component = 'local_oksigeniafamily';

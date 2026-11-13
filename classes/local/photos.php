@@ -260,8 +260,9 @@ final class photos {
     }
 
     /**
-     * Whether the student behind a key is still here: an account that is neither deleted nor suspended, or an active
-     * child in a family.
+     * Whether the student behind a key is still here: an account that is not deleted, or an active child in a family,
+     * or a child whose account is not deleted. A suspended account is still here: the student may come back after the
+     * summer, and must find the family's «no» to the use of their image as it was.
      *
      * @param string $key The key.
      * @return bool
@@ -270,10 +271,16 @@ final class photos {
         global $DB;
 
         if (preg_match('/^user:(\d+)$/', $key, $match)) {
-            return $DB->record_exists('user', ['id' => (int) $match[1], 'deleted' => 0, 'suspended' => 0]);
+            return $DB->record_exists('user', ['id' => (int) $match[1], 'deleted' => 0]);
         }
 
-        return $DB->record_exists('local_oksigeniafamily_child', ['sourcekey' => $key, 'status' => api::ACTIVE]);
+        return $DB->record_exists_sql(
+            "SELECT 1
+               FROM {local_oksigeniafamily_child} c
+          LEFT JOIN {user} u ON u.id = c.userid AND u.deleted = 0
+              WHERE c.sourcekey = :sourcekey AND (c.status = :active OR u.id IS NOT NULL)",
+            ['sourcekey' => $key, 'active' => api::ACTIVE]
+        );
     }
 
     /**

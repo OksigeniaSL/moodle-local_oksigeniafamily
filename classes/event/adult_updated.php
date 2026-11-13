@@ -17,7 +17,7 @@
 namespace local_oksigeniafamily\event;
 
 /**
- * Event adult updated: their details changed; other['oldphone'] is the phone they had.
+ * Event adult updated: their details changed; other['oldphonehash'] is the SHA-256 of the phone they had.
  *
  * Other plugins observe it to take back their own part (a key, a linked phone, a reader), and their daily tasks check
  * the same through the API, so the event only brings that forward.

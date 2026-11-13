@@ -40,7 +40,14 @@ class links {
         $links = [];
         foreach (get_plugins_with_function('oksigeniafamily_links') as $type => $plugins) {
             foreach ($plugins as $name => $function) {
-                foreach (self::clean($function($adult, $childuserid)) as $link) {
+                // Called once the code is claimed: a plugin that fails must not show the adult an error after they joined.
+                try {
+                    $given = self::clean($function($adult, $childuserid));
+                } catch (\Throwable $e) {
+                    debugging('Family links of ' . $type . '_' . $name . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
+                    continue;
+                }
+                foreach ($given as $link) {
                     $links[] = ['component' => $type . '_' . $name] + $link;
                 }
             }

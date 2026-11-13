@@ -344,6 +344,24 @@
     gap: .4rem;
 }
 
+/* A complete list that takes many children out: the number is typed, next to the button, before it applies. */
+.local-oksigeniafamily .okf-guard {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+    margin: 0 .4rem 0 0;
+    padding: .35rem .6rem;
+    border: 1px solid var(--okf-bad-line);
+    border-radius: .5rem;
+    background: var(--okf-bad-soft);
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily .okf-guard input {
+    width: 6rem;
+}
+
 .local-oksigeniafamily .okf-question {
     margin-bottom: 1rem;
     border-color: var(--okf-bad-line);

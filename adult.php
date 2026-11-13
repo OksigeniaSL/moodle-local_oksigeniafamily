@@ -62,7 +62,11 @@ $form = new adult_form($PAGE->url);
 if ($adult) {
     $data = (array) $adult;
     $data['username'] = $adult->userid ? (string) $DB->get_field('user', 'username', ['id' => $adult->userid]) : '';
+    $data['phonechecked'] = (int) $adult->phoneverified;
     $form->set_data($data);
+} else {
+    // A number the school types itself is one it knows.
+    $form->set_data(['phonechecked' => 1]);
 }
 if ($form->is_cancelled()) {
     redirect($back);
@@ -77,7 +81,7 @@ if ($data = $form->get_data()) {
     $username = core_text::strtolower(trim((string) $data->username));
     $userid = $username === '' ? null : (int) $DB->get_field('user', 'id', ['username' => $username, 'deleted' => 0]);
     if ($adult) {
-        api::update_adult((int) $adult->id, $details + ['phoneverified' => true]);
+        api::update_adult((int) $adult->id, $details + ['phoneverified' => !empty($data->phonechecked)]);
         if ((int) $adult->userid !== (int) $userid) {
             api::set_adult_user((int) $adult->id, $userid);
         }
@@ -85,7 +89,7 @@ if ($data = $form->get_data()) {
     }
     $isnew = !$family;
     $familyid = $familyid ?: api::create_family('manual');
-    api::add_adult($familyid, $details + ['userid' => $userid, 'phoneverified' => true]);
+    api::add_adult($familyid, $details + ['userid' => $userid, 'phoneverified' => !empty($data->phonechecked)]);
     // A new family goes on with its first child.
     redirect($isnew
         ? new moodle_url('/local/oksigeniafamily/child.php', ['familyid' => $familyid])

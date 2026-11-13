@@ -41,6 +41,10 @@ class adult_form extends \moodleform {
         $form->setType('lastname', PARAM_NOTAGS);
         $form->addElement('text', 'phone', get_string('adult:phone', 'local_oksigeniafamily'), ['autocomplete' => 'off']);
         $form->setType('phone', PARAM_NOTAGS);
+        // Only a number the school knows is theirs finds them when they write from it (WhatsApp, Telegram): one the adult
+        // typed when claiming a code is kept, but proves nothing until the school says so here.
+        $form->addElement('advcheckbox', 'phonechecked', '', get_string('adult:phonechecked', 'local_oksigeniafamily'));
+        $form->hideIf('phonechecked', 'phone', 'eq', '');
         $form->addElement('text', 'email', get_string('adult:email', 'local_oksigeniafamily'), ['autocomplete' => 'off']);
         $form->setType('email', PARAM_RAW_TRIMMED);
         $form->addElement('text', 'username', get_string('adult:username', 'local_oksigeniafamily'), ['autocomplete' => 'off']);

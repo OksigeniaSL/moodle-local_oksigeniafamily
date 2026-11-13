@@ -79,5 +79,32 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111201, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026111300) {
+        // Why each child left, so that one whose account was only suspended comes back to the family when it returns.
+        $table = new xmldb_table('local_oksigeniafamily_child');
+        $field = new xmldb_field('leftreason', XMLDB_TYPE_CHAR, '20', null, null, null, null, 'timeleft');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        // The children who already left kept their reason only in the log: take it from there.
+        $left = $DB->get_records_select('local_oksigeniafamily_child', 'status = :left', ['left' => 'left'], '', 'id');
+        foreach ($left as $child) {
+            $logs = $DB->get_records(
+                'logstore_standard_log',
+                ['eventname' => '\\local_oksigeniafamily\\event\\child_unlinked', 'objectid' => $child->id],
+                'id DESC',
+                'id, other',
+                0,
+                1
+            );
+            $log = reset($logs);
+            $other = $log ? json_decode((string) $log->other, true) : null;
+            if (is_array($other) && !empty($other['reason']) && is_string($other['reason'])) {
+                $DB->set_field('local_oksigeniafamily_child', 'leftreason', substr($other['reason'], 0, 20), ['id' => $child->id]);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026111300, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

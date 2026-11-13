@@ -89,7 +89,11 @@ class page {
             require([], function() {
                 document.querySelectorAll('form[data-okf-once]').forEach(function(form) {
                     form.addEventListener('submit', function() {
-                        form.querySelector('button[type=submit]').disabled = true;
+                        // Moodle's own forms send with an input, the templates with a button. Switched off just after
+                        // the form leaves, so the one pressed still goes with it.
+                        form.querySelectorAll('button[type=submit], input[type=submit]').forEach(function(button) {
+                            setTimeout(function() { button.disabled = true; }, 0);
+                        });
                     });
                 });
             });

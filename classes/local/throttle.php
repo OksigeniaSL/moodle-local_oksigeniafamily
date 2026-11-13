@@ -65,6 +65,13 @@ class throttle {
      * @return string
      */
     private static function key(string $address): string {
+        // An IPv6 home or phone line gets a whole /64: every address in it would count apart. Count the /64.
+        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            $packed = inet_pton($address);
+            if ($packed !== false) {
+                $address = bin2hex(substr($packed, 0, 8)) . '::/64';
+            }
+        }
         return sha1($address);
     }
 }

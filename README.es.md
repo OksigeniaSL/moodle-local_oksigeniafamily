@@ -8,7 +8,7 @@ leen la misma ficha en lugar de llevar cada uno su lista de quién es familia de
 funciona sin este plugin y lo usa si está instalado. Aparte de las autorizaciones, por sí solo no enseña nada a las
 familias; cada plugin enseña lo suyo.
 
-**Estado:** primeras fases de desarrollo.
+**Estado:** en uso en el sitio de un colegio con familias reales desde la 0.3.11 (noviembre de 2026), y en los sitios de desarrollo de Oksigenia.
 
 ## Cómo entran las familias
 

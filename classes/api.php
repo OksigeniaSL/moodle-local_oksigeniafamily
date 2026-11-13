@@ -474,6 +474,7 @@ class api {
         if ($existing) {
             $existing->status = self::ACTIVE;
             $existing->timeleft = null;
+            $existing->leftreason = null;
             $existing->timemodified = $now;
             $existing->userid = $existing->userid ?: ($userid ?: null);
             $existing->sourcekey = $existing->sourcekey ?? $sourcekey;
@@ -498,11 +499,12 @@ class api {
     }
 
     /**
-     * Change an adult's details. When anything changes, the event `adult_updated` carries the phone they had, so a plugin
-     * that linked the old number lets it go at once.
+     * Change an adult's details. When anything changes, the event `adult_updated` carries the hash (SHA-256) of the phone
+     * they had, so a plugin that linked the old number lets it go at once.
      *
      * @param int $adultid The adult.
-     * @param array $data Any of firstname, lastname, email, phone (E.164) and sourcekey.
+     * @param array $data Any of firstname, lastname, email, phone (E.164) and sourcekey; and phoneverified, which only counts
+     *     with the phone: true when the caller vouches for it, false when it says it is not proved.
      * @return bool Whether anything changed.
      */
     public static function update_adult(int $adultid, array $data): bool {
@@ -519,10 +521,16 @@ class api {
                 $changes[$field] = $value;
             }
         }
-        // A number stops counting as theirs when it changes, unless whoever changes it vouches for the new one.
+        // A number stops counting as theirs when it changes, unless whoever changes it vouches for it. Only a caller that
+        // gives the number can vouch for it: fixing a name, or an import that only brings an e-mail, says nothing about
+        // a phone the adult typed themselves. And one that gives it may say, with false, that it is not proved.
         $verified = array_key_exists('phone', $changes) ? 0 : (int) $adult->phoneverified;
-        if (!empty($data['phoneverified']) && ($data['phone'] ?? $adult->phone)) {
-            $verified = 1;
+        if (array_key_exists('phoneverified', $data) && !empty($data['phone'])) {
+            if (!empty($data['phoneverified'])) {
+                $verified = 1;
+            } else if ($data['phoneverified'] === false) {
+                $verified = 0;
+            }
         }
         if ($verified !== (int) $adult->phoneverified) {
             $changes['phoneverified'] = $verified;
@@ -537,7 +545,12 @@ class api {
             'objectid' => $adultid,
             'context' => \context_system::instance(),
             'relateduserid' => $adult->userid ?: null,
-            'other' => ['familyid' => (int) $adult->familyid, 'oldphone' => $adult->phone],
+            // Not the number itself: the log keeps events for as long as the site wants, and an adult without an account
+            // has no way to have it removed. A plugin that keeps the number compares its hash.
+            'other' => [
+                'familyid' => (int) $adult->familyid,
+                'oldphonehash' => $adult->phone ? hash('sha256', $adult->phone) : '',
+            ],
         ])->trigger();
 
         return true;
@@ -577,7 +590,8 @@ class api {
         }
         $now = time();
         $DB->update_record('local_oksigeniafamily_child', (object) [
-            'id' => $childid, 'status' => self::LEFT, 'timeleft' => $now, 'timemodified' => $now,
+            'id' => $childid, 'status' => self::LEFT, 'timeleft' => $now, 'leftreason' => substr($reason, 0, 20),
+            'timemodified' => $now,
         ]);
 
         event\child_unlinked::create([
@@ -702,12 +716,40 @@ class api {
      * @throws \moodle_exception When the code does not exist, has expired or was revoked.
      */
     public static function claim(string $code, array $adult, bool $phoneverified = false): stdClass {
+        $code = strtoupper(preg_replace('/[\s-]+/', '', $code));
+        // One claim at a time for the same person or the same code: a double tap, or the app trying again, would otherwise
+        // find no adult yet in both, and make two families.
+        $who = !empty($adult['userid']) ? 'u' . (int) $adult['userid'] : 'c' . substr(hash('sha256', $code), 0, 32);
+        $lock = \core\lock\lock_config::get_lock_factory('local_oksigeniafamily_claim')->get_lock($who, 10);
+        if (!$lock) {
+            throw new \moodle_exception('claimbusy', 'local_oksigeniafamily');
+        }
+        try {
+            return self::claim_locked($code, $adult, $phoneverified);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * The claim itself, once nobody else is claiming for the same person or code.
+     *
+     * @param string $code The code, already cleaned.
+     * @param array $adult As for claim().
+     * @param bool $phoneverified As for claim().
+     * @return stdClass As for claim().
+     */
+    private static function claim_locked(string $code, array $adult, bool $phoneverified): stdClass {
         global $DB;
 
-        $code = strtoupper(preg_replace('/[\s-]+/', '', $code));
         $claim = $DB->get_record('local_oksigeniafamily_claim', ['codehash' => hash('sha256', $code)]);
         if (!$claim || $claim->status !== self::ACTIVE || $claim->expires < time()) {
             throw new \moodle_exception('claiminvalid', 'local_oksigeniafamily');
+        }
+        // The letter goes home in the student's bag: the student, signed in, must not join their own family as an adult
+        // (and then answer the requests about themselves).
+        if (!empty($adult['userid']) && (int) $adult['userid'] === (int) $claim->userid) {
+            throw new \moodle_exception('claimself', 'local_oksigeniafamily');
         }
 
         $known = null;

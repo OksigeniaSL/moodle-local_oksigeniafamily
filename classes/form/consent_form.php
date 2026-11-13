@@ -117,8 +117,8 @@ class consent_form extends \moodleform {
                 $errors['courseid'] = get_string('consent:error:who', $component);
             }
         }
-        if ((int) ($data['keepdays'] ?? 0) < 0) {
-            $errors['keepdays'] = get_string('consent:error:keepdays', $component);
+        if ((int) ($data['keepdays'] ?? 0) < \local_oksigeniafamily\local\consent::MINKEEPDAYS) {
+            $errors['keepdays'] = get_string('consent:error:keepdays', $component, \local_oksigeniafamily\local\consent::MINKEEPDAYS);
         }
 
         return $errors;

@@ -28,6 +28,7 @@
     * quiet - How many families do not change, if any.
     * leaving, hasleaving - Each with key and family.
     * haswork - Whether there is anything to apply.
+    * guarded, leavingcount - Whether so many leave that the number has to be typed to apply it, and how many.
     * action, sesskey, draft, complete - For the buttons.
 
     Example context (json):
@@ -38,7 +39,7 @@
         "families": [{"key": "F-1001", "isnew": true,
             "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "", "chip": {"label": "New", "kind": "new"} }],
             "children": [{"name": "Ana Ruiz", "noaccount": false, "chip": {"label": "New", "kind": "new"} }] }],
-        "hasfamilies": true, "quiet": "", "leaving": [], "hasleaving": false, "haswork": true,
+        "hasfamilies": true, "quiet": "", "leaving": [], "hasleaving": false, "haswork": true, "guarded": false, "leavingcount": 0,
         "action": "#", "sesskey": "abc", "draft": 1, "complete": 0
     }
 }}
@@ -52,6 +53,12 @@
                 <input type="hidden" name="draft" value="{{draft}}">
                 <input type="hidden" name="complete" value="{{complete}}">
                 <input type="hidden" name="apply" value="1">
+                {{#guarded}}
+                <label class="okf-guard">
+                    <span>{{#str}} import:guard, local_oksigeniafamily, {{leavingcount}} {{/str}}</span>
+                    <input type="number" name="confirmleaving" min="0" required inputmode="numeric" class="form-control">
+                </label>
+                {{/guarded}}
                 <button type="submit" class="btn btn-primary">{{#str}} import:apply, local_oksigeniafamily {{/str}}</button>
             </form>
             {{/haswork}}

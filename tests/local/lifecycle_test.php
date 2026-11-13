@@ -74,6 +74,77 @@ final class lifecycle_test extends \advanced_testcase {
     }
 
     /**
+     * A student suspended for a while (the summer, a sync that went wrong) comes back to the family when the account is
+     * active again, and the family's «no» to the use of their image is still there. One who left for another reason does
+     * not come back by itself.
+     */
+    public function test_suspended_student_comes_back(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $ana = $generator->create_user();
+        $eva = $generator->create_user();
+        $parent = $generator->create_user();
+        $familyid = api::create_family();
+        $adultid = api::add_adult($familyid, ['firstname' => 'Pilar', 'userid' => (int) $parent->id]);
+        $anaid = api::add_child($familyid, (int) $ana->id);
+        $evaid = api::add_child($familyid, (int) $eva->id);
+        standing::record('user:' . $ana->id, standing::IMAGE, false);
+        $this->assertFalse(standing::may_show(standing::keys_for_user((int) $ana->id)));
+        set_config('gracedays', 30, 'local_oksigeniafamily');
+
+        // Ana is suspended and leaves with the round, with the reason; Eva is taken out by hand.
+        $DB->set_field('user', 'suspended', 1, ['id' => $ana->id]);
+        api::unlink_child($evaid, 'manual');
+        $now = time();
+        lifecycle::run($now);
+        $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_child', 'status', ['id' => $anaid]));
+        $this->assertSame('suspended', $DB->get_field('local_oksigeniafamily_child', 'leftreason', ['id' => $anaid]));
+        $this->assertSame('manual', $DB->get_field('local_oksigeniafamily_child', 'leftreason', ['id' => $evaid]));
+
+        // Well past the grace period of the photos, the «no» is still there while the account is.
+        lifecycle::run($now + 40 * DAYSECS);
+        $this->assertSame(1, $DB->count_records('local_oksigeniafamily_standing', ['childkey' => 'user:' . $ana->id]));
+
+        // Back from the suspension: she is in her family again, with the role of her parent, and her «no» stands.
+        $DB->set_field('local_oksigeniafamily_family', 'status', api::ACTIVE, ['id' => $familyid]);
+        $DB->set_field('local_oksigeniafamily_adult', 'status', api::ACTIVE, ['id' => $adultid]);
+        $DB->set_field('user', 'suspended', 0, ['id' => $ana->id]);
+        lifecycle::run($now + 41 * DAYSECS);
+        $this->assertSame(api::ACTIVE, $DB->get_field('local_oksigeniafamily_child', 'status', ['id' => $anaid]));
+        $this->assertNull($DB->get_field('local_oksigeniafamily_child', 'leftreason', ['id' => $anaid]));
+        $this->assertTrue(api::adult_has_child($adultid, (int) $ana->id));
+        $this->assertFalse(standing::may_show(standing::keys_for_user((int) $ana->id)));
+        // Eva, taken out by hand, stays out.
+        $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_child', 'status', ['id' => $evaid]));
+    }
+
+    /**
+     * A closed family does not open again when a suspended student comes back.
+     */
+    public function test_closed_family_stays_closed(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $ana = $this->getDataGenerator()->create_user();
+        $familyid = api::create_family();
+        api::add_adult($familyid, ['firstname' => 'Pilar']);
+        $anaid = api::add_child($familyid, (int) $ana->id);
+        set_config('gracedays', 30, 'local_oksigeniafamily');
+
+        $DB->set_field('user', 'suspended', 1, ['id' => $ana->id]);
+        lifecycle::run(time());
+        lifecycle::run(time() + 31 * DAYSECS);
+        $this->assertSame(api::CLOSED, $DB->get_field('local_oksigeniafamily_family', 'status', ['id' => $familyid]));
+
+        $DB->set_field('user', 'suspended', 0, ['id' => $ana->id]);
+        lifecycle::run(time() + 32 * DAYSECS);
+        $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_child', 'status', ['id' => $anaid]));
+        $this->assertSame(api::CLOSED, $DB->get_field('local_oksigeniafamily_family', 'status', ['id' => $familyid]));
+    }
+
+    /**
      * In a family that goes on, who left is erased after the retention period, and so are the codes that no longer work.
      */
     public function test_people_who_left_are_erased(): void {

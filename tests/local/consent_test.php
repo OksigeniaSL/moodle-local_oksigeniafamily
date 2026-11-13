@@ -326,8 +326,11 @@ final class consent_test extends \advanced_testcase {
         ]);
         $this->assertSame([$data->requestid], consent::due_reminders($now));
 
+        // Even one stored with no days to keep stays the minimum after its deadline: the answers are the outing's proof.
         $this->assertSame(0, consent::purge($now));
-        $this->assertSame(1, consent::purge($now + 2 * HOURSECS));
+        $this->assertSame(0, consent::purge($now + 2 * HOURSECS));
+        $this->assertSame(0, consent::purge($now + (consent::MINKEEPDAYS - 1) * DAYSECS));
+        $this->assertSame(1, consent::purge($now + HOURSECS + consent::MINKEEPDAYS * DAYSECS + 1));
         $this->assertNull(consent::get($data->requestid));
     }
 }

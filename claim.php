@@ -27,6 +27,7 @@
 require(__DIR__ . '/../../config.php');
 
 use local_oksigeniafamily\local\links;
+use local_oksigeniafamily\local\page;
 use local_oksigeniafamily\local\phone;
 use local_oksigeniafamily\local\throttle;
 
@@ -37,7 +38,9 @@ $PAGE->set_title(get_string('claim:title', 'local_oksigeniafamily'));
 $PAGE->set_heading(format_string(get_site()->fullname));
 
 $signedin = isloggedin() && !isguestuser();
-$form = new \local_oksigeniafamily\form\claim_form();
+// It goes once: a double tap would otherwise claim twice.
+$form = new \local_oksigeniafamily\form\claim_form(null, null, 'post', '', ['data-okf-once' => 1]);
+page::once_forms();
 if ($signedin) {
     $form->set_data(['firstname' => $USER->firstname, 'lastname' => $USER->lastname, 'email' => $USER->email]);
 }
@@ -63,11 +66,14 @@ if ($data = $form->get_data()) {
             // A phone typed here proves nothing, so it is not passed as verified: it never joins an adult already there.
             $done = \local_oksigeniafamily\api::claim((string) $data->code, $adult);
         } catch (moodle_exception $e) {
-            if ($e->errorcode !== 'claiminvalid') {
+            if ($e->errorcode === 'claimbusy' || $e->errorcode === 'claimself') {
+                $error = get_string($e->errorcode, 'local_oksigeniafamily');
+            } else if ($e->errorcode !== 'claiminvalid') {
                 throw $e;
+            } else {
+                throttle::failed($address);
+                $error = get_string('claiminvalid', 'local_oksigeniafamily');
             }
-            throttle::failed($address);
-            $error = get_string('claiminvalid', 'local_oksigeniafamily');
         }
     }
 }

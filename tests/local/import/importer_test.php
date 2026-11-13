@@ -148,7 +148,7 @@ final class importer_test extends \advanced_testcase {
             fn($event) => $event instanceof \local_oksigeniafamily\event\adult_updated
         ));
         $this->assertCount(1, $updated);
-        $this->assertSame('+14155550101', $updated[0]->other['oldphone']);
+        $this->assertSame(hash('sha256', '+14155550101'), $updated[0]->other['oldphonehash']);
 
         $adult = $DB->get_record('local_oksigeniafamily_adult', ['email' => 'marta@example.com']);
         $this->assertSame('+14155550109', $adult->phone);
@@ -260,6 +260,8 @@ final class importer_test extends \advanced_testcase {
         $plan = importer::plan($rows, 'csv', true);
         $this->assertSame(1, $plan['counts']['childrenleaving']);
         $this->assertSame('csv:S-2', $plan['leaving'][0]->sourcekey);
+        // One leaving out of two is under the floor: it applies without typing anything.
+        $this->assertFalse($plan['guarded']);
         importer::apply($plan);
 
         $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_child', 'status', ['sourcekey' => 'csv:S-2']));
@@ -273,6 +275,40 @@ final class importer_test extends \advanced_testcase {
         importer::apply($plan);
         $this->assertSame(api::ACTIVE, $DB->get_field('local_oksigeniafamily_child', 'status', ['sourcekey' => 'csv:S-2']));
         $this->assertSame(3, $DB->count_records('local_oksigeniafamily_child', ['familyid' => $plan['families'][0]['id']]));
+    }
+
+    /**
+     * A complete list that would take out more than a fifth of the children (and more than a few), or that has rows it did
+     * not understand, has to be confirmed by typing how many leave: a partial file must not empty the school's families.
+     */
+    public function test_complete_list_guard(): void {
+        $this->resetAfterTest();
+
+        $lines = ['F1,adult,Marta,Gil,,,,,'];
+        for ($i = 1; $i <= 20; $i++) {
+            $lines[] = "F1,child,,,,,,,S-$i";
+        }
+        importer::apply(importer::plan($this->rows($lines)));
+
+        // A file with only three of the twenty: seventeen would leave.
+        $partial = importer::plan($this->rows(['F1,adult,Marta,Gil,,,,,', 'F1,child,,,,,,,S-1', 'F1,child,,,,,,,S-2',
+            'F1,child,,,,,,,S-3']), 'csv', true);
+        $this->assertCount(17, $partial['leaving']);
+        $this->assertTrue($partial['guarded']);
+
+        // Nearly all of them, and a row it did not understand: a few leave, but it has to be confirmed too.
+        $rows = ['F1,adult,Marta,Gil,,,,,'];
+        for ($i = 1; $i <= 18; $i++) {
+            $rows[] = "F1,child,,,,,,,S-$i";
+        }
+        $rows[] = 'F1,child,,,,,nobody.here,,';
+        $witherror = importer::plan($this->rows($rows), 'csv', true);
+        $this->assertNotEmpty($witherror['errors']);
+        $this->assertCount(2, $witherror['leaving']);
+        $this->assertTrue($witherror['guarded']);
+
+        // Without saying it is complete, nothing leaves and nothing is guarded.
+        $this->assertFalse(importer::plan($this->rows(['F1,adult,Marta,Gil,,,,,', 'F1,child,,,,,,,S-1']))['guarded']);
     }
 
     /**

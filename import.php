@@ -60,6 +60,10 @@ if ($draft && (optional_param('apply', 0, PARAM_BOOL) || optional_param('cancel'
     if ($file && optional_param('apply', 0, PARAM_BOOL)) {
         $read = csv_file::read($file->get_content());
         $plan = importer::plan($read['rows'], 'csv', (bool) $complete);
+        if ($plan['guarded'] && optional_param('confirmleaving', -1, PARAM_INT) !== count($plan['leaving'])) {
+            $fs->delete_area_files($area[0], $area[1], $area[2], $draft);
+            redirect($scripturl, get_string('import:guard:mismatch', $component), null, \core\output\notification::NOTIFY_ERROR);
+        }
         importer::apply($plan, 'csv');
         \core\notification::success(get_string('import:done', $component, (object) $plan['counts']));
         $fs->delete_area_files($area[0], $area[1], $area[2], $draft);
@@ -189,6 +193,8 @@ if ($preview) {
         'quiet' => $quiet ? get_string('import:quiet', $component, $quiet) : '',
         'leaving' => array_map(fn($child) => ['key' => $child->sourcekey, 'family' => $child->familykey], $preview['leaving']),
         'hasleaving' => !empty($preview['leaving']),
+        'guarded' => $preview['guarded'],
+        'leavingcount' => count($preview['leaving']),
         'haswork' => $work > 0,
         'action' => $scripturl->out(false),
         'sesskey' => sesskey(),

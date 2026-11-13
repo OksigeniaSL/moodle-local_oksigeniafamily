@@ -8,7 +8,7 @@ record instead of keeping their own list of who is family of whom. None of them 
 this plugin and uses it when it is installed. Besides requests for consent, it shows nothing to families by itself; each
 plugin shows its own part.
 
-**Status:** early development.
+**Status:** in use on a school's site with real families since 0.3.11 (November 2026), and on Oksigenia's development sites.
 
 ## How families get in
 

@@ -48,6 +48,18 @@ class roles {
             $params = ['familyid' => $familyid, 'active' => api::ACTIVE];
             $adults = $DB->get_fieldset_select('local_oksigeniafamily_adult', 'userid', $active, $params);
             $children = $DB->get_fieldset_select('local_oksigeniafamily_child', 'userid', $active, $params);
+            // An account that is itself a child in a family (a student who claimed a classmate's code) is never a
+            // parent of anyone.
+            if ($adults) {
+                [$insql, $inparams] = $DB->get_in_or_equal(array_map('intval', $adults), SQL_PARAMS_NAMED, 'adult');
+                $students = $DB->get_fieldset_select(
+                    'local_oksigeniafamily_child',
+                    'userid',
+                    "status = :childactive AND userid $insql",
+                    ['childactive' => api::ACTIVE] + $inparams
+                );
+                $adults = array_diff(array_map('intval', $adults), array_map('intval', $students));
+            }
             foreach ($children as $childuserid) {
                 $context = \context_user::instance((int) $childuserid, IGNORE_MISSING);
                 if (!$context) {

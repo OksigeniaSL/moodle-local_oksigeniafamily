@@ -36,6 +36,7 @@ class lifecycle {
      */
     public static function run(?int $now = null): void {
         $now = $now ?? time();
+        self::relink_returned();
         self::unlink_departed();
         self::close_childless($now);
         self::purge_closed($now);
@@ -44,6 +45,27 @@ class lifecycle {
         photos::purge($now, self::days('gracedays', 30));
         standing::purge($now, self::days('gracedays', 30));
         roles::sync_all();
+    }
+
+    /**
+     * Children who left because their account was suspended come back to their family when it is active again (the
+     * summer, a fee, a sync that suspended by mistake), as long as the family is still open. One that closed meanwhile
+     * does not open again.
+     *
+     * @return void
+     */
+    public static function relink_returned(): void {
+        global $DB;
+
+        $sql = "SELECT c.id, c.familyid, c.userid, c.sourcekey
+                  FROM {local_oksigeniafamily_child} c
+                  JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
+                  JOIN {user} u ON u.id = c.userid AND u.deleted = 0 AND u.suspended = 0
+                 WHERE c.status = :left AND c.leftreason = :suspended";
+        $params = ['factive' => api::ACTIVE, 'left' => api::LEFT, 'suspended' => 'suspended'];
+        foreach ($DB->get_records_sql($sql, $params) as $child) {
+            api::add_child((int) $child->familyid, (int) $child->userid, $child->sourcekey ?: null);
+        }
     }
 
     /**
