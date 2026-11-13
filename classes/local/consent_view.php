@@ -454,4 +454,46 @@ class consent_view {
 
         return [['heading' => get_string('consent:aty:heading', $component), 'items' => $items]];
     }
+
+    /**
+     * For the home of the app of an adult of a family: the requests still waiting for their answer, each with a button
+     * to answer it, so they go up to «Today» as something to do. Answered ones stay on each child's page.
+     *
+     * @param int $adultuserid The adult's account.
+     * @param int $now The time.
+     * @return array The card, or none.
+     */
+    public static function home_card(int $adultuserid, int $now): array {
+        $component = 'local_oksigeniafamily';
+        $items = [];
+        foreach (consent::for_user($adultuserid, $now) as $item) {
+            $request = $item['request'];
+            $answers = consent::last_answers((int) $request->id, $item['children']);
+            $missing = array_values(array_filter(
+                $item['children'],
+                fn($child) => !isset($answers[$child][(int) $item['adult']->id])
+            ));
+            if (!$missing) {
+                continue;
+            }
+            $children = array_map(fn($userid) => \core_user::get_user($userid, 'id, firstname'), $missing);
+            $deadline = (int) $request->deadline;
+            $items[] = [
+                'title' => format_string($request->title, true, ['context' => \context_system::instance()]),
+                'detail' => get_string('consent:aty:homedetail', $component, consent_notices::names(array_filter($children))),
+                'date' => $deadline,
+                'kind' => 'close',
+                'urgent' => $deadline - $now <= 2 * DAYSECS,
+                'actionlabel' => get_string('consent:aty:answer', $component),
+                'method' => 'mobile_consent_view',
+                'args' => ['id' => (int) $request->id],
+                'pagetitle' => get_string('consent:title', $component),
+            ];
+        }
+        if (!$items) {
+            return [];
+        }
+
+        return [['heading' => get_string('consent:aty:heading', $component), 'items' => $items]];
+    }
 }

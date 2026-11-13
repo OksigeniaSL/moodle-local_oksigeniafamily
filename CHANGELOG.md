@@ -7,6 +7,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- A card for the home of the app (0.3.14-dev, `local_oksigeniafamily_oksigeniaaty_home_cards()`): the requests for
+  consent still waiting for the adult's answer, with the children they are about and an «Answer» button, as a deadline
+  that closes. With local_oksigeniaaty 0.5.60, they go up to «Today» as something to do.
+
 - `api::each_household()` (0.3.13-dev): the roll of households one at a time, a few hundred loaded at once, with or
   without the adults. `households()` keeps its answer and is built on it. With 30,000 households the whole roll took
   0.6–1.4 s and 190 MB at once, too much for a web request with 128 MB; a plugin that only counts or asks about the

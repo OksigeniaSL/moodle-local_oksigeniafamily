@@ -173,6 +173,17 @@ function local_oksigeniafamily_oksigeniaaty_child_cards(int $adultuserid, int $c
 }
 
 /**
+ * For the home of the app (local_oksigeniaaty): the requests for consent that still wait for this adult's answer, each
+ * with a button to answer it.
+ *
+ * @param int $userid The person.
+ * @return array The card, or none.
+ */
+function local_oksigeniafamily_oksigeniaaty_home_cards(int $userid): array {
+    return \local_oksigeniafamily\local\consent_view::home_card($userid, time());
+}
+
+/**
  * For «Your work», the dashboard block of the Oksigenia plugins: the family records, for whoever runs them, and the
  * requests for consent, with what closes today without an answer.
  *

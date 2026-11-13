@@ -312,7 +312,14 @@ final class consent_test extends \advanced_testcase {
         $this->assertArrayNotHasKey('url', $card[0]['items'][0]);
         $this->assertSame((int) consent::get($data->requestid)->deadline, $card[0]['items'][0]['date']);
         $this->assertSame(get_string('consent:aty:missing', 'local_oksigeniafamily'), $card[0]['items'][0]['detail']);
+        // On the home of the app, the same request as something to do, with its button; gone once answered.
+        $home = consent_view::home_card((int) $data->parent->id, $now);
+        $this->assertCount(1, $home[0]['items']);
+        $this->assertSame(get_string('consent:aty:answer', 'local_oksigeniafamily'), $home[0]['items'][0]['actionlabel']);
+        $this->assertSame('close', $home[0]['items'][0]['kind']);
+        $this->assertStringContainsString($data->ana->firstname, $home[0]['items'][0]['detail']);
         consent::answer($data->requestid, (int) $data->ana->id, $data->adultid, consent::YES, 'app');
+        $this->assertSame([], consent_view::home_card((int) $data->parent->id, $now));
         $card = consent_view::child_card((int) $data->parent->id, (int) $data->ana->id, $now);
         $this->assertSame(get_string('consent:aty:yes', 'local_oksigeniafamily'), $card[0]['items'][0]['detail']);
         $this->assertSame([], consent_view::child_card((int) $data->parent->id, (int) $data->leo->id, $now));
