@@ -150,8 +150,41 @@ class api {
     }
 
     /**
+     * The adults of many students at once, as adults_of_child() gives them for one: for a request to a whole school,
+     * where one query per student would be tens of thousands.
+     *
+     * @param int[] $childuserids The students' accounts.
+     * @return array Student's user id => [adult id => adult record], with an empty list for a student with no adult.
+     */
+    public static function adults_of_children(array $childuserids): array {
+        global $DB;
+
+        $result = array_fill_keys(array_map('intval', $childuserids), []);
+        foreach (array_chunk(array_keys($result), 1000) as $chunk) {
+            [$in, $params] = $DB->get_in_or_equal($chunk, SQL_PARAMS_NAMED, 'child');
+            $rows = $DB->get_recordset_sql(
+                "SELECT c.userid AS childuserid, a.id, a.familyid, a.firstname, a.lastname, a.email, a.phone, a.userid
+                   FROM {local_oksigeniafamily_child} c
+                   JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
+                   JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive
+                  WHERE c.userid $in AND c.status = :cactive
+               ORDER BY a.id",
+                $params + ['factive' => self::ACTIVE, 'aactive' => self::ACTIVE, 'cactive' => self::ACTIVE]
+            );
+            foreach ($rows as $row) {
+                $childuserid = (int) $row->childuserid;
+                unset($row->childuserid);
+                $result[$childuserid][(int) $row->id] = $row;
+            }
+            $rows->close();
+        }
+
+        return $result;
+    }
+
+    /**
      * The whole roll of households, to reach every family of the centre at once (such as Eguahe asking who stays next
-     * school year): each household with its children and its adults, in three queries.
+     * school year): each household with its children and its adults. All in memory: for a large site, each_household().
      *
      * Names, e-mail and phone are the adult's own record; an adult with an account and none of their own takes them from
      * the account. A child with an account carries the account's name; a child known only by a key in the school's data
@@ -164,79 +197,107 @@ class api {
      *     lastname, email, phone, phoneverified, status), in the order they were added.
      */
     public static function households(bool $activeonly = true): array {
-        global $DB;
-
-        // Moodle refuses named parameters a query does not use: each query gets only its own.
-        $family = $activeonly ? 'AND f.status = :factive' : '';
-        $fparams = $activeonly ? ['factive' => self::ACTIVE] : [];
-
         $households = [];
-        $rows = $DB->get_records_sql(
-            "SELECT f.id, f.status, f.source, f.sourcekey, f.timeclosed
-               FROM {local_oksigeniafamily_family} f
-              WHERE 1 = 1 $family
-           ORDER BY f.id",
-            $fparams
-        );
-        foreach ($rows as $row) {
-            $households[(int) $row->id] = (object) [
-                'familyid' => (int) $row->id,
-                'status' => $row->status,
-                'source' => $row->source,
-                'sourcekey' => $row->sourcekey,
-                'timeclosed' => $row->timeclosed === null ? null : (int) $row->timeclosed,
-                'children' => [],
-                'adults' => [],
-            ];
-        }
-
-        $children = $DB->get_records_sql(
-            "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, c.groupname,
-                    c.firstname AS cfirstname, c.lastname AS clastname, u.firstname, u.lastname
-               FROM {local_oksigeniafamily_child} c
-               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid $family
-          LEFT JOIN {user} u ON u.id = c.userid AND u.deleted = 0
-              WHERE " . ($activeonly ? 'c.status = :cactive' : '1 = 1') . "
-           ORDER BY c.id",
-            $activeonly ? $fparams + ['cactive' => self::ACTIVE] : []
-        );
-        foreach ($children as $child) {
-            $households[(int) $child->familyid]->children[] = (object) [
-                'childid' => (int) $child->id,
-                'userid' => $child->userid === null ? null : (int) $child->userid,
-                'sourcekey' => $child->sourcekey,
-                'firstname' => $child->firstname ?? $child->cfirstname,
-                'lastname' => $child->lastname ?? $child->clastname,
-                'group' => $child->groupname,
-                'status' => $child->status,
-                'timeleft' => $child->timeleft === null ? null : (int) $child->timeleft,
-            ];
-        }
-
-        $adults = $DB->get_records_sql(
-            "SELECT a.id, a.familyid, a.userid, a.firstname, a.lastname, a.email, a.phone, a.phoneverified, a.status,
-                    u.firstname AS ufirstname, u.lastname AS ulastname, u.email AS uemail
-               FROM {local_oksigeniafamily_adult} a
-               JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid $family
-          LEFT JOIN {user} u ON u.id = a.userid AND u.deleted = 0
-              WHERE " . ($activeonly ? 'a.status = :aactive' : '1 = 1') . "
-           ORDER BY a.id",
-            $activeonly ? $fparams + ['aactive' => self::ACTIVE] : []
-        );
-        foreach ($adults as $adult) {
-            $households[(int) $adult->familyid]->adults[] = (object) [
-                'adultid' => (int) $adult->id,
-                'userid' => $adult->userid === null ? null : (int) $adult->userid,
-                'firstname' => $adult->firstname ?? $adult->ufirstname,
-                'lastname' => $adult->lastname ?? $adult->ulastname,
-                'email' => $adult->email ?? $adult->uemail,
-                'phone' => $adult->phone,
-                'phoneverified' => (bool) $adult->phoneverified,
-                'status' => $adult->status,
-            ];
+        foreach (self::each_household($activeonly) as $household) {
+            $households[$household->familyid] = $household;
         }
 
         return $households;
+    }
+
+    /**
+     * The roll of households one at a time, a few hundred loaded at once: for a site the size of a university, where the
+     * whole roll in memory (households()) would not fit a web request. Each household as households() gives it; without
+     * adults when only the children are wanted (to count them, or to ask about each child).
+     *
+     * @param bool $activeonly Only active households, children and adults; false brings the closed and the gone too.
+     * @param bool $withadults Whether to bring the adults too.
+     * @param int $batch How many households are loaded at once.
+     * @return \Generator<int, stdClass> Households by family id, in the order they were made.
+     */
+    public static function each_household(bool $activeonly = true, bool $withadults = true, int $batch = 500): \Generator {
+        global $DB;
+
+        $last = 0;
+        do {
+            // Moodle refuses named parameters a query does not use: each query gets only its own.
+            $rows = $DB->get_records_select(
+                'local_oksigeniafamily_family',
+                'id > :last' . ($activeonly ? ' AND status = :factive' : ''),
+                ['last' => $last] + ($activeonly ? ['factive' => self::ACTIVE] : []),
+                'id',
+                'id, status, source, sourcekey, timeclosed',
+                0,
+                $batch
+            );
+            if (!$rows) {
+                return;
+            }
+            $households = [];
+            foreach ($rows as $row) {
+                $households[(int) $row->id] = (object) [
+                    'familyid' => (int) $row->id,
+                    'status' => $row->status,
+                    'source' => $row->source,
+                    'sourcekey' => $row->sourcekey,
+                    'timeclosed' => $row->timeclosed === null ? null : (int) $row->timeclosed,
+                    'children' => [],
+                    'adults' => [],
+                ];
+                $last = (int) $row->id;
+            }
+            [$in, $inparams] = $DB->get_in_or_equal(array_keys($households), SQL_PARAMS_NAMED, 'fam');
+
+            $children = $DB->get_records_sql(
+                "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, c.groupname,
+                        c.firstname AS cfirstname, c.lastname AS clastname, u.firstname, u.lastname
+                   FROM {local_oksigeniafamily_child} c
+              LEFT JOIN {user} u ON u.id = c.userid AND u.deleted = 0
+                  WHERE c.familyid $in" . ($activeonly ? ' AND c.status = :cactive' : '') . "
+               ORDER BY c.id",
+                $inparams + ($activeonly ? ['cactive' => self::ACTIVE] : [])
+            );
+            foreach ($children as $child) {
+                $households[(int) $child->familyid]->children[] = (object) [
+                    'childid' => (int) $child->id,
+                    'userid' => $child->userid === null ? null : (int) $child->userid,
+                    'sourcekey' => $child->sourcekey,
+                    'firstname' => $child->firstname ?? $child->cfirstname,
+                    'lastname' => $child->lastname ?? $child->clastname,
+                    'group' => $child->groupname,
+                    'status' => $child->status,
+                    'timeleft' => $child->timeleft === null ? null : (int) $child->timeleft,
+                ];
+            }
+
+            if ($withadults) {
+                $adults = $DB->get_records_sql(
+                    "SELECT a.id, a.familyid, a.userid, a.firstname, a.lastname, a.email, a.phone, a.phoneverified, a.status,
+                            u.firstname AS ufirstname, u.lastname AS ulastname, u.email AS uemail
+                       FROM {local_oksigeniafamily_adult} a
+                  LEFT JOIN {user} u ON u.id = a.userid AND u.deleted = 0
+                      WHERE a.familyid $in" . ($activeonly ? ' AND a.status = :aactive' : '') . "
+                   ORDER BY a.id",
+                    $inparams + ($activeonly ? ['aactive' => self::ACTIVE] : [])
+                );
+                foreach ($adults as $adult) {
+                    $households[(int) $adult->familyid]->adults[] = (object) [
+                        'adultid' => (int) $adult->id,
+                        'userid' => $adult->userid === null ? null : (int) $adult->userid,
+                        'firstname' => $adult->firstname ?? $adult->ufirstname,
+                        'lastname' => $adult->lastname ?? $adult->ulastname,
+                        'email' => $adult->email ?? $adult->uemail,
+                        'phone' => $adult->phone,
+                        'phoneverified' => (bool) $adult->phoneverified,
+                        'status' => $adult->status,
+                    ];
+                }
+            }
+
+            foreach ($households as $familyid => $household) {
+                yield $familyid => $household;
+            }
+        } while (count($rows) === $batch);
     }
 
     /**

@@ -467,6 +467,37 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * The roll one household at a time, in small batches, is the same as all at once; and without adults when only the
+     * children are wanted.
+     */
+    public function test_each_household_in_batches(): void {
+        $this->resetAfterTest();
+
+        $ids = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $familyid = api::create_family();
+            api::add_adult($familyid, ['firstname' => "Adulto $i"]);
+            api::add_child($familyid, null, "cifra:$i");
+            $ids[] = $familyid;
+        }
+        api::close_family($ids[2]);
+
+        $batched = iterator_to_array(api::each_household(true, true, 3));
+        $this->assertEquals(api::households(), $batched);
+        $this->assertCount(6, $batched);
+        $this->assertArrayNotHasKey($ids[2], $batched);
+
+        $all = iterator_to_array(api::each_household(false, true, 2));
+        $this->assertCount(7, $all);
+
+        foreach (api::each_household(true, false, 4) as $familyid => $household) {
+            $this->assertSame([], $household->adults);
+            $this->assertCount(1, $household->children);
+            $this->assertSame($familyid, $household->familyid);
+        }
+    }
+
+    /**
      * Moodle's parent role follows the records: given to each adult with an account over each child, taken away when
      * the child leaves, and none at all while the site chooses no role.
      */

@@ -18,6 +18,10 @@ on:
     paths-ignore: ['**.md', 'docs/**', 'LICENSE', '.gitignore', 'provenance/**']
   workflow_dispatch:
 
+# Read only: the suite runs third-party actions and Composer packages, and needs no token that writes to the repository.
+permissions:
+  contents: read
+
 # A new push cancels the run of the one before it on the same branch, which nobody needs any more.
 concurrency:
   group: moodle-ci-${{ github.ref }}

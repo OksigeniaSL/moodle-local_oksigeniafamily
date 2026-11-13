@@ -367,9 +367,11 @@ class consent {
     public static function state(\stdClass $request): array {
         $students = self::students((int) $request->id);
         $last = self::last_answers((int) $request->id);
+        // The adults of every student in one go, not one query each: a request to a whole school has thousands.
+        $adults = api::adults_of_children($students);
         $state = [];
         foreach ($students as $userid) {
-            $state[$userid] = self::student_state($request, $userid, $last[$userid] ?? []);
+            $state[$userid] = self::student_state($request, $userid, $last[$userid] ?? [], $adults[$userid] ?? []);
         }
 
         return $state;
@@ -408,9 +410,10 @@ class consent {
     public static function recipients(\stdClass $request, bool $reminder, ?array $childuserids = null): array {
         $students = $childuserids ?? self::students((int) $request->id);
         $last = self::last_answers((int) $request->id, $students);
+        $adults = api::adults_of_children($students);
         $recipients = [];
         foreach ($students as $userid) {
-            $state = self::student_state($request, $userid, $last[$userid] ?? []);
+            $state = self::student_state($request, $userid, $last[$userid] ?? [], $adults[$userid] ?? []);
             $adultids = $reminder ? $state->missing : array_keys($state->adults);
             foreach ($adultids as $adultid) {
                 $recipients[$adultid] = $recipients[$adultid] ?? ['adult' => $state->adults[$adultid], 'children' => []];

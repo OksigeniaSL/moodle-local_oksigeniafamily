@@ -5,6 +5,20 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added
+
+- `api::each_household()` (0.3.13-dev): the roll of households one at a time, a few hundred loaded at once, with or
+  without the adults. `households()` keeps its answer and is built on it. With 30,000 households the whole roll took
+  0.6–1.4 s and 190 MB at once, too much for a web request with 128 MB; a plugin that only counts or asks about the
+  children (Eguahe's re-enrolment) goes through it without the adults.
+- `api::adults_of_children()`: the adults of many students in one go.
+
+### Changed
+
+- A request for consent works out how every student stands with a few queries, not one per student: a request to a
+  whole school (3,000 students) was 3,002 queries for each row of the list.
+- The suite of the CI runs with a read-only token.
+
 ## [0.3.12] - 2026-11-13
 
 Published for the site with real families: a suspended student no longer loses their family, nor their family's
