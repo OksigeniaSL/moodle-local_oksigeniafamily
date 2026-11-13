@@ -7,6 +7,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added
 
+- `api::families_of_user()` (0.3.15-dev): the open families where an account is an adult, with the source and key of
+  each household, so another plugin goes from a person to their households (Eguahe's cards on the app's home) without
+  the whole roll.
+
 - A card for the home of the app (0.3.14-dev, `local_oksigeniafamily_oksigeniaaty_home_cards()`): the requests for
   consent still waiting for the adult's answer, with the children they are about and an «Answer» button, as a deadline
   that closes. With local_oksigeniaaty 0.5.60, they go up to «Today» as something to do.

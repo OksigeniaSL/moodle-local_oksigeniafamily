@@ -150,6 +150,37 @@ class api {
     }
 
     /**
+     * The open families where an account is an adult in the family, so another plugin can go from a person to their
+     * households (Eguahe's cards on the app's home), children without an account included, without the whole roll.
+     *
+     * @param int $userid The account.
+     * @return stdClass[] By family id, each with familyid, source and sourcekey (the key of the household where it came
+     *     from, such as eguahe:12), in the order they were made.
+     */
+    public static function families_of_user(int $userid): array {
+        global $DB;
+
+        $rows = $DB->get_records_sql(
+            "SELECT DISTINCT f.id, f.source, f.sourcekey
+               FROM {local_oksigeniafamily_adult} a
+               JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
+              WHERE a.userid = :userid AND a.status = :aactive
+           ORDER BY f.id",
+            ['userid' => $userid, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]
+        );
+        $families = [];
+        foreach ($rows as $row) {
+            $families[(int) $row->id] = (object) [
+                'familyid' => (int) $row->id,
+                'source' => $row->source,
+                'sourcekey' => $row->sourcekey,
+            ];
+        }
+
+        return $families;
+    }
+
+    /**
      * The adults of many students at once, as adults_of_child() gives them for one: for a request to a whole school,
      * where one query per student would be tens of thousands.
      *

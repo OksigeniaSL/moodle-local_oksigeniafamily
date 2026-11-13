@@ -467,6 +467,33 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * From a person to their open families, as an adult, with where each came from; not where they are only a child, nor
+     * a closed one.
+     */
+    public function test_families_of_user(): void {
+        $this->resetAfterTest();
+
+        $parent = $this->getDataGenerator()->create_user();
+        $first = api::create_family('eguahe', 'eguahe:12');
+        $second = api::create_family();
+        $closed = api::create_family();
+        $theirs = api::create_family();
+        foreach ([$first, $second, $closed] as $familyid) {
+            api::add_adult($familyid, ['userid' => (int) $parent->id]);
+            api::add_child($familyid, null, "cifra:$familyid");
+        }
+        api::close_family($closed);
+        api::add_adult($theirs, ['firstname' => 'Otra']);
+        api::add_child($theirs, (int) $parent->id);
+
+        $families = api::families_of_user((int) $parent->id);
+        $this->assertSame([$first, $second], array_keys($families));
+        $this->assertSame('eguahe', $families[$first]->source);
+        $this->assertSame('eguahe:12', $families[$first]->sourcekey);
+        $this->assertSame([], api::families_of_user((int) $this->getDataGenerator()->create_user()->id));
+    }
+
+    /**
      * The roll one household at a time, in small batches, is the same as all at once; and without adults when only the
      * children are wanted.
      */
