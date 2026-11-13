@@ -1,0 +1,67 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/consent_ask_pick
+
+    Before the letter, on the site: whose families. The courses under way and the cohorts this person can ask, as
+    chips that open the letter with them, and a search by name.
+
+    Context variables required for this template:
+    * action - Where the search goes.
+    * q - What was searched.
+    * coursestitle - The heading of the courses.
+    * hascourses, courses - Each with name, countlabel and url.
+    * hascohorts, cohorts - Each with name, countlabel and url.
+    * more - Whether there are more than those shown.
+    * none, nonetext - Nothing to show, and what to say then.
+
+    Example context (json):
+    {
+        "action": "#", "q": "", "coursestitle": "Cursos en marcha",
+        "hascourses": true, "courses": [{"name": "Armonía", "countlabel": "24 alumnos", "url": "#"}],
+        "hascohorts": true, "cohorts": [{"name": "Alumnado de 1.º", "countlabel": "38 alumnos", "url": "#"}],
+        "more": false, "none": false, "nonetext": ""
+    }
+}}
+<div class="local-oksigeniafamily">
+    <div class="okf-ask-pick">
+        <h2>{{#str}} consent:pick, local_oksigeniafamily {{/str}}</h2>
+        <form class="okf-ask-search" method="get" action="{{action}}" role="search">
+            <label class="visually-hidden sr-only" for="okf-ask-q">{{#str}} consent:pick:search, local_oksigeniafamily {{/str}}</label>
+            <input class="form-control" type="search" id="okf-ask-q" name="q" value="{{q}}" placeholder="{{#str}} consent:pick:search, local_oksigeniafamily {{/str}}">
+            <button class="btn btn-primary" type="submit">{{#str}} search {{/str}}</button>
+        </form>
+        {{#hascourses}}
+        <h3>{{coursestitle}}</h3>
+        <ul class="okf-ask-chips list-unstyled m-0">
+            {{#courses}}
+            <li><a class="okf-ask-chip nav-link" href="{{url}}">{{name}} <small>{{countlabel}}</small></a></li>
+            {{/courses}}
+        </ul>
+        {{/hascourses}}
+        {{#hascohorts}}
+        <h3>{{#str}} consent:pick:cohorts, local_oksigeniafamily {{/str}}</h3>
+        <ul class="okf-ask-chips list-unstyled m-0">
+            {{#cohorts}}
+            <li><a class="okf-ask-chip nav-link" href="{{url}}">{{name}} <small>{{countlabel}}</small></a></li>
+            {{/cohorts}}
+        </ul>
+        {{/hascohorts}}
+        {{#more}}<p class="okf-ask-note">{{#str}} consent:pick:more, local_oksigeniafamily {{/str}}</p>{{/more}}
+        {{#none}}<p class="okf-ask-note">{{nonetext}}</p>{{/none}}
+    </div>
+</div>

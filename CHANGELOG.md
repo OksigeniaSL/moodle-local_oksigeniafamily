@@ -26,6 +26,26 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Changed
 
+- «Ask for consent» is a letter (0.3.17-dev, Jujol's design), not a Moodle form. Who it is for is a row of chips (the
+  whole course or one of its groups), so changing it reloads nothing and loses neither the text nor the file; the
+  title is large, the text is a plain text area (kept as plain text: its paragraphs stay, nothing of it is taken as
+  HTML), and the circular is clipped to it with an ordinary file field. Under the sheet go its terms as chips: until
+  when (in a week, in two, or another day), who answers, and, folded in a sentence, how long the answers are kept
+  (three months, six, a year or two; never below the 30 days of the minimum). The send stays at the foot of the screen
+  and says how many students' families it goes to. On the site, the page asks first «Whose families?», with the
+  courses under way and the cohorts as chips and a search, only those the person can ask (`consent_school`). The
+  server checks everything again: the capability in the course or the cohort chosen, the session key, the deadline at
+  the end of the day where whoever asks is, the minimum to keep the answers, and the circular (a document or an image,
+  under a clean name, within the size of uploads of the site and past Moodle's antivirus, if the site has one). A
+  circular taken on a try that had to be fixed waits in the person's drafts for the next one.
+- The answers of a request open on who is missing while it is open: the counts are the tabs (Not answered, Agree,
+  Do not agree, All), the reminder goes over that list, and the students with nobody in the family records come in an
+  alert, each with «Add their family» for whoever runs the records. Each student is a row with what each adult
+  answered, and while it is open, the paper answer is a gesture of the row: who signs it among the adults of the
+  record (nobody chosen when there are two) and «Agrees» or «Does not agree», which save at once
+  (`consent_record.php`, by POST with the session key, kept as the school's answer). Someone not in the records, or a
+  comment, still goes through the page of the paper answer.
+- The page title no longer shows twice on the site: only inside a course, under its name.
 - A big import goes in in the background, by batches (0.3.16-dev). «Apply» on a file of more than 200 rows queues a
   task that goes through the families 500 at a time, each batch in its own transaction, and then the children who
   leave; the import page shows how far it got and what it did, and whoever applied it gets a notification of Moodle
@@ -45,6 +65,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 - A request for consent works out how every student stands with a few queries, not one per student: a request to a
   whole school (3,000 students) was 3,002 queries for each row of the list.
 - The suite of the CI runs with a read-only token.
+
+### Fixed
+
+- «Call off the request» opens its question again: it was a form by GET, which drops the request from the address, so
+  the page could not find it (0.3.17-dev).
 
 ## [0.3.12] - 2026-11-13
 

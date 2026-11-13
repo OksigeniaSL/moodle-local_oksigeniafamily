@@ -296,24 +296,44 @@ class consent_view {
     }
 
     /**
-     * The answers of a request, for the school.
+     * The answers of a request, for the school. The counts are the tabs of the list: while the request is open it opens
+     * on those still missing, first those the reminder reaches and then those with nobody in the records; once it is
+     * closed, on everyone. While it is open, each student carries the paper answer: the adults of their record, and
+     * «Agrees» and «Does not agree», which save at once.
      *
      * @param \stdClass $request The request.
      * @param int $now The time.
+     * @param string $show The tab: pending, yes, no or all; empty for the one it opens on.
      * @return array For local_oksigeniafamily/consent_report (without the actions, which the page adds).
      */
-    public static function report(\stdClass $request, int $now): array {
+    public static function report(\stdClass $request, int $now, string $show = ''): array {
         global $DB;
 
         $component = 'local_oksigeniafamily';
         $state = consent::state($request);
         $counts = consent::counts($state);
         $open = consent::is_open($request, $now);
+        if (!in_array($show, ['pending', 'yes', 'no', 'all'], true)) {
+            $show = $open && $counts['pending'] > 0 ? 'pending' : 'all';
+        }
         $users = $state ? $DB->get_records_list('user', 'id', array_keys($state)) : [];
+        $canmanage = has_capability('local/oksigeniafamily:manage', \context_system::instance());
         $rows = [];
+        $nofamily = [];
         foreach ($state as $userid => $one) {
             $user = $users[$userid] ?? null;
             if (!$user) {
+                continue;
+            }
+            $name = fullname($user);
+            $sort = \core_text::strtolower($user->lastname . ' ' . $user->firstname);
+            $alone = $one->status === consent::PENDING && !$one->adults;
+            if ($alone) {
+                // Whoever runs the family records goes straight to them, with the student's name already searched.
+                $addurl = $canmanage ? new \moodle_url('/local/oksigeniafamily/index.php', ['q' => $name]) : null;
+                $nofamily[] = ['name' => $name, 'sort' => $sort, 'addurl' => $addurl ? $addurl->out(false) : ''];
+            }
+            if ($show !== 'all' && $show !== $one->status) {
                 continue;
             }
             $people = [];
@@ -327,35 +347,64 @@ class consent_view {
                 }
             }
             $status = self::student_status($one);
+            $recordurl = new \moodle_url('/local/oksigeniafamily/consent_record.php', ['id' => $request->id, 'child' => $userid]);
+            $adults = [];
+            foreach ($one->adults as $adultid => $adult) {
+                $adults[] = [
+                    'id' => (int) $adultid,
+                    'name' => consent::adult_name($adult),
+                    'inputid' => 'okf-paper-' . $userid . '-' . $adultid,
+                    // With one adult, it is them; with more, nobody is chosen for the school: the paper says who signs.
+                    'checked' => count($one->adults) === 1,
+                    'required' => count($one->adults) > 1,
+                ];
+            }
             $rows[] = [
-                'name' => fullname($user),
-                'sort' => \core_text::strtolower($user->lastname . ' ' . $user->firstname),
+                'userid' => (int) $userid,
+                'anchor' => 'okf-row-' . $userid,
+                'name' => $name,
+                // Those the reminder reaches come before those with nobody in the records.
+                'sort' => ($alone ? '1 ' : '0 ') . $sort,
                 'status' => $status['label'],
                 'chip' => $status['chip'],
                 'conflict' => $one->conflict,
                 'people' => $people,
                 'haspeople' => (bool) $people,
-                'recordurl' => $open ? (new \moodle_url('/local/oksigeniafamily/consent_record.php', [
-                    'id' => $request->id, 'child' => $userid,
-                ]))->out(false) : '',
+                'recordurl' => $open ? $recordurl->out(false) : '',
+                'paper' => $open ? [
+                    'student' => $name,
+                    'action' => $recordurl->out(false),
+                    'whoid' => 'okf-paper-who-' . $userid,
+                    'adults' => $adults,
+                    'hasadults' => (bool) $adults,
+                ] : null,
             ];
         }
         \core_collator::asort_array_of_arrays_by_key($rows, 'sort');
-        $total = count($state);
+        \core_collator::asort_array_of_arrays_by_key($nofamily, 'sort');
+
+        $url = new \moodle_url('/local/oksigeniafamily/consent_report.php', ['id' => $request->id]);
+        $tabs = [];
+        $tabcounts = ['pending' => $counts['pending'], 'yes' => $counts['yes'], 'no' => $counts['no'], 'all' => count($state)];
+        foreach ($tabcounts as $key => $value) {
+            $tabs[] = [
+                'key' => $key,
+                'count' => $value,
+                'label' => get_string($key === 'all' ? 'consent:show:all' : 'consent:count:' . $key, $component),
+                'url' => (new \moodle_url($url, ['show' => $key]))->out(false),
+                'current' => $key === $show,
+            ];
+        }
+        $alone = count($nofamily);
 
         return self::request($request, $now) + [
             'status' => self::request_status($request, $now),
-            'tiles' => [
-                ['label' => get_string('consent:count:yes', $component), 'value' => $counts['yes'], 'tone' => 'ok'],
-                ['label' => get_string('consent:count:no', $component), 'value' => $counts['no'], 'tone' => 'bad'],
-                ['label' => get_string('consent:count:pending', $component), 'value' => $counts['pending'], 'tone' => ''],
-            ],
-            'lede' => get_string('consent:report:lede', $component, (object) [
-                'total' => $total,
-                'nofamily' => $counts['nofamily'],
-            ]),
-            'hasnofamily' => $counts['nofamily'] > 0,
-            'nofamily' => get_string('consent:report:nofamily', $component, $counts['nofamily']),
+            'show' => $show,
+            'tabs' => $tabs,
+            'hasnofamily' => $show === 'pending' && $alone > 0,
+            'nofamilytitle' => get_string('consent:nofamily:title' . ($alone === 1 ? 'one' : ''), $component, $alone),
+            'nofamilytext' => get_string($canmanage ? 'consent:nofamily:text' : 'consent:nofamily:askoffice', $component),
+            'nofamily' => array_values($nofamily),
             'rows' => array_values($rows),
             'hasrows' => (bool) $rows,
             'remindable' => $counts['pending'] - $counts['nofamily'],

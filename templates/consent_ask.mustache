@@ -1,0 +1,131 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/consent_ask
+
+    A request for consent written as a letter: to whom (chips), its title, its text and the circular clipped to it; under
+    the sheet, its terms (until when, who answers, how long the answers are kept); at the foot, always in sight, the send.
+    Chips are radios with their label: choosing one reloads nothing, so what was typed and the file stay.
+
+    Context variables required for this template:
+    * action, sesskey - Where the letter goes.
+    * draftitemid - The circular taken on a first try, kept in the draft area, or 0.
+    * fixed - The only recipient, chosen before (a cohort): id, value, label, countlabel; or null.
+    * options - The recipients to choose from: id, value, label, countlabel, sendlabel and checked.
+    * changeurl - Where to choose others, on the site; empty in a course.
+    * title, invalidtitle, message - What was typed.
+    * accept, attachhint - The kinds of file and the line under the clip.
+    * untils - Each with value, label, small (its day) and checked; daychecked, today and untilday for another day.
+    * needone, needall - Who answers.
+    * keeps - Each with days, label, inline and checked; keepopen and keepline (HTML).
+    * sendlabel - The text of the button.
+    * cancelurl - Back to the list.
+
+    Example context (json):
+    {
+        "action": "#", "sesskey": "abc", "draftitemid": 0, "fixed": null,
+        "options": [{"id": "okf-ask-who-0", "value": "course:12", "label": "Todo el curso", "countlabel": "24 alumnos",
+            "sendlabel": "Enviar a las familias de 24 alumnos", "checked": true}],
+        "changeurl": "", "title": "", "invalidtitle": false, "message": "", "accept": ".pdf,.jpg",
+        "attachhint": "La circular, si la hay: un PDF o una foto.",
+        "untils": [{"value": 7, "label": "En una semana", "small": "el 20 de noviembre", "checked": true}],
+        "daychecked": false, "today": "2026-11-13", "untilday": "2026-11-20", "needone": true, "needall": false,
+        "keeps": [{"days": 365, "label": "Un año", "inline": "un año", "checked": true}], "keepopen": false,
+        "keepline": "Las respuestas se guardan <b>un año</b> después del plazo; luego se borran.",
+        "sendlabel": "Enviar a las familias de 24 alumnos", "cancelurl": "#"
+    }
+}}
+<div class="local-oksigeniafamily">
+    <form class="okf-ask" method="post" action="{{action}}" enctype="multipart/form-data" data-okf-ask data-okf-once>
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        {{#draftitemid}}<input type="hidden" name="draftitemid" value="{{draftitemid}}">{{/draftitemid}}
+        <div class="okf-ask-sheet">
+            <div class="okf-ask-to">
+                <span class="okf-ask-label" id="okf-ask-to">{{#str}} consent:to, local_oksigeniafamily {{/str}}</span>
+                {{#fixed}}
+                <span class="okf-ask-chips"><span class="okf-ask-chip">{{label}} <small>{{countlabel}}</small></span></span>
+                <input type="hidden" name="who" value="{{value}}">
+                {{/fixed}}
+                {{^fixed}}
+                <span class="okf-ask-chips" role="radiogroup" aria-labelledby="okf-ask-to">
+                    {{#options}}
+                    <input type="radio" id="{{id}}" name="who" value="{{value}}" data-okf-send="{{sendlabel}}"{{#checked}} checked{{/checked}}>
+                    <label class="okf-ask-chip" for="{{id}}">{{label}} <small>{{countlabel}}</small></label>
+                    {{/options}}
+                </span>
+                {{/fixed}}
+                {{#changeurl}}<a href="{{changeurl}}">{{#str}} consent:change, local_oksigeniafamily {{/str}}</a>{{/changeurl}}
+            </div>
+            <label class="visually-hidden sr-only" for="okf-ask-title">{{#str}} consent:field:title, local_oksigeniafamily {{/str}}</label>
+            <input class="okf-ask-title" id="okf-ask-title" name="title" value="{{title}}" required maxlength="255" autocomplete="off"
+                placeholder="{{#str}} consent:field:title:hint, local_oksigeniafamily {{/str}}"{{#invalidtitle}} aria-invalid="true"{{/invalidtitle}}>
+            <label class="visually-hidden sr-only" for="okf-ask-text">{{#str}} consent:field:message, local_oksigeniafamily {{/str}}</label>
+            <textarea class="okf-ask-text" id="okf-ask-text" name="message" rows="6"
+                placeholder="{{#str}} consent:field:message:hint, local_oksigeniafamily {{/str}}">{{message}}</textarea>
+            <div class="okf-ask-clip">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11.5 12.6 19.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>
+                <input type="file" name="attachment" id="okf-ask-file" accept="{{accept}}" aria-describedby="okf-ask-file-hint"
+                    aria-label="{{#str}} consent:attach, local_oksigeniafamily {{/str}}">
+                <small id="okf-ask-file-hint">{{attachhint}}</small>
+            </div>
+        </div>
+        <div class="okf-ask-terms">
+            <fieldset class="okf-ask-row">
+                <legend>{{#str}} consent:field:deadline, local_oksigeniafamily {{/str}}</legend>
+                <span class="okf-ask-chips">
+                    {{#untils}}
+                    <input type="radio" id="okf-ask-until-{{value}}" name="until" value="{{value}}"{{#checked}} checked{{/checked}}>
+                    <label class="okf-ask-chip" for="okf-ask-until-{{value}}">{{label}} <small>{{small}}</small></label>
+                    {{/untils}}
+                    <input type="radio" id="okf-ask-until-day" name="until" value="day"{{#daychecked}} checked{{/daychecked}}>
+                    <label class="okf-ask-chip" for="okf-ask-until-day">{{#str}} consent:until:day, local_oksigeniafamily {{/str}}</label>
+                    <input class="okf-ask-date" type="date" name="untilday" min="{{today}}" value="{{untilday}}"
+                        aria-label="{{#str}} consent:until:dayfield, local_oksigeniafamily {{/str}}"{{#daychecked}} required{{/daychecked}}>
+                </span>
+            </fieldset>
+            <fieldset class="okf-ask-row">
+                <legend>{{#str}} consent:who, local_oksigeniafamily {{/str}}</legend>
+                <span class="okf-ask-chips">
+                    <input type="radio" id="okf-ask-needall-0" name="needall" value="0"{{#needone}} checked{{/needone}}>
+                    <label class="okf-ask-chip" for="okf-ask-needall-0">{{#str}} consent:needall:one, local_oksigeniafamily {{/str}}</label>
+                    <input type="radio" id="okf-ask-needall-1" name="needall" value="1"{{#needall}} checked{{/needall}}>
+                    <label class="okf-ask-chip" for="okf-ask-needall-1">{{#str}} consent:needall:all, local_oksigeniafamily {{/str}}</label>
+                </span>
+            </fieldset>
+            <details class="okf-ask-keep"{{#keepopen}} open{{/keepopen}}>
+                <summary><span class="okf-ask-keepline">{{{keepline}}}</span> <span class="okf-ask-change">{{#str}} consent:change, local_oksigeniafamily {{/str}}</span></summary>
+                <fieldset class="okf-ask-row">
+                    <legend class="visually-hidden sr-only">{{#str}} consent:keep:legend, local_oksigeniafamily {{/str}}</legend>
+                    <span class="okf-ask-chips">
+                        {{#keeps}}
+                        <input type="radio" id="okf-ask-keep-{{days}}" name="keepdays" value="{{days}}" data-okf-keep="{{inline}}"{{#checked}} checked{{/checked}}>
+                        <label class="okf-ask-chip" for="okf-ask-keep-{{days}}">{{label}}</label>
+                        {{/keeps}}
+                    </span>
+                </fieldset>
+            </details>
+        </div>
+        <p class="okf-ask-note">{{#str}} consent:note, local_oksigeniafamily {{/str}}</p>
+        <div class="okf-ask-foot">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 3 10 14"/><path d="m21 3-7 18-4-7-7-4z"/></svg>
+                <span data-okf-sendlabel>{{sendlabel}}</span>
+            </button>
+            <a href="{{cancelurl}}">{{#str}} cancel {{/str}}</a>
+        </div>
+    </form>
+</div>

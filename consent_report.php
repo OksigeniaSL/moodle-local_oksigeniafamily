@@ -36,6 +36,7 @@ use local_oksigeniafamily\task\consent_send;
 $id = required_param('id', PARAM_INT);
 $do = optional_param('do', '', PARAM_ALPHA);
 $ask = optional_param('ask', '', PARAM_ALPHA);
+$show = optional_param('show', '', PARAM_ALPHA);
 $download = optional_param('download', '', PARAM_ALPHA);
 $component = 'local_oksigeniafamily';
 
@@ -81,7 +82,10 @@ if ($do !== '') {
 }
 
 echo $OUTPUT->header();
-echo $OUTPUT->heading($title);
+// Inside a course the page header is the course's, and the request goes under it; on the site, it is the header.
+if ($context->contextlevel == CONTEXT_COURSE) {
+    echo $OUTPUT->heading($title);
+}
 if ($ask === 'cancel' && $open) {
     echo $OUTPUT->confirm(
         get_string('consent:cancel:question', $component, $title),
@@ -92,15 +96,20 @@ if ($ask === 'cancel' && $open) {
         new single_button($url, get_string('consent:cancel:keep', $component), 'get')
     );
 } else {
-    $report = consent_view::report($request, $now);
+    $report = consent_view::report($request, $now, $show);
+    $remindable = $report['remindable'];
     echo $OUTPUT->render_from_template('local_oksigeniafamily/consent_report', $report + [
         'listurl' => (new moodle_url('/local/oksigeniafamily/consents.php', $params))->out(false),
         'actionurl' => $url->out(false),
         'sesskey' => sesskey(),
-        'canremind' => $open && $report['remindable'] > 0,
-        'remindlabel' => get_string('consent:remind', $component, $report['remindable']),
+        // The reminder goes over the list of those missing.
+        'canremind' => $open && $remindable > 0 && $report['show'] === 'pending',
+        'remindlabel' => $remindable == 1
+            ? get_string('consent:remindfamiliesone', $component)
+            : get_string('consent:remindfamilies', $component, $remindable),
         'canaddnew' => $open && $request->scope !== '',
         'cancancel' => $open,
+        'cancelurl' => (new moodle_url($url, ['ask' => 'cancel']))->out(false),
         'csvurl' => (new moodle_url($url, ['download' => 'csv']))->out(false),
         'pdfurl' => (new moodle_url($url, ['download' => 'pdf']))->out(false),
     ]);

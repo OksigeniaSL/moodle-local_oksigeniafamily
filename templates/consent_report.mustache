@@ -17,38 +17,46 @@
 {{!
     @template local_oksigeniafamily/consent_report
 
-    A request for consent as the school sees it: the request, how many said yes and no, who is missing, and every
-    student with what each of their adults answered. Everything that changes something goes by POST with the session key.
+    A request for consent as the school sees it. The counts are the tabs of the list, and it opens on who is missing:
+    over them, the reminder and the students with nobody in the family records. Each student is a row with what each of
+    their adults answered and, while it is open, the paper answer as a gesture: a little sheet that unfolds the adults of
+    the record and two buttons that save at once. At the side, the request itself and what is done seldom. Everything
+    that changes something goes by POST with the session key.
 
     Context variables required for this template:
     * title, message, hasattachment, attachment (name, url), until - The request.
     * status - label and chip of the request.
-    * tiles - Each with label, value and tone (ok, bad or empty).
-    * lede - How many students it is about.
-    * hasnofamily, nofamily - Students with no adult in the family records.
-    * hasrows, rows - Each student: name, status, chip, conflict, haspeople, people (name, answer, chip, detail, comment)
-      and recordurl.
+    * show, tabs - The tab shown; each tab with key, count, label, url and current.
+    * hasnofamily, nofamilytitle, nofamilytext, nofamily - Students with nobody in the records: name and addurl.
+    * hasrows, rows - Each student: anchor, name, status, chip, conflict, haspeople, people (name, answer, chip, detail,
+      comment) and paper (student, action, whoid, hasadults, adults with id, name, inputid, checked and required) or null.
     * listurl - Back to the list.
     * actionurl, sesskey - Where the buttons post.
     * canremind, remindlabel - The reminder to those missing.
     * canaddnew - Whether new students of its course, group or cohort can be added.
-    * cancancel - Whether it can be called off.
+    * cancancel, cancelurl - Whether it can be called off, and where it asks first.
     * csvurl, pdfurl - The downloads.
 
     Example context (json):
     {
         "title": "Salida al Teide", "message": "<p>Salimos a las 8:30.</p>", "hasattachment": true,
-        "attachment": {"name": "circular.pdf", "url": "#"}, "until": "Se puede contestar hasta el 14 de noviembre de 2026.",
-        "status": {"label": "Abierta", "chip": ""},
-        "tiles": [{"label": "Autorizan", "value": 18, "tone": "ok"}, {"label": "No autorizan", "value": 1, "tone": "bad"},
-            {"label": "Sin contestar", "value": 6, "tone": ""}],
-        "lede": "25 alumnos.", "hasnofamily": true, "nofamily": "2 alumnos no tienen a nadie en la ficha de familias.",
+        "attachment": {"name": "circular.pdf", "url": "#"}, "until": "Se contesta hasta el 14 de noviembre de 2026.",
+        "status": {"label": "Abierta", "chip": ""}, "show": "pending",
+        "tabs": [{"key": "pending", "count": 6, "label": "Sin contestar", "url": "#", "current": true},
+            {"key": "yes", "count": 18, "label": "Autorizan", "url": "#", "current": false}],
+        "hasnofamily": true, "nofamilytitle": "A 1 alumno no le llega: no hay nadie en su ficha de familias",
+        "nofamilytext": "Añade a su familia y la petición le llegará.", "nofamily": [{"name": "Leo Díaz", "addurl": "#"}],
         "hasrows": true,
-        "rows": [{"name": "Lucas Pérez", "status": "Autoriza", "chip": "okf-chip-ok", "conflict": false, "haspeople": true,
-            "people": [{"name": "Pilar Sanz", "answer": "Autorizo", "chip": "okf-chip-ok", "detail": "3/11/26, 18:20 · WhatsApp", "comment": ""}],
-            "recordurl": "#"}],
-        "listurl": "#", "actionurl": "#", "sesskey": "abc", "canremind": true, "remindlabel": "Recordar a las familias de 6 alumnos",
-        "canaddnew": true, "cancancel": true, "csvurl": "#", "pdfurl": "#"
+        "rows": [{"anchor": "okf-row-3", "name": "Lucas Pérez", "status": "Sin contestar", "chip": "okf-chip-muted",
+            "conflict": false, "haspeople": true,
+            "people": [{"name": "Pilar Sanz", "answer": "Sin contestar", "chip": "okf-chip-muted", "detail": "", "comment": ""}],
+            "paper": {"student": "Lucas Pérez", "action": "#", "whoid": "okf-paper-who-3", "hasadults": true,
+                "adults": [{"id": 5, "name": "Pilar Sanz", "inputid": "okf-paper-3-5", "checked": true, "required": false}]
+            }
+        }],
+        "listurl": "#", "actionurl": "#", "sesskey": "abc", "canremind": true,
+        "remindlabel": "Recordárselo a las familias de 6 alumnos", "canaddnew": true, "cancancel": true, "cancelurl": "#",
+        "csvurl": "#", "pdfurl": "#"
     }
 }}
 <div class="local-oksigeniafamily okf-consent-report">
@@ -58,87 +66,116 @@
     </div>
     <div class="okf-cols">
         <div>
-            <div class="okf-tiles">
-                {{#tiles}}
-                <div class="okf-tile okf-tile-{{tone}}">
-                    <span class="okf-tile-value">{{value}}</span>
-                    <span class="okf-tile-label">{{label}}</span>
-                </div>
-                {{/tiles}}
+            <nav class="okf-rep-tabs" aria-label="{{#str}} consent:col:answers, local_oksigeniafamily {{/str}}">
+                {{#tabs}}
+                <a class="okf-rep-tab nav-link" data-tone="{{key}}" href="{{url}}"{{#current}} aria-current="page"{{/current}}><b>{{count}}</b><span>{{label}}</span></a>
+                {{/tabs}}
+            </nav>
+            {{#canremind}}
+            <div class="okf-rep-bar">
+                <form method="post" action="{{actionurl}}" data-okf-once>
+                    <input type="hidden" name="sesskey" value="{{sesskey}}">
+                    <input type="hidden" name="do" value="remind">
+                    <button type="submit" class="btn btn-primary">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+                        {{remindlabel}}
+                    </button>
+                </form>
+                <p>{{#str}} consent:remind:note, local_oksigeniafamily {{/str}}</p>
             </div>
-            <p class="okf-lede">{{lede}}</p>
-            {{#hasnofamily}}<p class="okf-warn">{{nofamily}}</p>{{/hasnofamily}}
+            {{/canremind}}
+            {{#hasnofamily}}
+            <section class="okf-rep-alert" aria-labelledby="okf-rep-alert-t">
+                <h3 id="okf-rep-alert-t">{{nofamilytitle}}</h3>
+                <p>{{nofamilytext}}</p>
+                <ul>
+                    {{#nofamily}}
+                    <li>{{name}}{{#addurl}} <a class="btn btn-sm btn-outline-secondary" href="{{addurl}}">{{#str}} consent:nofamily:add, local_oksigeniafamily {{/str}}</a>{{/addurl}}</li>
+                    {{/nofamily}}
+                </ul>
+            </section>
+            {{/hasnofamily}}
             {{#hasrows}}
-            <table class="okf-table table-reboot">
-                <thead>
-                    <tr>
-                        <th scope="col">{{#str}} consent:col:student, local_oksigeniafamily {{/str}}</th>
-                        <th scope="col">{{#str}} consent:col:status, local_oksigeniafamily {{/str}}</th>
-                        <th scope="col">{{#str}} consent:col:family, local_oksigeniafamily {{/str}}</th>
-                        <th scope="col"><span class="visually-hidden sr-only">{{#str}} consent:col:actions, local_oksigeniafamily {{/str}}</span></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{#rows}}
-                    <tr>
-                        <td class="okf-strong">{{name}}</td>
-                        <td>
-                            <span class="okf-chip {{chip}}">{{status}}</span>
-                            {{#conflict}}<span class="okf-line">{{#str}} consent:conflictnote, local_oksigeniafamily {{/str}}</span>{{/conflict}}
-                        </td>
-                        <td>
-                            {{#haspeople}}
-                            <ul class="okf-plain">
-                                {{#people}}
-                                <li>
-                                    {{name}} · <span class="okf-chip {{chip}}">{{answer}}</span>
-                                    {{#detail}}<span class="okf-line">{{detail}}</span>{{/detail}}
-                                    {{#comment}}<span class="okf-line">«{{comment}}»</span>{{/comment}}
-                                </li>
-                                {{/people}}
-                            </ul>
-                            {{/haspeople}}
-                            {{^haspeople}}<span class="okf-line">{{#str}} consent:nobody, local_oksigeniafamily {{/str}}</span>{{/haspeople}}
-                        </td>
-                        <td>{{#recordurl}}<a href="{{recordurl}}">{{#str}} consent:record, local_oksigeniafamily {{/str}}</a>{{/recordurl}}</td>
-                    </tr>
-                    {{/rows}}
-                </tbody>
-            </table>
+            <ul class="okf-rep-list">
+                {{#rows}}
+                <li class="okf-rep-row" id="{{anchor}}">
+                    <div class="okf-rep-who">
+                        <b>{{name}}</b> <span class="okf-chip {{chip}}">{{status}}</span>
+                        {{#conflict}}<small class="okf-line">{{#str}} consent:conflictnote, local_oksigeniafamily {{/str}}</small>{{/conflict}}
+                    </div>
+                    <ul class="okf-rep-people">
+                        {{#people}}
+                        <li>
+                            {{name}} · <span class="okf-chip {{chip}}">{{answer}}</span>
+                            {{#detail}}<small>{{detail}}</small>{{/detail}}
+                            {{#comment}}<small>«{{comment}}»</small>{{/comment}}
+                        </li>
+                        {{/people}}
+                        {{^haspeople}}<li><small>{{#str}} consent:nobody, local_oksigeniafamily {{/str}}</small></li>{{/haspeople}}
+                    </ul>
+                    {{#paper}}
+                    <details class="okf-rep-paper">
+                        <summary title="{{#str}} consent:record, local_oksigeniafamily {{/str}}">
+                            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7"/><path d="M14 3v5h5"/><path d="M8 12h6M8 16h3"/><path d="m19.5 13.5 2 2-5 5H14.5v-2z"/></svg>
+                            <span class="okf-rep-paper-t">{{#str}} consent:paper, local_oksigeniafamily {{/str}}<span class="visually-hidden sr-only"> · {{student}}</span></span>
+                        </summary>
+                        {{#hasadults}}
+                        <form class="okf-rep-paperform" method="post" action="{{action}}" data-okf-once>
+                            <input type="hidden" name="sesskey" value="{{sesskey}}">
+                            <input type="hidden" name="quick" value="1">
+                            <input type="hidden" name="show" value="{{show}}">
+                            <p id="{{whoid}}">{{#str}} consent:paper:who, local_oksigeniafamily {{/str}}</p>
+                            <span class="okf-ask-chips" role="radiogroup" aria-labelledby="{{whoid}}">
+                                {{#adults}}
+                                <input type="radio" id="{{inputid}}" name="adultid" value="{{id}}"{{#checked}} checked{{/checked}}{{#required}} required{{/required}}>
+                                <label class="okf-ask-chip" for="{{inputid}}">{{name}}</label>
+                                {{/adults}}
+                            </span>
+                            <div class="okf-rep-answers">
+                                <button class="btn btn-success" type="submit" name="answer" value="yes">{{#str}} consent:paper:yes, local_oksigeniafamily {{/str}}</button>
+                                <button class="btn btn-outline-danger" type="submit" name="answer" value="no">{{#str}} consent:paper:no, local_oksigeniafamily {{/str}}</button>
+                            </div>
+                            <a href="{{action}}">{{#str}} consent:paper:other, local_oksigeniafamily {{/str}}</a>
+                        </form>
+                        {{/hasadults}}
+                        {{^hasadults}}
+                        <div class="okf-rep-paperform">
+                            <p>{{#str}} consent:paper:nobody, local_oksigeniafamily {{/str}}</p>
+                            <a href="{{action}}">{{#str}} consent:paper:write, local_oksigeniafamily {{/str}}</a>
+                        </div>
+                        {{/hasadults}}
+                    </details>
+                    {{/paper}}
+                </li>
+                {{/rows}}
+            </ul>
             {{/hasrows}}
+            {{^hasrows}}<p class="okf-lede">{{#str}} consent:show:empty, local_oksigeniafamily {{/str}}</p>{{/hasrows}}
         </div>
         <div class="okf-side-stack">
             <section class="okf-card okf-side">
                 <h3>{{title}}</h3>
                 <p>{{until}}</p>
                 <div class="okf-message">{{{message}}}</div>
-                {{#hasattachment}}{{#attachment}}<p><a href="{{url}}">{{name}}</a></p>{{/attachment}}{{/hasattachment}}
+                {{#hasattachment}}{{#attachment}}
+                <p class="okf-rep-clip">
+                    <a href="{{url}}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11.5 12.6 19.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg> {{name}}</a>
+                </p>
+                {{/attachment}}{{/hasattachment}}
             </section>
-            <section class="okf-card okf-side okf-actions">
-                {{#canremind}}
-                <form method="post" action="{{actionurl}}" data-okf-once>
-                    <input type="hidden" name="sesskey" value="{{sesskey}}">
-                    <input type="hidden" name="do" value="remind">
-                    <button type="submit" class="btn btn-primary">{{remindlabel}}</button>
-                </form>
-                {{/canremind}}
+            <section class="okf-card okf-side okf-rep-more">
                 {{#canaddnew}}
                 <form method="post" action="{{actionurl}}" data-okf-once>
                     <input type="hidden" name="sesskey" value="{{sesskey}}">
                     <input type="hidden" name="do" value="addnew">
-                    <button type="submit" class="btn btn-secondary">{{#str}} consent:addnew, local_oksigeniafamily {{/str}}</button>
+                    <button type="submit" class="btn btn-outline-secondary">{{#str}} consent:addnew, local_oksigeniafamily {{/str}}</button>
                 </form>
                 {{/canaddnew}}
                 <p class="okf-downloads">
                     <a href="{{csvurl}}">{{#str}} consent:download:csv, local_oksigeniafamily {{/str}}</a>
                     · <a href="{{pdfurl}}">{{#str}} consent:download:pdf, local_oksigeniafamily {{/str}}</a>
                 </p>
-                {{#cancancel}}
-                <form method="get" action="{{actionurl}}">
-                    <input type="hidden" name="ask" value="cancel">
-                    <button type="submit" class="btn btn-link okf-danger-link">{{#str}} consent:cancel, local_oksigeniafamily {{/str}}</button>
-                </form>
-                {{/cancancel}}
+                {{#cancancel}}<p><a class="okf-danger-link" href="{{cancelurl}}">{{#str}} consent:cancel, local_oksigeniafamily {{/str}}</a></p>{{/cancancel}}
             </section>
         </div>
     </div>

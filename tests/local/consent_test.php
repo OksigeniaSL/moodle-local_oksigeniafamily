@@ -208,7 +208,9 @@ final class consent_test extends \advanced_testcase {
 
         $PAGE->set_url('/local/oksigeniafamily/answer.php');
         $request = consent::get($data->requestid);
-        $html = $OUTPUT->render_from_template('local_oksigeniafamily/consent_report', consent_view::report($request, $now) + [
+        // On the tab of everyone: the report opens on those still missing, and Ana's family has already answered.
+        $report = consent_view::report($request, $now, 'all');
+        $html = $OUTPUT->render_from_template('local_oksigeniafamily/consent_report', $report + [
             'listurl' => '#', 'actionurl' => '#', 'sesskey' => 'x', 'canremind' => true, 'remindlabel' => 'x',
             'canaddnew' => false, 'cancancel' => true, 'csvurl' => '#', 'pdfurl' => '#',
         ]);

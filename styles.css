@@ -956,3 +956,654 @@
         break-after: auto;
     }
 }
+
+/* «Pedir una autorización» and its report (Jujol, 13 Nov 2026), for styles.css of local_oksigeniafamily, after what is
+   there. Everything hangs from .local-oksigeniafamily and uses its --okf-* colours, which are the theme's, so it follows
+   the site in light and in dark. The request is a letter: who it is for, its title and its text, the circular clipped to
+   it, and its terms; the report opens on who is missing, with the reminder over that list and the paper answer as a
+   gesture of each row. Chrome 93 and Firefox 98: no :has(), no color-mix(). */
+
+/* ---------- Chips that choose (radios before their label): the same in the letter and in the paper answer ---------- */
+.local-oksigeniafamily .okf-ask-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+
+.local-oksigeniafamily .okf-ask-chips input[type="radio"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+}
+
+.local-oksigeniafamily .okf-ask-chip {
+    display: inline-flex;
+    gap: .45rem;
+    align-items: baseline;
+    min-height: 2.5rem;
+    padding: .45rem 1rem;
+    margin: 0;
+    color: var(--okf-ink);
+    cursor: pointer;
+    background: var(--okf-bg);
+    border: 1px solid var(--okf-line);
+    border-radius: 999px;
+}
+
+.local-oksigeniafamily .okf-ask-chip small {
+    font-size: .8125rem;
+    color: var(--okf-muted);
+    white-space: nowrap;
+}
+
+.local-oksigeniafamily .okf-ask-chip:hover {
+    border-color: var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-ask-chips input:checked + .okf-ask-chip {
+    color: var(--okf-accent-text);
+    background: var(--okf-accent-soft);
+    border-color: var(--okf-accent);
+    box-shadow: inset 0 0 0 1px var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-ask-chips input:checked + .okf-ask-chip small {
+    color: var(--okf-accent-text);
+}
+
+.local-oksigeniafamily .okf-ask-chips input:focus-visible + .okf-ask-chip {
+    outline: 3px solid var(--okf-accent);
+    outline-offset: 2px;
+}
+
+/* The day chosen by hand shows only with «Otro día». */
+.local-oksigeniafamily .okf-ask-date {
+    display: none;
+    min-height: 2.5rem;
+    padding: .3rem .75rem;
+    color: var(--okf-ink);
+    background: var(--okf-bg);
+    border: 1px solid var(--okf-accent);
+    border-radius: .5rem;
+}
+
+.local-oksigeniafamily .okf-ask-chips input:checked + .okf-ask-chip + .okf-ask-date {
+    display: inline-block;
+}
+
+/* ---------- The letter ---------- */
+.local-oksigeniafamily .okf-ask {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+}
+
+.local-oksigeniafamily .okf-ask-to > [role="radiogroup"] {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.local-oksigeniafamily .okf-ask-sheet {
+    padding: 1.5rem 1.75rem 1.25rem;
+    background: var(--okf-bg);
+    border: 1px solid var(--okf-line);
+    border-radius: 1rem;
+    box-shadow: 0 10px 28px -18px rgba(0, 0, 0, .45);
+}
+
+.local-oksigeniafamily .okf-ask-to {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem .875rem;
+    align-items: center;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px dashed var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-ask-label {
+    font-size: .8125rem;
+    font-weight: 700;
+    color: var(--okf-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.local-oksigeniafamily .okf-ask-to a {
+    font-size: .875rem;
+}
+
+.local-oksigeniafamily .okf-ask-title,
+.local-oksigeniafamily .okf-ask-text {
+    display: block;
+    width: 100%;
+    padding: .25rem 0;
+    color: var(--okf-ink);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+}
+
+.local-oksigeniafamily .okf-ask-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.3;
+    border-bottom: 2px solid var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-ask-title:focus {
+    border-bottom-color: var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-ask-text {
+    min-height: 9rem;
+    margin-top: .875rem;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.local-oksigeniafamily .okf-ask-text:focus {
+    box-shadow: inset 3px 0 0 var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-ask-title::placeholder,
+.local-oksigeniafamily .okf-ask-text::placeholder {
+    color: var(--okf-muted);
+    opacity: 1;
+}
+
+/* The circular, clipped to the letter: the native file field, with its button as a chip with a paper clip. */
+.local-oksigeniafamily .okf-ask-clip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem .75rem;
+    align-items: center;
+    padding-top: .875rem;
+    margin-top: .5rem;
+    border-top: 1px dashed var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-ask-clip svg {
+    flex: none;
+    color: var(--okf-muted);
+    transform: rotate(-20deg);
+}
+
+.local-oksigeniafamily .okf-ask-clip input[type="file"] {
+    flex: 1 1 12rem;
+    min-width: 0;
+    max-width: 100%;
+    font-size: .9375rem;
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-ask-clip input[type="file"]::file-selector-button {
+    min-height: 2.25rem;
+    padding: .3rem 1rem;
+    margin-right: .75rem;
+    font: inherit;
+    color: var(--okf-ink);
+    cursor: pointer;
+    background: var(--okf-soft);
+    border: 1px solid var(--okf-line);
+    border-radius: 999px;
+}
+
+.local-oksigeniafamily .okf-ask-clip small {
+    flex-basis: 100%;
+    color: var(--okf-muted);
+}
+
+/* The terms, under the letter. */
+.local-oksigeniafamily .okf-ask-terms {
+    display: grid;
+    gap: 1rem;
+    padding: 0 .25rem;
+}
+
+.local-oksigeniafamily .okf-ask-row {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: .5rem 1rem;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+.local-oksigeniafamily .okf-ask-row legend {
+    float: left;
+    width: auto;
+    padding: 0;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-ask-keep summary {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .25rem .75rem;
+    color: var(--okf-muted);
+    cursor: pointer;
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-ask-keep summary::-webkit-details-marker {
+    display: none;
+}
+
+/* The line, and «Change» after it; open, the line stays and follows the choice. */
+.local-oksigeniafamily .okf-ask-keep .okf-ask-change {
+    color: var(--okf-accent-text);
+    text-decoration: underline;
+}
+
+.local-oksigeniafamily .okf-ask-keep[open] .okf-ask-change {
+    display: none;
+}
+
+.local-oksigeniafamily .okf-ask-keep .okf-ask-row {
+    display: block;
+}
+
+.local-oksigeniafamily .okf-ask-keep .okf-ask-chips {
+    margin-top: .625rem;
+}
+
+/* The send, always in sight at the foot of the screen while the letter is written. */
+.local-oksigeniafamily .okf-ask-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.25rem;
+    align-items: center;
+    padding: .875rem 1rem;
+    margin: 0 -1rem;
+    background: var(--okf-bg);
+    border-top: 1px solid var(--okf-line);
+    box-shadow: 0 -8px 18px -14px rgba(0, 0, 0, .35);
+}
+
+.local-oksigeniafamily .okf-ask-foot .btn {
+    display: inline-flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.local-oksigeniafamily .okf-ask-note {
+    padding: 0 .25rem;
+    margin: 0;
+    font-size: .875rem;
+    color: var(--okf-muted);
+}
+
+/* The choice of who, before the letter, when the page is not inside a course. */
+.local-oksigeniafamily .okf-ask-pick {
+    display: grid;
+    gap: .75rem;
+}
+
+.local-oksigeniafamily .okf-ask-pick h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-ask-pick h3 {
+    margin: .75rem 0 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-ask-pick .okf-ask-chips a {
+    text-decoration: none;
+}
+
+.local-oksigeniafamily .okf-ask-search {
+    display: flex;
+    gap: .5rem;
+}
+
+.local-oksigeniafamily .okf-ask-search input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+@media (max-width: 575.98px) {
+    .local-oksigeniafamily .okf-ask-sheet {
+        padding: 1rem 1rem .875rem;
+    }
+
+    .local-oksigeniafamily .okf-ask-title {
+        font-size: 1.25rem;
+    }
+
+    .local-oksigeniafamily .okf-ask-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .local-oksigeniafamily .okf-ask-foot {
+        flex-wrap: nowrap;
+        gap: .75rem;
+        padding: .625rem 0;
+        margin: 0;
+    }
+
+    .local-oksigeniafamily .okf-ask-foot .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+        padding: .5rem .75rem;
+        font-size: 1rem;
+    }
+}
+
+/* ---------- The report ---------- */
+/* The counts are the tabs: the one shown is marked, and the report opens on who is missing. They carry the theme's
+   nav-link (as the chips of the choice do) so that the theme does not underline them in dark. */
+.local-oksigeniafamily .okf-rep-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
+    margin: 0 0 1rem;
+}
+
+.local-oksigeniafamily .okf-rep-tab {
+    display: grid;
+    gap: .125rem;
+    padding: .75rem 1rem;
+    color: var(--okf-ink);
+    text-decoration: none;
+    background: var(--okf-bg);
+    border: 1px solid var(--okf-line);
+    border-radius: .875rem;
+}
+
+.local-oksigeniafamily .okf-rep-tab b {
+    font-size: 1.75rem;
+    line-height: 1.1;
+}
+
+.local-oksigeniafamily .okf-rep-tab span {
+    font-size: .875rem;
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-rep-tab[data-tone="yes"] b {
+    color: var(--okf-ok-text);
+}
+
+.local-oksigeniafamily .okf-rep-tab[data-tone="no"] b {
+    color: var(--okf-bad-text);
+}
+
+.local-oksigeniafamily .okf-rep-tab:hover,
+.local-oksigeniafamily .okf-rep-tab:focus-visible {
+    color: var(--okf-ink);
+    border-color: var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-rep-tab[aria-current="page"] {
+    background: var(--okf-accent-soft);
+    border-color: var(--okf-accent);
+    box-shadow: inset 0 -3px 0 var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-rep-tab[aria-current="page"] span {
+    color: var(--okf-accent-text);
+}
+
+/* The reminder, over the list of who is missing. */
+.local-oksigeniafamily .okf-rep-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+    align-items: center;
+    padding: 1rem 1.125rem;
+    margin: 0 0 1rem;
+    background: var(--okf-soft);
+    border-radius: .875rem;
+}
+
+.local-oksigeniafamily .okf-rep-bar form {
+    margin: 0;
+}
+
+.local-oksigeniafamily .okf-rep-bar .btn {
+    display: inline-flex;
+    gap: .5rem;
+    align-items: center;
+}
+
+.local-oksigeniafamily .okf-rep-bar p {
+    flex: 1 1 14rem;
+    margin: 0;
+    font-size: .875rem;
+    color: var(--okf-muted);
+}
+
+/* Students with nobody in the family records: an alert with what to do about each one. */
+.local-oksigeniafamily .okf-rep-alert {
+    padding: 1rem 1.125rem;
+    margin: 0 0 1rem;
+    color: var(--okf-warn-text);
+    background: var(--okf-warn-soft);
+    border-radius: .875rem;
+}
+
+.local-oksigeniafamily .okf-rep-alert h3 {
+    margin: 0 0 .25rem;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.local-oksigeniafamily .okf-rep-alert p {
+    margin: 0 0 .75rem;
+}
+
+.local-oksigeniafamily .okf-rep-alert ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-rep-alert li {
+    display: inline-flex;
+    gap: .5rem;
+    align-items: center;
+    padding: .25rem .25rem .25rem .875rem;
+    color: var(--okf-ink);
+    background: var(--okf-bg);
+    border-radius: 999px;
+}
+
+.local-oksigeniafamily .okf-rep-alert .btn {
+    border-radius: 999px;
+}
+
+/* Each student, a row: the name and how it stands, who answered, and the paper answer as a gesture. */
+.local-oksigeniafamily .okf-rep-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    background: var(--okf-bg);
+    border: 1px solid var(--okf-line);
+    border-radius: .875rem;
+}
+
+.local-oksigeniafamily .okf-rep-row {
+    display: grid;
+    grid-template-columns: minmax(11rem, 1fr) minmax(0, 1.6fr) auto;
+    gap: .375rem 1rem;
+    align-items: start;
+    padding: .875rem 1.125rem;
+    border-top: 1px solid var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-rep-row:first-child {
+    border-top: 0;
+}
+
+.local-oksigeniafamily .okf-rep-who b {
+    display: block;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-rep-who .okf-chip {
+    margin-top: .25rem;
+    white-space: nowrap;
+}
+
+.local-oksigeniafamily .okf-rep-people {
+    display: grid;
+    gap: .375rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-rep-people small {
+    display: block;
+    color: var(--okf-muted);
+}
+
+/* The paper answer: a small sheet with a pen; it unfolds the adults and the two answers, which save at once. */
+.local-oksigeniafamily .okf-rep-paper {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.local-oksigeniafamily .okf-rep-paper > summary {
+    display: inline-flex;
+    gap: .375rem;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0 .625rem;
+    color: var(--okf-accent-text);
+    cursor: pointer;
+    list-style: none;
+    border: 1px solid var(--okf-line);
+    border-radius: .75rem;
+}
+
+.local-oksigeniafamily .okf-rep-paper > summary::-webkit-details-marker {
+    display: none;
+}
+
+.local-oksigeniafamily .okf-rep-paper > summary:hover {
+    border-color: var(--okf-accent);
+}
+
+/* Open, it takes the whole width under the row, and its button becomes the title of the little sheet. */
+.local-oksigeniafamily .okf-rep-paper[open] {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+.local-oksigeniafamily .okf-rep-paper-t {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.local-oksigeniafamily .okf-rep-paper[open] > summary {
+    justify-content: flex-start;
+    width: 100%;
+    font-weight: 600;
+    background: var(--okf-soft);
+    border-color: transparent;
+    border-radius: .75rem .75rem 0 0;
+}
+
+.local-oksigeniafamily .okf-rep-paper[open] .okf-rep-paper-t {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+}
+
+.local-oksigeniafamily .okf-rep-paperform {
+    display: grid;
+    gap: .625rem;
+    padding: .25rem 1rem 1rem;
+    background: var(--okf-soft);
+    border-radius: 0 0 .75rem .75rem;
+}
+
+.local-oksigeniafamily .okf-rep-paperform p {
+    margin: 0;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-rep-paperform .okf-rep-answers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.local-oksigeniafamily .okf-rep-paperform a {
+    font-size: .875rem;
+}
+
+/* The request itself, at the side; on a phone, folded at the top. */
+.local-oksigeniafamily .okf-rep-request summary {
+    font-weight: 600;
+    cursor: pointer;
+}
+
+@media (max-width: 767.98px) {
+    .local-oksigeniafamily .okf-rep-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .local-oksigeniafamily .okf-rep-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .local-oksigeniafamily .okf-rep-people {
+        grid-column: 1 / -1;
+    }
+
+    .local-oksigeniafamily .okf-rep-paper {
+        grid-column: 2;
+    }
+
+    .local-oksigeniafamily .okf-rep-paper[open] {
+        grid-row: 3;
+    }
+}
+
+/* The side of the report: what is done seldom, one under the other; the circular with its clip. */
+.local-oksigeniafamily .okf-rep-more {
+    display: grid;
+    gap: .75rem;
+    justify-items: start;
+}
+
+.local-oksigeniafamily .okf-rep-more form,
+.local-oksigeniafamily .okf-rep-more p {
+    margin: 0;
+}
+
+.local-oksigeniafamily .okf-rep-clip a {
+    display: inline-flex;
+    gap: .375rem;
+    align-items: center;
+}
