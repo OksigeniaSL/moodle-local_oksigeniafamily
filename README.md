@@ -70,6 +70,23 @@ without an answer.
 Copy the plugin into `local/oksigeniafamily` of your Moodle and finish the upgrade from *Site administration*, or
 install the ZIP from *Site administration ▸ Plugins ▸ Install plugins*.
 
+## First steps
+
+In *Site administration ▸ Plugins ▸ Local plugins ▸ Oksigenia Family*:
+
+1. **The role for adults with an account.** Moodle has no parent role ready to use: make one in the user context (for
+   instance, with «View profile» and «View grades» over the student) and choose it here. Without it, adults with an
+   account see nothing of their children in Moodle, though they do in the plugins that work with families.
+2. **The country code** of the phones, if your families give them without it. Empty, each number is written with its own.
+3. **The margin before closing** a family with no children. If the school suspends the students' accounts over the
+   summer, give it more days than the holidays: a student who comes back finds their family as it was.
+4. **Consent requests and photos**, on or off, as your school handles them.
+
+Then, in *Users ▸ Accounts ▸ Families*, import the families from a file or hand out the letters with the codes. Other
+plugins use the same records: Oksigenia Aty gives each adult the app (and, if the school turns it on, an account for the
+app only), Marandu writes to them on WhatsApp or Telegram, Meals gives them the canteen's keys and Ayvurenda the
+library's.
+
 ## Licence
 
 GNU GPL v3 or later. See [LICENSE](LICENSE).

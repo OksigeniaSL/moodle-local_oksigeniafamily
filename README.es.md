@@ -71,6 +71,23 @@ todavía sin respuesta.
 Copia el plugin en `local/oksigeniafamily` de tu Moodle y termina la actualización desde *Administración del sitio*, o
 instala el ZIP desde *Administración del sitio ▸ Extensiones ▸ Instalar extensiones*.
 
+## Primeros pasos
+
+En *Administración del sitio ▸ Extensiones ▸ Extensiones locales ▸ Oksigenia Family*:
+
+1. **El rol para los adultos con cuenta.** Moodle no trae un rol de padre listo para usar: crea uno en el contexto de
+   usuario (por ejemplo, con «Ver el perfil» y «Ver las calificaciones» sobre el alumno) y elígelo aquí. Sin él, los
+   adultos con cuenta no ven nada de sus hijos en Moodle, aunque sí en los plugins que trabajan con familias.
+2. **El prefijo del país** de los teléfonos, si tus familias los dan sin él. Vacío, cada número se escribe con el suyo.
+3. **El margen antes de cerrar** una familia sin hijos. Si el centro suspende las cuentas de los alumnos en verano, dale
+   más días que las vacaciones: un alumno que vuelve encuentra su familia como estaba.
+4. **Las autorizaciones y las fotos**, encendidas o no, según cómo las lleve tu centro.
+
+Después, en *Usuarios ▸ Cuentas ▸ Familias*, importa las familias desde un fichero o reparte las cartas con los
+códigos. Otros plugins usan la misma ficha: Oksigenia Aty da a cada adulto la app (y, si el centro lo enciende, una
+cuenta solo para la app), Marandu le escribe por WhatsApp o Telegram, Meals le da las llaves del comedor y Ayvurenda las
+de la biblioteca.
+
 ## Licencia
 
 GNU GPL v3 o posterior. Ver [LICENSE](LICENSE).
