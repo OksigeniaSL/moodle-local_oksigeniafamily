@@ -37,6 +37,7 @@ final class families_needs_test extends \advanced_testcase {
      * Five families of example data, each missing something else, counted, filtered and said in words.
      */
     public function test_needs(): void {
+        global $DB;
         $this->resetAfterTest();
         $gen = $this->getDataGenerator();
         $now = time();
@@ -80,8 +81,9 @@ final class families_needs_test extends \advanced_testcase {
             'firstname' => 'Lola', 'lastname' => 'Paz', 'userid' => $lola->id, 'phone' => '+34600555666', 'phoneverified' => 1,
         ]);
         api::add_child($used, (int) $leo->id);
-        $code = api::issue_claim_code((int) $leo->id);
-        api::claim($code, ['firstname' => 'Toni', 'lastname' => 'Paz', 'phone' => '+34600777888'], true);
+        // Used by an adult who already had it (a claim by somebody new would open a family of their own).
+        api::issue_claim_code((int) $leo->id);
+        $DB->set_field('local_oksigeniafamily_claim', 'claims', 1, ['userid' => $leo->id]);
         standing::record('user:' . $leo->id, standing::IMAGE, false);
         standing::record('user:' . $leo->id, standing::IMAGE, true, $adult);
 
