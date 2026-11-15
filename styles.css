@@ -715,6 +715,28 @@
     font-size: .875rem;
 }
 
+/* The app at the foot of a letter, when families get into it: its icon and where to find it. */
+.local-oksigeniafamily .okf-letter-app {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+    margin-top: 6mm;
+    padding-top: 4mm;
+    border-top: 1px solid #c8ccd0;
+}
+
+.local-oksigeniafamily .okf-letter-app img {
+    flex: none;
+    width: 12mm;
+    height: 12mm;
+    border-radius: 22%;
+}
+
+.local-oksigeniafamily .okf-letter-app p {
+    margin: 0;
+    font-size: .95rem;
+}
+
 /* Requests for consent. */
 .local-oksigeniafamily .okf-chip-bad {
     background: var(--okf-bad-soft);

@@ -66,6 +66,12 @@
             <li>{{#str}} letter:step3, local_oksigeniafamily {{/str}}</li>
         </ol>
         <p class="okf-letter-care">{{#str}} letter:care, local_oksigeniafamily {{/str}}</p>
+        {{#app}}
+        <aside class="okf-letter-app">
+            <img src="{{icon}}" alt="" width="48" height="48">
+            <p><strong>{{title}}</strong> {{text}}</p>
+        </aside>
+        {{/app}}
     </article>
     {{/letters}}
 </div>

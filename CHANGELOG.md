@@ -5,6 +5,12 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.21-dev)
+
+- The letters with the codes say, at their foot, that everything is also in the Oksigenia Aty app, with its icon and
+  where to find it (the App Store and Google Play, in words), when the site lets families into the app
+  (`local_oksigeniaaty` with «Families get into the app» on). Asked by Enrique to make the app known to families.
+
 ### Changed (0.3.20-dev)
 
 - «Familias» says what each family is missing, and filters by it (design by Jujol). On top, a tile for each need with

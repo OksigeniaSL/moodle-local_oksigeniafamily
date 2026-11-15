@@ -127,6 +127,27 @@ class letters {
     }
 
     /**
+     * The app, at the foot of each letter, when the site lets families into it (Oksigenia Aty with «Families get into the
+     * app» on): its icon and where to find it, in words. The stores' badges cannot ship with a GPL plugin, so the text
+     * names the stores without imitating them.
+     *
+     * @return array|null icon, title and text; null when families do not get into the app here.
+     */
+    public static function app(): ?array {
+        global $OUTPUT;
+
+        if (!class_exists('\\local_oksigeniaaty\\api') || !get_config('local_oksigeniaaty', 'familyapp')) {
+            return null;
+        }
+
+        return [
+            'icon' => $OUTPUT->image_url('aty', 'local_oksigeniafamily')->out(false),
+            'title' => get_string('letter:apptitle', 'local_oksigeniafamily'),
+            'text' => get_string('letter:apptext', 'local_oksigeniafamily'),
+        ];
+    }
+
+    /**
      * A code as people read it: two groups of four.
      *
      * @param string $code The code.

@@ -147,6 +147,7 @@ if ($mode !== '') {
         'letters' => letters::context($issued, $single ? '' : $name),
         'logo' => (string) $OUTPUT->get_logo_url(null, 100),
         'site' => format_string(get_site()->fullname),
+        'app' => letters::app(),
     ]);
     echo $OUTPUT->footer();
     exit;

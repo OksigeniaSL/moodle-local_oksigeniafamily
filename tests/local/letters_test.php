@@ -188,4 +188,23 @@ final class letters_test extends \advanced_testcase {
         $this->assertSame(2, (int) $cohorts[0]->members);
         $this->assertSame([], students::cohorts('nothing'));
     }
+
+    /**
+     * The foot of the letters names the app only where families get into it: Oksigenia Aty installed and its setting on.
+     */
+    public function test_app(): void {
+        $this->resetAfterTest();
+
+        set_config('familyapp', 0, 'local_oksigeniaaty');
+        $this->assertNull(letters::app());
+
+        set_config('familyapp', 1, 'local_oksigeniaaty');
+        if (!class_exists('\\local_oksigeniaaty\\api')) {
+            $this->assertNull(letters::app());
+            return;
+        }
+        $app = letters::app();
+        $this->assertStringContainsString('aty', $app['icon']);
+        $this->assertSame(get_string('letter:apptitle', 'local_oksigeniafamily'), $app['title']);
+    }
 }
