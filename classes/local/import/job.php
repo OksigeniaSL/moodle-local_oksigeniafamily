@@ -18,6 +18,7 @@ namespace local_oksigeniafamily\local\import;
 
 use local_oksigeniafamily\local\page;
 use local_oksigeniafamily\task\import_apply;
+use local_oksigeniafamily\task\import_plan;
 
 /**
  * A file of families on its way in. Looking at it keeps the file in the plugin's own area, with what the preview said.
@@ -27,6 +28,9 @@ use local_oksigeniafamily\task\import_apply;
  *
  * A batch that went in stays if a later one fails, and running the task again goes on from there: the import never
  * duplicates anything, so the families already in are simply found as they are.
+ *
+ * Looking at a file of more than a few thousand people is also too long for a page (some 35 seconds for 40,000
+ * children): its preview is worked out by a background task too, and the page comes back to it when it is ready.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -42,8 +46,17 @@ class job {
     /** A file with up to this many rows goes in at once, inside the page, as it always did. */
     public const NOWROWS = 200;
 
+    /** A file with up to this many rows is looked at inside the page; a bigger one, in the background. */
+    public const PREVIEWNOWROWS = 2000;
+
+    /** Being looked at in the background: its preview is not ready yet. */
+    public const PLANNING = 'planning';
+
     /** Looked at, not applied yet. */
     public const PREVIEW = 'preview';
+
+    /** The preview of a big file, kept next to it once the background task has worked it out. */
+    private const PREVIEWFILE = 'preview.json';
 
     /** Waiting for the background task. */
     public const QUEUED = 'queued';
@@ -116,6 +129,104 @@ class job {
     }
 
     /**
+     * Keep a big file to be looked at in the background: its preview comes when the task has worked it out.
+     *
+     * @param string $text The file.
+     * @param string $filename Its name, as it was loaded.
+     * @param bool $complete Whether it is the complete list of its source.
+     * @param int $rows How many rows of people it has.
+     * @param int $userid Who looks at it.
+     * @param string $source Where it comes from.
+     * @return int The import.
+     */
+    public static function prepare_later(
+        string $text,
+        string $filename,
+        bool $complete,
+        int $rows,
+        int $userid,
+        string $source = 'csv'
+    ): int {
+        global $DB;
+
+        $now = time();
+        $filename = \core_text::substr(clean_param($filename, PARAM_FILE), 0, 255);
+        $jobid = (int) $DB->insert_record('local_oksigeniafamily_import', (object) [
+            'userid' => $userid,
+            'source' => $source,
+            'filename' => $filename === '' ? null : $filename,
+            'complete' => $complete ? 1 : 0,
+            'status' => self::PLANNING,
+            'filerows' => $rows,
+            'guarded' => 0,
+            'leaving' => 0,
+            'timecreated' => $now,
+            'timemodified' => $now,
+        ]);
+        get_file_storage()->create_file_from_string(self::filerecord($jobid), $text);
+        import_plan::queue($jobid);
+
+        return $jobid;
+    }
+
+    /**
+     * Work out the preview of a big file, for the background task: the same plan as the page would make, kept as the page
+     * shows it. Then the import waits to be applied, as one looked at in the page does.
+     *
+     * @param int $jobid The import.
+     * @return void
+     */
+    public static function make_preview(int $jobid): void {
+        global $DB;
+
+        $job = self::get($jobid);
+        if (!$job || $job->status !== self::PLANNING) {
+            return;
+        }
+        $file = self::file($job);
+        if (!$file) {
+            self::finish($job, self::STOPPED, 'import:job:nofile', [], false);
+            return;
+        }
+        $read = csv_file::read($file->get_content());
+        $plan = importer::plan($read['rows'], $job->source, (bool) $job->complete);
+        $view = preview::view($plan, $read['unknown']);
+
+        $record = self::filerecord($jobid);
+        $record['filename'] = self::PREVIEWFILE;
+        $fs = get_file_storage();
+        if ($old = $fs->get_file($record['contextid'], $record['component'], $record['filearea'], $record['itemid'],
+                $record['filepath'], $record['filename'])) {
+            $old->delete();
+        }
+        $fs->create_file_from_string($record, json_encode($view));
+
+        $job->status = self::PREVIEW;
+        $job->guarded = empty($plan['guarded']) ? 0 : 1;
+        $job->leaving = count($plan['leaving']);
+        $job->timemodified = time();
+        $DB->update_record('local_oksigeniafamily_import', $job);
+    }
+
+    /**
+     * The preview a background task worked out for a big file, if there is one.
+     *
+     * @param \stdClass $job The import.
+     * @return array|null For the template local_oksigeniafamily/import_preview, as preview::view() makes it.
+     */
+    public static function stored_preview(\stdClass $job): ?array {
+        $record = self::filerecord((int) $job->id);
+        $file = get_file_storage()->get_file($record['contextid'], $record['component'], $record['filearea'],
+            $record['itemid'], $record['filepath'], self::PREVIEWFILE);
+        if (!$file) {
+            return null;
+        }
+        $view = json_decode($file->get_content(), true);
+
+        return is_array($view) ? $view : null;
+    }
+
+    /**
      * An import.
      *
      * @param int $jobid The import.
@@ -137,7 +248,8 @@ class job {
     public static function cancel(int $jobid, int $userid): void {
         global $DB;
 
-        if ($DB->record_exists('local_oksigeniafamily_import', ['id' => $jobid, 'userid' => $userid, 'status' => self::PREVIEW])) {
+        $job = $DB->get_record('local_oksigeniafamily_import', ['id' => $jobid, 'userid' => $userid]);
+        if ($job && in_array($job->status, [self::PLANNING, self::PREVIEW], true)) {
             self::erase($jobid);
         }
     }
@@ -491,7 +603,8 @@ class job {
     public static function recent(int $now): array {
         global $DB;
 
-        [$busyin, $busyparams] = $DB->get_in_or_equal([self::QUEUED, self::RUNNING, self::FAILED], SQL_PARAMS_NAMED, 'busy');
+        [$busyin, $busyparams] = $DB->get_in_or_equal([self::PLANNING, self::QUEUED, self::RUNNING, self::FAILED],
+            SQL_PARAMS_NAMED, 'busy');
         $busy = $DB->get_records_select('local_oksigeniafamily_import', "status $busyin", $busyparams, 'id DESC');
         [$endin, $endparams] = $DB->get_in_or_equal([self::DONE, self::STOPPED], SQL_PARAMS_NAMED, 'end');
         $finished = $DB->get_records_select(
@@ -526,7 +639,7 @@ class job {
                 ];
             }
         }
-        $busy = in_array($job->status, [self::QUEUED, self::RUNNING], true);
+        $busy = in_array($job->status, [self::PLANNING, self::QUEUED, self::RUNNING], true);
         $progress = [];
         // Waiting, it does not know its families yet: it reads the file when it starts.
         if ($job->status === self::RUNNING || $job->status === self::FAILED) {
@@ -544,6 +657,7 @@ class job {
             $note = self::reason($job);
         }
         $kinds = [
+            self::PLANNING => 'muted',
             self::QUEUED => 'muted',
             self::RUNNING => 'new',
             self::DONE => 'ok',
@@ -558,6 +672,7 @@ class job {
             'status' => get_string('import:job:' . $job->status, $component),
             'kind' => $kinds[$job->status] ?? 'muted',
             'busy' => $busy,
+            'planning' => $job->status === self::PLANNING,
             'finished' => $job->status === self::DONE,
             'by' => get_string('import:job:by', $component, (object) [
                 'name' => $user && empty($user->deleted) ? fullname($user) : get_string('notice:someone', $component),
@@ -567,7 +682,7 @@ class job {
             'hasprogress' => !empty($progress),
             'progresslabel' => $busy && $progress ? $progress[0]['label'] : '',
             'stats' => $stats,
-            'hasstats' => $job->status !== self::QUEUED,
+            'hasstats' => !in_array($job->status, [self::PLANNING, self::QUEUED], true),
             'note' => $note,
             'complete' => !empty($job->complete),
         ];
@@ -634,9 +749,10 @@ class job {
         $ids = $DB->get_fieldset_select(
             'local_oksigeniafamily_import',
             'id',
-            "(status = :preview AND timemodified < :previewbefore) OR (status $endin AND timemodified < :before)",
+            "(status IN (:preview, :planning) AND timemodified < :previewbefore) OR (status $endin AND timemodified < :before)",
             $params + [
                 'preview' => self::PREVIEW,
+                'planning' => self::PLANNING,
                 'previewbefore' => $now - DAYSECS,
                 'before' => $now - self::KEEPDAYS * DAYSECS,
             ]

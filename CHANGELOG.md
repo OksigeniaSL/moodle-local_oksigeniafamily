@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.19-dev)
+
+- A file of more than 2,000 rows is looked at in the background, as a big one is already applied: reading what 40,000
+  children would change took some 35 seconds, more than a page holds. The import page says it is preparing the preview
+  and comes back to it when the task has it; nothing changes until it is applied. The preview, whether worked out in the
+  page or in the background, comes from the new `local\import\preview`.
+
 ### Added
 
 - `api::adult_users_of_family()`: the accounts of the active adults of an open family, so another plugin can tell them

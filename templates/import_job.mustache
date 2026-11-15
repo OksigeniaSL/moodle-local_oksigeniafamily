@@ -65,7 +65,8 @@
             {{/progress}}
         </div>
         {{/hasprogress}}
-        {{#busy}}<p class="okf-note">{{#str}} import:job:wait, local_oksigeniafamily {{/str}}</p>{{/busy}}
+        {{#busy}}{{^planning}}<p class="okf-note">{{#str}} import:job:wait, local_oksigeniafamily {{/str}}</p>{{/planning}}{{/busy}}
+        {{#planning}}<p class="okf-note">{{#str}} import:job:planwait, local_oksigeniafamily {{/str}}</p>{{/planning}}
         {{#note}}<p class="okf-note okf-warn" role="alert">{{note}}</p>{{/note}}
     </section>
     {{#hasstats}}

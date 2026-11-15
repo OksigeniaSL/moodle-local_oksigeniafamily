@@ -18,6 +18,7 @@ namespace local_oksigeniafamily\local\import;
 
 use local_oksigeniafamily\api;
 use local_oksigeniafamily\task\import_apply;
+use local_oksigeniafamily\task\import_plan;
 
 /**
  * Tests for applying an import: a small file at once, a big one in the background by batches, what a failure halfway
@@ -28,6 +29,8 @@ use local_oksigeniafamily\task\import_apply;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers \local_oksigeniafamily\local\import\job
  * @covers \local_oksigeniafamily\task\import_apply
+ * @covers \local_oksigeniafamily\task\import_plan
+ * @covers \local_oksigeniafamily\local\import\preview
  */
 #[\PHPUnit\Framework\Attributes\CoversClass(job::class)]
 final class job_test extends \advanced_testcase {
@@ -401,5 +404,66 @@ final class job_test extends \advanced_testcase {
         // The page lists the one on its way.
         $recent = job::recent($now);
         $this->assertSame([(int) $waiting], array_map(fn($job) => (int) $job->id, $recent));
+    }
+
+    /**
+     * A file of more than a few thousand people is looked at in the background: the page waits, the task works out its
+     * preview as the page would, and then it is applied as any big file. Leaving it while it is looked at erases it, and
+     * the daily round erases one forgotten there.
+     */
+    public function test_big_file_preview_in_background(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $user = $this->manager();
+        $this->redirectMessages();
+
+        $text = $this->csv($this->families(1, 700));
+        $rows = count(csv_file::read($text)['rows']);
+        $this->assertGreaterThan(job::PREVIEWNOWROWS, $rows);
+        $jobid = job::prepare_later($text, 'families.csv', false, $rows, (int) $user->id);
+
+        $job = job::get($jobid);
+        $this->assertSame(job::PLANNING, $job->status);
+        $this->assertNull(job::stored_preview($job));
+        $this->assertCount(1, \core\task\manager::get_adhoc_tasks(import_plan::class));
+        $view = job::export($job);
+        $this->assertTrue($view['busy']);
+        $this->assertTrue($view['planning']);
+        $this->assertFalse($view['hasstats']);
+        $this->assertSame([0, 0, 0], $this->totals());
+
+        ob_start();
+        $this->runAdhocTasks(import_plan::class);
+        ob_end_clean();
+        $job = job::get($jobid);
+        $this->assertSame(job::PREVIEW, $job->status);
+        $stored = job::stored_preview($job);
+        $this->assertNotNull($stored);
+        $this->assertCount(preview::LISTED, $stored['families']);
+        $this->assertTrue($stored['haswork']);
+        $this->assertFalse($stored['guarded']);
+        $this->assertSame(700, $stored['stats'][0]['value']);
+        $this->assertSame([0, 0, 0], $this->totals());
+
+        // Then it goes in as any big file, and its preview goes with its file.
+        $this->assertSame(job::QUEUED, job::start($jobid, null, (int) $user->id)->status);
+        $this->assertTrue(job::run($jobid));
+        $this->assertSame(job::DONE, job::get($jobid)->status);
+        $this->assertSame([700, 700, 1400], $this->totals());
+        $this->assertNull(job::stored_preview(job::get($jobid)));
+
+        // Left while it is looked at: erased, and its task finds nothing to do.
+        $left = job::prepare_later($text, 'families.csv', false, $rows, (int) $user->id);
+        job::cancel($left, (int) $user->id);
+        $this->assertNull(job::get($left));
+        $this->assertFalse($this->has_file($left));
+        job::make_preview($left);
+        $this->assertNull(job::get($left));
+
+        // Forgotten while it is looked at: the daily round erases it the day after.
+        $forgotten = job::prepare_later($text, 'families.csv', false, $rows, (int) $user->id);
+        $DB->set_field('local_oksigeniafamily_import', 'timemodified', time() - 2 * DAYSECS, ['id' => $forgotten]);
+        job::purge(time());
+        $this->assertNull(job::get($forgotten));
     }
 }

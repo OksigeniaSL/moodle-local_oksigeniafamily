@@ -18,7 +18,8 @@
  * Importing families from a CSV file: upload it, see what would change, and apply it. The file waits between the two
  * steps in the plugin's own area (see local\import\job), and it is deleted when it has gone in or the person leaves it;
  * if they just go away, the daily round erases it the day after. A small file goes in at once; a big one, in the
- * background by batches, and this page shows how it goes and what it did.
+ * background by batches, and this page shows how it goes and what it did. A file of more than a few thousand people is
+ * also looked at in the background, and this page shows its preview when it is ready.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -28,10 +29,10 @@
 require(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
-use local_oksigeniafamily\local\families;
 use local_oksigeniafamily\local\import\csv_file;
 use local_oksigeniafamily\local\import\importer;
 use local_oksigeniafamily\local\import\job;
+use local_oksigeniafamily\local\import\preview;
 use local_oksigeniafamily\local\page;
 
 $component = 'local_oksigeniafamily';
@@ -72,6 +73,21 @@ if ($jobid && (optional_param('apply', 0, PARAM_BOOL) || optional_param('cancel'
 
 // An import on its way in, or what it did.
 $job = $jobid ? job::get($jobid) : null;
+$stored = $job && $job->status === job::PREVIEW && (int) $job->userid === (int) $USER->id ? job::stored_preview($job) : null;
+if ($stored) {
+    page::dress(get_string('import:preview', $component));
+    page::once_forms();
+    echo $OUTPUT->header();
+    echo $OUTPUT->render_from_template('local_oksigeniafamily/import_preview', $stored + [
+        'nav' => page::nav('import'),
+        'action' => $scripturl->out(false),
+        'sesskey' => sesskey(),
+        'job' => (int) $job->id,
+        'background' => (int) $job->filerows > job::NOWROWS,
+    ]);
+    echo $OUTPUT->footer();
+    exit;
+}
 if ($job && $job->status !== job::PREVIEW) {
     $view = job::export($job);
     if ($view['busy']) {
@@ -104,6 +120,10 @@ if (!empty($_FILES['csvfile'])) {
             $error = get_string('import:file:missing', $component, implode(', ', $read['missing']));
         } else if ($read['error'] !== '') {
             $error = get_string('import:file:' . $read['error'], $component);
+        } else if (count($read['rows']) > job::PREVIEWNOWROWS) {
+            // Too many people to look at inside the page: the preview is worked out in the background.
+            $jobid = job::prepare_later($text, (string) $upload['name'], (bool) $complete, count($read['rows']), (int) $USER->id);
+            redirect(new moodle_url($scripturl, ['job' => $jobid]));
         } else {
             $preview = importer::plan($read['rows'], 'csv', (bool) $complete);
             $rows = count($read['rows']);
@@ -117,98 +137,8 @@ page::once_forms();
 
 echo $OUTPUT->header();
 if ($preview) {
-    $userids = [];
-    foreach ($preview['families'] as $family) {
-        foreach ($family['children'] as $child) {
-            $userids[] = $child['userid'];
-        }
-    }
-    $fields = 'id, ' . implode(', ', \core_user\fields::get_name_fields());
-    $users = array_filter($userids) ? $DB->get_records_list('user', 'id', array_filter($userids), '', $fields) : [];
-    $changing = [];
-    $quiet = 0;
-    // In a new family everybody is new: chips only say something in a family that was already there.
-    $chip = function (array $person, array $family) use ($component) {
-        if (!$family['id']) {
-            return null;
-        }
-        if (empty($person['id'])) {
-            return ['label' => get_string('import:chip:new', $component), 'kind' => 'new'];
-        }
-        if ($person['changes']) {
-            $fields = array_unique($person['changes']);
-            $fields = array_map(fn($field) => get_string('import:field:' . $field, $component), $fields);
-            return ['label' => get_string('import:chip:changes', $component, implode(', ', $fields)), 'kind' => 'warn'];
-        }
-        return ['label' => get_string('import:chip:same', $component), 'kind' => 'muted'];
-    };
-    foreach ($preview['families'] as $family) {
-        $adults = [];
-        $children = [];
-        $changes = !$family['id'];
-        foreach ($family['adults'] as $adult) {
-            if (empty($adult['seen'])) {
-                continue;
-            }
-            $changes = $changes || empty($adult['id']) || $adult['changes'];
-            $data = $adult['data'];
-            $adults[] = [
-                'name' => families::adult_name((object) $data),
-                'phone' => $data['phone'] ?? '',
-                'email' => $data['email'] ?? '',
-                'chip' => $chip($adult, $family),
-            ];
-        }
-        foreach ($family['children'] as $child) {
-            if (empty($child['seen'])) {
-                continue;
-            }
-            $changes = $changes || empty($child['id']) || $child['changes'];
-            $children[] = [
-                'name' => isset($users[$child['userid']]) ? fullname($users[$child['userid']]) : $child['sourcekey'],
-                'noaccount' => !$child['userid'],
-                'chip' => $chip($child, $family),
-            ];
-        }
-        if (!$changes) {
-            $quiet++;
-        } else if (count($changing) < 60) {
-            $changing[] = [
-                'key' => $family['key'],
-                'isnew' => !$family['id'],
-                'adults' => $adults,
-                'children' => $children,
-            ];
-        }
-    }
-    $counts = $preview['counts'];
-    $stats = [];
-    foreach (['familiesnew', 'adultsnew', 'adultschanged', 'childrennew', 'childrenleaving', 'errors'] as $name) {
-        if ($counts[$name] > 0 || in_array($name, ['familiesnew', 'adultsnew', 'childrennew'], true)) {
-            $stats[] = [
-                'value' => $counts[$name],
-                'label' => get_string('import:stat:' . $name, $component),
-                'bad' => $name === 'errors',
-            ];
-        }
-    }
-    $unknown = $read['unknown'];
-    $work = $counts['familiesnew'] + $counts['adultsnew'] + $counts['adultschanged'] + $counts['childrennew']
-        + $counts['childrenchanged'] + $counts['childrenleaving'];
-    echo $OUTPUT->render_from_template('local_oksigeniafamily/import_preview', [
+    echo $OUTPUT->render_from_template('local_oksigeniafamily/import_preview', preview::view($preview, $read['unknown']) + [
         'nav' => page::nav('import'),
-        'stats' => $stats,
-        'unknown' => $unknown ? get_string('import:file:unknown', $component, implode(', ', $unknown)) : '',
-        'errors' => $preview['errors'],
-        'haserrors' => !empty($preview['errors']),
-        'families' => $changing,
-        'hasfamilies' => !empty($changing),
-        'quiet' => $quiet ? get_string('import:quiet', $component, $quiet) : '',
-        'leaving' => array_map(fn($child) => ['key' => $child->sourcekey, 'family' => $child->familykey], $preview['leaving']),
-        'hasleaving' => !empty($preview['leaving']),
-        'guarded' => $preview['guarded'],
-        'leavingcount' => count($preview['leaving']),
-        'haswork' => $work > 0,
         'action' => $scripturl->out(false),
         'sesskey' => sesskey(),
         'job' => $jobid,
