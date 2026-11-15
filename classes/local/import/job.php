@@ -616,8 +616,8 @@ class job {
     public static function recent(int $now): array {
         global $DB;
 
-        [$busyin, $busyparams] = $DB->get_in_or_equal([self::PLANNING, self::QUEUED, self::RUNNING, self::FAILED],
-            SQL_PARAMS_NAMED, 'busy');
+        $busystatuses = [self::PLANNING, self::QUEUED, self::RUNNING, self::FAILED];
+        [$busyin, $busyparams] = $DB->get_in_or_equal($busystatuses, SQL_PARAMS_NAMED, 'busy');
         $busy = $DB->get_records_select('local_oksigeniafamily_import', "status $busyin", $busyparams, 'id DESC');
         [$endin, $endparams] = $DB->get_in_or_equal([self::DONE, self::STOPPED], SQL_PARAMS_NAMED, 'end');
         $finished = $DB->get_records_select(
