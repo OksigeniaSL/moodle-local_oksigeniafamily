@@ -195,8 +195,15 @@ class job {
         $record = self::filerecord($jobid);
         $record['filename'] = self::PREVIEWFILE;
         $fs = get_file_storage();
-        if ($old = $fs->get_file($record['contextid'], $record['component'], $record['filearea'], $record['itemid'],
-                $record['filepath'], $record['filename'])) {
+        $old = $fs->get_file(
+            $record['contextid'],
+            $record['component'],
+            $record['filearea'],
+            $record['itemid'],
+            $record['filepath'],
+            $record['filename']
+        );
+        if ($old) {
             $old->delete();
         }
         $fs->create_file_from_string($record, json_encode($view));
@@ -216,8 +223,14 @@ class job {
      */
     public static function stored_preview(\stdClass $job): ?array {
         $record = self::filerecord((int) $job->id);
-        $file = get_file_storage()->get_file($record['contextid'], $record['component'], $record['filearea'],
-            $record['itemid'], $record['filepath'], self::PREVIEWFILE);
+        $file = get_file_storage()->get_file(
+            $record['contextid'],
+            $record['component'],
+            $record['filearea'],
+            $record['itemid'],
+            $record['filepath'],
+            self::PREVIEWFILE
+        );
         if (!$file) {
             return null;
         }
