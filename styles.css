@@ -1607,3 +1607,364 @@
     gap: .375rem;
     align-items: center;
 }
+
+/* «Familias»: what each family is missing, and the list filtered by it (Jujol, 15 Nov 2026), for styles.css of
+   local_oksigeniafamily, after what is there. It hangs from .okf-families and uses only the --okf-* variables, which
+   are the theme's: it follows each site in light and dark. No :has(), no color-mix() and no max-width on text. */
+
+/* The icons, drawn once at the top of the page and used by each tile and each card. */
+.local-oksigeniafamily .okf-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+/* ---------- What the families are missing: a tile each, with how many and what it means ---------- */
+.local-oksigeniafamily .okf-needs {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.local-oksigeniafamily .okf-need-group-title {
+    margin: 0 0 .5rem;
+    color: var(--okf-muted);
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.local-oksigeniafamily .okf-need-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+    gap: .6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-need {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+        "icon count"
+        "label label"
+        "hint hint";
+    align-items: center;
+    column-gap: .55rem;
+    height: 100%;
+    padding: .8rem .95rem .85rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .9rem;
+    background: var(--okf-bg);
+    color: var(--okf-ink);
+    text-decoration: none;
+}
+
+/* A need that some families have: a band of the warning colour along its left side. */
+.local-oksigeniafamily .okf-need::before {
+    content: "";
+    position: absolute;
+    top: .8rem;
+    bottom: .8rem;
+    left: -1px;
+    width: 4px;
+    border-radius: 0 4px 4px 0;
+    background: var(--okf-warn-text);
+}
+
+.local-oksigeniafamily .okf-need-icon {
+    grid-area: icon;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--okf-warn-text);
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.local-oksigeniafamily .okf-need-count {
+    grid-area: count;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.local-oksigeniafamily .okf-need-label {
+    grid-area: label;
+    margin-top: .35rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.local-oksigeniafamily .okf-need-hint {
+    grid-area: hint;
+    margin-top: .15rem;
+    color: var(--okf-muted);
+    font-size: .85rem;
+    line-height: 1.35;
+}
+
+/* What is good to know, but is not missing: the band and the icon in the colour of the text. */
+.local-oksigeniafamily .okf-need-info::before {
+    background: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-need-info .okf-need-icon {
+    color: var(--okf-ink);
+}
+
+/* Nobody has it: the tile stays, quiet, so that it says that everything is in order. */
+.local-oksigeniafamily .okf-need.is-none {
+    background: var(--okf-soft);
+}
+
+.local-oksigeniafamily .okf-need.is-none::before {
+    display: none;
+}
+
+.local-oksigeniafamily .okf-need.is-none .okf-need-icon,
+.local-oksigeniafamily .okf-need.is-none .okf-need-count {
+    color: var(--okf-muted);
+}
+
+/* The one shown: marked in the theme's colour, and «Quitar» says that another touch shows them all. */
+.local-oksigeniafamily .okf-need.is-current {
+    border-color: var(--okf-accent);
+    background: var(--okf-accent-soft);
+    box-shadow: inset 0 0 0 1px var(--okf-accent);
+}
+
+.local-oksigeniafamily .okf-need-off {
+    position: absolute;
+    top: .7rem;
+    right: .85rem;
+    color: var(--okf-accent-text);
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily .okf-need-off::before {
+    content: "× ";
+}
+
+.local-oksigeniafamily .okf-need:focus-visible {
+    outline: 2px solid var(--okf-accent);
+    outline-offset: 2px;
+}
+
+/* Only where there is a pointer that hovers: a touch would leave it stuck. The tiles and the steps of the pages carry
+   the theme's nav-link, which Boost does not underline in dark mode; these keep their own colours over its hover. */
+@media (hover: hover) {
+    .local-oksigeniafamily .okf-need:hover,
+    .local-oksigeniafamily .okf-need:focus {
+        border-color: var(--okf-accent);
+        color: var(--okf-ink);
+    }
+}
+
+/* What is shown, over the list, with the way back to all of them. */
+.local-oksigeniafamily .okf-showing {
+    margin: -.25rem 0 1rem;
+    color: var(--okf-muted);
+}
+
+.local-oksigeniafamily .okf-showing a {
+    margin-left: .25rem;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* ---------- The families: a card each ---------- */
+.local-oksigeniafamily .okf-fichas {
+    margin: 0 0 1rem;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--okf-line);
+    border-radius: .9rem;
+    background: var(--okf-bg);
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-ficha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto;
+    align-items: start;
+    gap: .4rem 1.25rem;
+    padding: .9rem 1.1rem;
+    border-top: 1px solid var(--okf-line);
+}
+
+.local-oksigeniafamily .okf-ficha:first-child {
+    border-top: 0;
+}
+
+.local-oksigeniafamily .okf-ficha-who {
+    display: grid;
+    gap: .15rem;
+    min-width: 0;
+}
+
+.local-oksigeniafamily .okf-ficha-adults {
+    color: var(--okf-ink);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.local-oksigeniafamily .okf-ficha-adults:hover,
+.local-oksigeniafamily .okf-ficha-adults:focus {
+    color: var(--okf-accent-text);
+    text-decoration: underline;
+}
+
+.local-oksigeniafamily .okf-ficha-children {
+    color: var(--okf-muted);
+    font-size: .9rem;
+}
+
+.local-oksigeniafamily .okf-ficha-source {
+    padding: .15rem .6rem;
+    border-radius: 2rem;
+    background: var(--okf-chip);
+    color: var(--okf-muted);
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.local-oksigeniafamily .okf-ficha.is-closed .okf-ficha-adults {
+    color: var(--okf-muted);
+}
+
+/* What the family is missing, in words, each with the icon of its tile. */
+.local-oksigeniafamily .okf-flags {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: .35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.local-oksigeniafamily .okf-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .2rem .65rem .2rem .5rem;
+    border-radius: 2rem;
+    font-size: .85rem;
+    line-height: 1.35;
+}
+
+.local-oksigeniafamily .okf-flag svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.local-oksigeniafamily .okf-flag-warn {
+    background: var(--okf-warn-soft);
+    color: var(--okf-warn-text);
+}
+
+.local-oksigeniafamily .okf-flag-info {
+    background: var(--okf-chip);
+    color: var(--okf-ink);
+}
+
+.local-oksigeniafamily .okf-flag-ok {
+    padding-left: 0;
+    color: var(--okf-ok-text);
+}
+
+/* The need being shown: the same flag in every card, in bold, so the eye goes to the names. */
+.local-oksigeniafamily .okf-flag.is-current {
+    font-weight: 700;
+}
+
+/* ---------- The pages: back, where it is, forward ---------- */
+.local-oksigeniafamily .okf-pager {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem 1rem;
+    margin-bottom: 1rem;
+}
+
+.local-oksigeniafamily .okf-pager-step {
+    padding: .45rem 1rem;
+    border: 1px solid var(--okf-line);
+    border-radius: 2rem;
+    color: var(--okf-ink);
+    text-decoration: none;
+}
+
+.local-oksigeniafamily .okf-pager-step[rel="prev"]::before {
+    content: "← ";
+}
+
+.local-oksigeniafamily .okf-pager-step[rel="next"]::after {
+    content: " →";
+}
+
+.local-oksigeniafamily .okf-pager-range {
+    color: var(--okf-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Only where there is a pointer that hovers: a touch would leave it stuck. */
+@media (hover: hover) {
+    .local-oksigeniafamily .okf-pager-step:hover {
+        border-color: var(--okf-accent);
+        color: var(--okf-accent-text);
+    }
+}
+
+/* On a phone: two tiles a row, and each card stacked, the flags under the names. */
+@media (max-width: 575.98px) {
+    .local-oksigeniafamily .okf-need-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .local-oksigeniafamily .okf-need {
+        padding: .7rem .75rem .75rem;
+    }
+
+    .local-oksigeniafamily .okf-need-count {
+        font-size: 1.35rem;
+    }
+
+    .local-oksigeniafamily .okf-need-off {
+        position: static;
+        grid-column: 1 / -1;
+        margin-top: .35rem;
+    }
+
+    .local-oksigeniafamily .okf-ficha {
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: .85rem .9rem;
+    }
+
+    .local-oksigeniafamily .okf-flags {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+
+    .local-oksigeniafamily .okf-ficha-source {
+        grid-column: 2;
+        grid-row: 1;
+    }
+}

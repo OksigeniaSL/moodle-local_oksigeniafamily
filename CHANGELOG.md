@@ -5,6 +5,16 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.20-dev)
+
+- «Familias» says what each family is missing, and filters by it (design by Jujol). On top, a tile for each need with
+  how many active families have it and what it means: consents not answered (with the consents on), nobody with an
+  account, a code not used, no confirmed phone; and, good to know, students without an account and a «no» to their
+  image. A touch shows only those families, with the search; another one shows them all. Each family is a card with its
+  adults, its students with their group and what it is missing in words, naming whom it concerns («Code not used: Leo
+  Ruiz»), or «Up to date». Everything is decided in SQL on indexed columns (`families::need_condition()`, a COUNT per
+  tile in `need_counts()`, `flags()` for the 25 cards of a page), and the pages say «26–50 of 87» without Moodle's bar.
+
 ### Changed (0.3.19-dev)
 
 - A file of more than 2,000 rows is looked at in the background, as a big one is already applied: reading what 40,000

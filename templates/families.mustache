@@ -17,38 +17,87 @@
 {{!
     @template local_oksigeniafamily/families
 
-    The list of families: the search, the filter and one row per family (one card on a phone), with only the names of
-    who is in each. Without any family yet, the ways for them to get in.
+    The list of families. On top, what the active families are missing, each with how many and what it means; a touch
+    shows only those families, and another touch shows them all again. Under it, the search and the status, and one card
+    per family with its adults, its students and what it is missing, in words. Without any family yet, the ways for them
+    to get in.
 
     Context variables required for this template:
     * nav - See local_oksigeniafamily/nav.
     * newurl, importurl, codesurl - The ways in.
     * lede - How many there are.
-    * action, q, closedfilter - The search form.
+    * hasneeds, needgroups - What the families are missing: each group with grouptitle and needs (each with needurl,
+      needkind (warn or info), needicon, needcount, needlabel, needhint, needcurrent and neednone).
+    * action, q, closedfilter, need - The search form.
     * filters - Each with url, label, count and current.
+    * showing - When only some families are shown: showingtext and clearurl.
     * hasany, hasrows - Whether there are families at all, and in this search.
-    * rows - Each with url, adults, children, source and closed.
-    * paging - The paging bar, as HTML.
+    * rows - Each with url, adults, children, source, closed, flags (each with flagtext, flagkind, flagicon and
+      flagcurrent) and allgood.
+    * pager - prevurl, nexturl and range, or false with a single page.
 
     Example context (json):
     {
-        "nav": {"items": [{"url": "#", "label": "Families", "current": true}]},
+        "nav": {"items": [{"url": "#", "label": "Familias", "current": true}]},
         "newurl": "#", "importurl": "#", "codesurl": "#",
-        "lede": "Active families: 2 · Adults: 3 · Students: 3",
-        "action": "#", "q": "", "closedfilter": false,
-        "filters": [{"url": "#", "label": "Active", "count": 2, "current": true}, {"url": "#", "label": "Closed", "count": 0, "current": false}],
+        "lede": "Familias activas: 2 · Adultos: 3 · Hijos: 3",
+        "hasneeds": true,
+        "needgroups": [
+            {"grouptitle": "Les falta", "needs": [
+                {"needurl": "#", "needkind": "warn", "needicon": "person", "needcount": "1", "needlabel": "Nadie con cuenta", "needhint": "No pueden entrar en la app", "needcurrent": false, "neednone": false},
+                {"needurl": "#", "needkind": "warn", "needicon": "code", "needcount": "0", "needlabel": "Código sin usar", "needhint": "Se les dio y no lo han usado", "needcurrent": false, "neednone": true}
+            ]}
+        ],
+        "action": "#", "q": "", "closedfilter": false, "need": "",
+        "filters": [{"url": "#", "label": "Activas", "count": 2, "current": true}, {"url": "#", "label": "Cerradas", "count": 0, "current": false}],
+        "showing": false,
         "hasany": true, "hasrows": true,
-        "rows": [{"url": "#", "adults": "Marta Gil, Juan Ruiz", "children": "Ana Ruiz, Leo Ruiz", "source": "Imported", "closed": false}],
-        "paging": ""
+        "rows": [
+            {"url": "#", "adults": "Marta Gil, Juan Ruiz", "children": "Ana Ruiz · 3.º B", "source": "Importada", "closed": false,
+             "flags": [{"flagtext": "Nadie con cuenta", "flagkind": "warn", "flagicon": "person", "flagcurrent": false}], "allgood": false}
+        ],
+        "pager": {"prevurl": "", "nexturl": "#", "range": "1–25 de 1.214"}
     }
 }}
 <div class="local-oksigeniafamily okf-families">
+    <svg class="okf-sprite" aria-hidden="true" focusable="false">
+        <symbol id="okf-i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+        <symbol id="okf-i-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
+        <symbol id="okf-i-code" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10.5h2M11 10.5h2M15 10.5h2M7 13.5h6"/></symbol>
+        <symbol id="okf-i-letter" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14h8M8 17.5h5"/></symbol>
+        <symbol id="okf-i-student" viewBox="0 0 24 24"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3V11"/></symbol>
+        <symbol id="okf-i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/><path d="M3.5 3.5l17 17"/></symbol>
+        <symbol id="okf-i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    </svg>
     <div class="okf-head">
         {{#nav}}{{> local_oksigeniafamily/nav}}{{/nav}}
         <a class="btn btn-primary" href="{{newurl}}">{{#str}} list:new, local_oksigeniafamily {{/str}}</a>
     </div>
     {{#hasany}}
     <p class="okf-lede">{{lede}}</p>
+    {{#hasneeds}}
+    <section class="okf-needs" aria-labelledby="okf-needs-title">
+        <h2 class="visually-hidden sr-only" id="okf-needs-title">{{#str}} need:title, local_oksigeniafamily {{/str}}</h2>
+        {{#needgroups}}
+        <div class="okf-need-group">
+            <p class="okf-need-group-title">{{grouptitle}}</p>
+            <ul class="okf-need-list">
+                {{#needs}}
+                <li>
+                    <a class="nav-link okf-need okf-need-{{needkind}}{{#needcurrent}} is-current{{/needcurrent}}{{#neednone}} is-none{{/neednone}}" href="{{needurl}}"{{#needcurrent}} aria-current="true"{{/needcurrent}}>
+                        <svg class="okf-need-icon" aria-hidden="true" focusable="false"><use href="#okf-i-{{needicon}}"/></svg>
+                        <span class="okf-need-count">{{needcount}}</span>
+                        <span class="okf-need-label">{{needlabel}}</span>
+                        <span class="okf-need-hint">{{needhint}}</span>
+                        {{#needcurrent}}<span class="okf-need-off">{{#str}} need:off, local_oksigeniafamily {{/str}}</span>{{/needcurrent}}
+                    </a>
+                </li>
+                {{/needs}}
+            </ul>
+        </div>
+        {{/needgroups}}
+    </section>
+    {{/hasneeds}}
     <div class="okf-tools">
         <form class="okf-search" method="get" action="{{action}}" role="search">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -56,6 +105,7 @@
             <label class="visually-hidden sr-only" for="okf-q">{{#str}} list:search, local_oksigeniafamily {{/str}}</label>
             <input id="okf-q" type="search" name="q" value="{{q}}" placeholder="{{#str}} list:search, local_oksigeniafamily {{/str}}">
             {{#closedfilter}}<input type="hidden" name="status" value="closed">{{/closedfilter}}
+            {{#need}}<input type="hidden" name="need" value="{{need}}">{{/need}}
         </form>
         <div class="okf-filter">
             {{#filters}}
@@ -63,26 +113,36 @@
             {{/filters}}
         </div>
     </div>
+    {{#showing}}
+    <p class="okf-showing">{{showingtext}} <a href="{{clearurl}}">{{#str}} need:all, local_oksigeniafamily {{/str}}</a></p>
+    {{/showing}}
     {{#hasrows}}
-    <table class="okf-table table-reboot">
-        <thead>
-            <tr>
-                <th scope="col">{{#str}} list:col:adults, local_oksigeniafamily {{/str}}</th>
-                <th scope="col">{{#str}} list:col:children, local_oksigeniafamily {{/str}}</th>
-                <th scope="col">{{#str}} list:col:source, local_oksigeniafamily {{/str}}</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{#rows}}
-            <tr>
-                <td class="okf-strong"><a href="{{url}}">{{adults}}</a></td>
-                <td>{{children}}</td>
-                <td><span class="okf-chip{{#closed}} okf-chip-muted{{/closed}}">{{source}}</span></td>
-            </tr>
-            {{/rows}}
-        </tbody>
-    </table>
-    {{{paging}}}
+    <ul class="okf-fichas">
+        {{#rows}}
+        <li class="okf-ficha{{#closed}} is-closed{{/closed}}">
+            <div class="okf-ficha-who">
+                <a class="okf-ficha-adults" href="{{url}}">{{adults}}</a>
+                <span class="okf-ficha-children">{{children}}</span>
+            </div>
+            <ul class="okf-flags">
+                {{#flags}}
+                <li class="okf-flag okf-flag-{{flagkind}}{{#flagcurrent}} is-current{{/flagcurrent}}"><svg aria-hidden="true" focusable="false"><use href="#okf-i-{{flagicon}}"/></svg>{{flagtext}}</li>
+                {{/flags}}
+                {{#allgood}}
+                <li class="okf-flag okf-flag-ok"><svg aria-hidden="true" focusable="false"><use href="#okf-i-ok"/></svg>{{#str}} flag:ok, local_oksigeniafamily {{/str}}</li>
+                {{/allgood}}
+            </ul>
+            <span class="okf-ficha-source">{{source}}</span>
+        </li>
+        {{/rows}}
+    </ul>
+    {{#pager}}
+    <nav class="okf-pager" aria-label="{{#str}} list:pages, local_oksigeniafamily {{/str}}">
+        {{#prevurl}}<a class="nav-link okf-pager-step" href="{{prevurl}}" rel="prev">{{#str}} list:prev, local_oksigeniafamily {{/str}}</a>{{/prevurl}}
+        <span class="okf-pager-range">{{range}}</span>
+        {{#nexturl}}<a class="nav-link okf-pager-step" href="{{nexturl}}" rel="next">{{#str}} list:next, local_oksigeniafamily {{/str}}</a>{{/nexturl}}
+    </nav>
+    {{/pager}}
     {{/hasrows}}
     {{^hasrows}}
     <p class="okf-empty">{{#str}} list:nothing, local_oksigeniafamily {{/str}}</p>
