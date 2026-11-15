@@ -5,6 +5,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.22-dev)
+
+- A letter names the student with first name and surnames, whatever order the site uses for its lists: the school's
+  «lastname firstname» put «Rodríguez Pérez Carolina» at the top of the letter (seen by Nuryana).
+
 ### Changed (0.3.21-dev)
 
 - The letters with the codes say, at their foot, that everything is also in the Oksigenia Aty app, with its icon and

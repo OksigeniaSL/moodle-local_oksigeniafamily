@@ -122,6 +122,8 @@ final class letters_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setAdminUser();
 
+        // A site that lists people by surname still writes the letter to «Ana Ruiz».
+        set_config('fullnamedisplay', 'lastname firstname');
         $ana = $this->getDataGenerator()->create_user(['firstname' => 'Ana', 'lastname' => 'Ruiz']);
         $issued = letters::issue([$ana->id => $ana], letters::REPLACE, time());
         $context = letters::context($issued, 'Year 5');

@@ -108,7 +108,7 @@ class letters {
         $letters = [];
         foreach ($issued as $letter) {
             $code = self::show_code($letter['code']);
-            $a = (object) ['student' => fullname($letter['user']), 'site' => $site];
+            $a = (object) ['student' => self::name($letter['user']), 'site' => $site];
             $letters[] = [
                 'title' => get_string('letter:title', 'local_oksigeniafamily', $a),
                 'intro' => get_string('letter:intro', 'local_oksigeniafamily', $a),
@@ -124,6 +124,19 @@ class letters {
         }
 
         return $letters;
+    }
+
+    /**
+     * The student as a letter calls them: first name and surnames, whatever order the site uses for its lists
+     * («Ruiz Pérez Ana» reads well in a list, not at the top of a letter to a family).
+     *
+     * @param \stdClass $user The student.
+     * @return string
+     */
+    public static function name(\stdClass $user): string {
+        $name = trim(($user->firstname ?? '') . ' ' . ($user->lastname ?? ''));
+
+        return $name !== '' ? $name : fullname($user);
     }
 
     /**
