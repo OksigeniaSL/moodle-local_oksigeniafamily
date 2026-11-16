@@ -52,8 +52,9 @@ $context = join::eligible($student) ? join::context($student) : null;
 $canteen = '';
 $help = '\\local_oksigeniameals\\local\\familyhelp';
 if ($context && class_exists($help) && method_exists($help, 'section')) {
-    $type = core_useragent::get_device_type();
-    $section = $help::section($student, $type === core_useragent::DEVICETYPE_MOBILE || $type === core_useragent::DEVICETYPE_TABLET);
+    // A phone, not a tablet: on the child's tablet the parent scans the QR with their own phone (Meals says which).
+    $phone = method_exists($help, 'phone') ? $help::phone() : core_useragent::get_device_type() === core_useragent::DEVICETYPE_MOBILE;
+    $section = $help::section($student, $phone);
     $canteen = (string) ($section['html'] ?? '');
     if ($canteen !== '' && !empty($section['css'])) {
         $PAGE->requires->css(new moodle_url((string) $section['css']));
