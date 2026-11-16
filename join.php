@@ -53,7 +53,9 @@ $canteen = '';
 $help = '\\local_oksigeniameals\\local\\familyhelp';
 if ($context && class_exists($help) && method_exists($help, 'section')) {
     // A phone, not a tablet: on the child's tablet the parent scans the QR with their own phone (Meals says which).
-    $phone = method_exists($help, 'phone') ? $help::phone() : core_useragent::get_device_type() === core_useragent::DEVICETYPE_MOBILE;
+    $phone = method_exists($help, 'phone')
+        ? $help::phone()
+        : core_useragent::get_device_type() === core_useragent::DEVICETYPE_MOBILE;
     $section = $help::section($student, $phone);
     $canteen = (string) ($section['html'] ?? '');
     if ($canteen !== '' && !empty($section['css'])) {
