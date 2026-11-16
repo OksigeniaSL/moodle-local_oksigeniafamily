@@ -177,8 +177,9 @@ class letters {
     }
 
     /**
-     * The claim page's address as a letter prints it, for whoever types it: short where the site has a link shortener
-     * (nur.click/familia), made once and kept; the full one otherwise. Without «https://», which nobody needs to type.
+     * The claim page's address as a letter prints it, for whoever types it: short where the site has a link shortener,
+     * with the centre's word if it chose one (nur.click/familias), made once and kept; the full one otherwise. Without
+     * «https://», which nobody needs to type.
      *
      * @return string
      */
@@ -188,11 +189,12 @@ class letters {
         $saved = (string) get_config('local_oksigeniafamily', 'claimshort');
         $short = str_starts_with($saved, $long . ' ') ? substr($saved, strlen($long) + 1) : '';
         if ($short === '' && ($shortener = shortener::of_site())) {
+            // A word only where the centre chose one: a test site that asks first would otherwise keep it for good.
             $short = (string) $shortener->shorten(
                 $long,
                 get_string('letter:shorttitle', 'local_oksigeniafamily'),
                 false,
-                get_string('letter:shortkeyword', 'local_oksigeniafamily')
+                trim((string) get_config('local_oksigeniafamily', 'claimkeyword'))
             );
             if ($short !== '') {
                 set_config('claimshort', $long . ' ' . $short, 'local_oksigeniafamily');

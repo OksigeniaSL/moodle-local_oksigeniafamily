@@ -112,6 +112,17 @@ if ($hassiteconfig) {
             1
         ));
         // One photo per student for the plugins that show children, with the families' consent to the use of the image.
+        // The word of the short address the letters print, where the site has a link shortener (nur.click/familias).
+        $keyword = new admin_setting_configtext(
+            'local_oksigeniafamily/claimkeyword',
+            new lang_string('settings:claimkeyword', 'local_oksigeniafamily'),
+            new lang_string('settings:claimkeyword_desc', 'local_oksigeniafamily'),
+            '',
+            PARAM_ALPHANUMEXT
+        );
+        // A new word, a new short address.
+        $keyword->set_updatedcallback(fn() => unset_config('claimshort', 'local_oksigeniafamily'));
+        $settings->add($keyword);
         // Every student has «For your family»: their QR, code and steps, for their family to join from the student's screen.
         $settings->add(new admin_setting_configcheckbox(
             'local_oksigeniafamily/studentpage',

@@ -5,6 +5,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.26-dev)
+
+- The short address asks the shortener for a word only where the centre chose one (setting «Word of the short
+  address»): a test site that asked first kept «familia» for itself.
+
 ### Added (0.3.25-dev)
 
 - «For your family» for every student, not only those who eat at the canteen: a page with their QR, code, short
