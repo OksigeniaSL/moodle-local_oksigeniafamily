@@ -186,4 +186,50 @@ final class join_test extends \advanced_testcase {
         $this->setUser($teacher);
         $this->assertTrue(\local_oksigeniafamily\output\mobile::mobile_join_init([])['disabled']);
     }
+
+    /**
+     * An adult brings in another adult of the household: they join the same family, with all its children.
+     */
+    public function test_invite_another_adult(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        $gen = $this->getDataGenerator();
+        $leo = $gen->create_user(['firstname' => 'Leo']);
+        $lola = $gen->create_user(['firstname' => 'Lola']);
+        $teacher = $gen->create_user(['firstname' => 'Eva']);
+        $eva = api::claim(api::issue_claim_code((int) $leo->id), ['userid' => (int) $teacher->id, 'firstname' => 'Eva']);
+        api::claim(api::issue_claim_code((int) $lola->id), ['userid' => (int) $teacher->id, 'firstname' => 'Eva']);
+        $family = (int) $eva->familyid;
+
+        $invite = api::invite_for_family($family);
+        $this->assertSame($invite['code'], api::invite_for_family($family)['code']);
+
+        $sink = $this->redirectMessages();
+        $luis = api::claim($invite['code'], ['firstname' => 'Luis', 'lastname' => 'Rey']);
+        $sink->close();
+
+        $this->assertSame($family, (int) $luis->familyid);
+        $this->assertCount(2, api::children_of_adult((int) $luis->id));
+        $this->assertSame(1, $DB->count_records('local_oksigeniafamily_family', ['status' => 'active']));
+
+        // A child of the family cannot come in as an adult.
+        try {
+            api::claim($invite['code'], ['userid' => (int) $leo->id, 'firstname' => 'Leo']);
+            $this->fail('A child joins as an adult.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('claimself', $e->errorcode);
+        }
+
+        // Eva's page: the QR, without the step of adding another child, which the invitation already does.
+        $context = join::invite_context((int) $teacher->id);
+        $this->assertSame($invite['code'], $context['code']);
+        $this->assertNotContains('siblings', array_column($context['steps'], 'kind'));
+        $this->setUser($teacher);
+        $view = \local_oksigeniafamily\output\mobile::mobile_invite_view([]);
+        $this->assertStringContainsString($invite['code'], $view['templates'][0]['html']);
+
+        // Somebody with no family has nothing to invite to.
+        $this->assertNull(join::invite_context((int) $gen->create_user()->id));
+    }
 }

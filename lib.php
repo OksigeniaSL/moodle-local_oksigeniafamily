@@ -188,7 +188,7 @@ function local_oksigeniafamily_oksigeniaaty_home_cards(int $userid): array {
 }
 
 /**
- * «For your family» on a student's own profile.
+ * «For your family» on a student's own profile, and «Invite another adult» on an adult's of a family.
  *
  * @param \core_user\output\myprofile\tree $tree The profile.
  * @param stdClass $user Whose profile it is.
@@ -197,16 +197,28 @@ function local_oksigeniafamily_oksigeniaaty_home_cards(int $userid): array {
  * @return void
  */
 function local_oksigeniafamily_myprofile_navigation(\core_user\output\myprofile\tree $tree, $user, $iscurrentuser, $course) {
-    if (!$iscurrentuser || !\local_oksigeniafamily\local\join::eligible((int) $user->id)) {
+    if (!$iscurrentuser) {
         return;
     }
-    $tree->add_node(new \core_user\output\myprofile\node(
-        'miscellaneous',
-        'local_oksigeniafamily_join',
-        get_string('join:title', 'local_oksigeniafamily'),
-        null,
-        new moodle_url('/local/oksigeniafamily/join.php')
-    ));
+    if (\local_oksigeniafamily\local\join::eligible((int) $user->id)) {
+        $tree->add_node(new \core_user\output\myprofile\node(
+            'miscellaneous',
+            'local_oksigeniafamily_join',
+            get_string('join:title', 'local_oksigeniafamily'),
+            null,
+            new moodle_url('/local/oksigeniafamily/join.php')
+        ));
+    }
+    // An adult of a family (a teacher who is also a parent) brings in the other adult of the household.
+    if (\local_oksigeniafamily\api::is_available() && \local_oksigeniafamily\api::families_of_user((int) $user->id)) {
+        $tree->add_node(new \core_user\output\myprofile\node(
+            'miscellaneous',
+            'local_oksigeniafamily_invite',
+            get_string('invite:title', 'local_oksigeniafamily'),
+            null,
+            new moodle_url('/local/oksigeniafamily/invite.php')
+        ));
+    }
 }
 
 /**

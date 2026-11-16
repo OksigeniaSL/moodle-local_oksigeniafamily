@@ -866,6 +866,9 @@ class api {
         if (!empty($adult['userid']) && (int) $adult['userid'] === (int) $claim->userid) {
             throw new \moodle_exception('claimself', 'local_oksigeniafamily');
         }
+        if (!empty($claim->familyid)) {
+            return self::claim_invite($claim, $adult, $phoneverified);
+        }
 
         $known = null;
         if (!empty($adult['adultid'])) {
@@ -924,49 +927,12 @@ class api {
      *     app here) and steps (letters::join_steps()); null without Family, or for an account that is not there.
      */
     public static function join_for_student(int $userid): ?array {
-        global $DB;
-
         $user = \core_user::get_user($userid);
         if (!self::is_available() || !$user || $user->deleted || isguestuser($user)) {
             return null;
         }
 
-        $now = time();
-        $code = null;
-        $claims = $DB->get_records_select(
-            'local_oksigeniafamily_claim',
-            'userid = :userid AND purpose = :purpose AND status = :status AND expires > :soon',
-            ['userid' => $userid, 'purpose' => 'page', 'status' => self::ACTIVE, 'soon' => $now + 7 * DAYSECS],
-            'expires DESC'
-        );
-        foreach ($claims as $claim) {
-            try {
-                $plain = \core\encryption::decrypt((string) $claim->codesealed);
-            } catch (\Throwable $e) {
-                continue;
-            }
-            if (hash('sha256', $plain) === $claim->codehash) {
-                $code = $plain;
-                $expires = (int) $claim->expires;
-                break;
-            }
-        }
-        if ($code === null) {
-            // One page code at a time: the one before goes, the letters' stay.
-            $DB->set_field_select(
-                'local_oksigeniafamily_claim',
-                'status',
-                self::REVOKED,
-                'userid = :userid AND purpose = :purpose AND status = :status',
-                ['userid' => $userid, 'purpose' => 'page', 'status' => self::ACTIVE]
-            );
-            $code = self::issue_claim_code($userid);
-            $claim = $DB->get_record('local_oksigeniafamily_claim', ['codehash' => hash('sha256', $code)], '*', MUST_EXIST);
-            $DB->update_record('local_oksigeniafamily_claim', (object) [
-                'id' => $claim->id, 'purpose' => 'page', 'codesealed' => \core\encryption::encrypt($code),
-            ]);
-            $expires = (int) $claim->expires;
-        }
+        [$code, $expires] = self::shown_code($userid, 'page', null);
 
         $shown = local\letters::show_code($code);
         $url = (new \moodle_url('/local/oksigeniafamily/claim.php'))->out(false) . '#code=' . $shown;
@@ -996,6 +962,97 @@ class api {
     }
 
     /**
+     * A code a page shows, and can show again: one at a time for the purpose (and family), kept until a week before its
+     * end and then a new one; sealed with the site's key, which lives outside the database.
+     *
+     * @param int $userid The student it is for (for an invitation, a child of the family).
+     * @param string $purpose page or invite.
+     * @param int|null $familyid For an invitation, the family.
+     * @return array [the code, when it expires]
+     */
+    private static function shown_code(int $userid, string $purpose, ?int $familyid): array {
+        global $DB;
+
+        $where = ['userid' => $userid, 'purpose' => $purpose, 'status' => self::ACTIVE];
+        $select = 'userid = :userid AND purpose = :purpose AND status = :status';
+        if ($familyid !== null) {
+            unset($where['userid']);
+            $select = 'familyid = :familyid AND purpose = :purpose AND status = :status';
+            $where['familyid'] = $familyid;
+        }
+        $claims = $DB->get_records_select(
+            'local_oksigeniafamily_claim',
+            $select . ' AND expires > :soon',
+            $where + ['soon' => time() + 7 * DAYSECS],
+            'expires DESC'
+        );
+        foreach ($claims as $claim) {
+            try {
+                $plain = \core\encryption::decrypt((string) $claim->codesealed);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            if (hash('sha256', $plain) === $claim->codehash) {
+                return [$plain, (int) $claim->expires];
+            }
+        }
+
+        // One at a time: the one before goes; the letters' stay.
+        $DB->set_field_select('local_oksigeniafamily_claim', 'status', self::REVOKED, $select, $where);
+        $code = self::issue_claim_code($userid, $purpose === 'invite' ? 14 : 0);
+        $claim = $DB->get_record('local_oksigeniafamily_claim', ['codehash' => hash('sha256', $code)], '*', MUST_EXIST);
+        $DB->update_record('local_oksigeniafamily_claim', (object) [
+            'id' => $claim->id, 'purpose' => $purpose, 'familyid' => $familyid,
+            'codesealed' => \core\encryption::encrypt($code),
+        ]);
+
+        return [$code, (int) $claim->expires];
+    }
+
+    /**
+     * What an adult of a family shows another adult of the same household (a parent without an account of the site, a
+     * grandmother) to bring them in: a code that joins this family, with all its children, rather than starting a family
+     * of its own as a student's code does. The caller checks that whoever looks is an adult of the family.
+     *
+     * @param int $familyid The family.
+     * @return array|null As join_for_student(), without adults and inapp; null if the family has no child to join.
+     */
+    public static function invite_for_family(int $familyid): ?array {
+        global $DB;
+
+        $active = $DB->record_exists('local_oksigeniafamily_family', ['id' => $familyid, 'status' => self::ACTIVE]);
+        if (!self::is_available() || !$active) {
+            return null;
+        }
+        $children = $DB->get_records_select(
+            'local_oksigeniafamily_child',
+            'familyid = :familyid AND status = :status AND userid IS NOT NULL',
+            ['familyid' => $familyid, 'status' => self::ACTIVE],
+            'id',
+            'id, userid',
+            0,
+            1
+        );
+        if (!$children) {
+            return null;
+        }
+        [$code, $expires] = self::shown_code((int) reset($children)->userid, 'invite', $familyid);
+        $shown = local\letters::show_code($code);
+        $url = (new \moodle_url('/local/oksigeniafamily/claim.php'))->out(false) . '#code=' . $shown;
+        $address = local\letters::claim_address();
+
+        return [
+            'code' => $shown,
+            'url' => $url,
+            'address' => $address,
+            'qrsvg' => local\letters::qr_svg($url, get_string('letter:qr', 'local_oksigeniafamily'), 'currentColor'),
+            'expires' => $expires,
+            'app' => local\letters::app() !== null,
+            'steps' => local\letters::join_steps($address),
+        ];
+    }
+
+    /**
      * The student a code is for, while it still joins: to check it before anything is sent, without claiming it.
      *
      * @param string $code The code, as typed.
@@ -1008,6 +1065,54 @@ class api {
         $claim = $DB->get_record('local_oksigeniafamily_claim', ['codehash' => hash('sha256', $code)]);
 
         return $claim && $claim->status === self::ACTIVE && $claim->expires >= time() ? (int) $claim->userid : null;
+    }
+
+    /**
+     * The claim of an invitation: the adult joins the family that invited them, with all its children; an adult of that
+     * family already is not added again.
+     *
+     * @param stdClass $claim The invitation.
+     * @param array $adult As for claim().
+     * @param bool $phoneverified As for claim().
+     * @return stdClass As for claim().
+     */
+    private static function claim_invite(stdClass $claim, array $adult, bool $phoneverified): stdClass {
+        global $DB;
+
+        $familyid = (int) $claim->familyid;
+        if (!$DB->record_exists('local_oksigeniafamily_family', ['id' => $familyid, 'status' => self::ACTIVE])) {
+            throw new \moodle_exception('claiminvalid', 'local_oksigeniafamily');
+        }
+        $children = $DB->get_records('local_oksigeniafamily_child', ['familyid' => $familyid, 'status' => self::ACTIVE]);
+        $childuserids = array_filter(array_map(fn($child) => (int) $child->userid, $children));
+        if (!empty($adult['userid']) && in_array((int) $adult['userid'], $childuserids, true)) {
+            throw new \moodle_exception('claimself', 'local_oksigeniafamily');
+        }
+
+        $known = empty($adult['userid']) ? null : $DB->get_record(
+            'local_oksigeniafamily_adult',
+            ['familyid' => $familyid, 'userid' => $adult['userid'], 'status' => self::ACTIVE],
+            '*',
+            IGNORE_MULTIPLE
+        );
+        $others = $DB->get_records('local_oksigeniafamily_adult', ['familyid' => $familyid, 'status' => self::ACTIVE]);
+        $adultid = $known ? (int) $known->id : self::add_adult($familyid, ['phoneverified' => $phoneverified] + $adult);
+        $DB->set_field('local_oksigeniafamily_claim', 'claims', (int) $claim->claims + 1, ['id' => $claim->id]);
+
+        $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid], '*', MUST_EXIST);
+        $first = (int) $claim->userid;
+        if (!$known) {
+            local\notices::new_adult($record, $first, array_filter($others, fn($other) => (int) $other->id !== $adultid));
+        }
+        $record->childuserid = $first;
+        $record->childid = (int) $DB->get_field(
+            'local_oksigeniafamily_child',
+            'id',
+            ['familyid' => $familyid, 'userid' => $first, 'status' => self::ACTIVE],
+            IGNORE_MULTIPLE
+        );
+
+        return $record;
     }
 
     /**

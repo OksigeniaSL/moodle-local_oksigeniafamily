@@ -92,6 +92,28 @@ class mobile {
     }
 
     /**
+     * «Invite another adult»: the QR another adult of the household scans to join this family, with all its children.
+     * Oksigenia Aty opens it from its home.
+     *
+     * @param array $args What the app sends.
+     * @return array
+     */
+    public static function mobile_invite_view(array $args): array {
+        global $OUTPUT, $USER;
+
+        $context = join::invite_context((int) $USER->id);
+        $html = $context
+            ? $OUTPUT->render_from_template('local_oksigeniafamily/mobile_join', self::inert($context))
+            : '<p class="ion-padding">' . s(get_string('invite:none', self::COMPONENT)) . '</p>';
+
+        return [
+            'templates' => [['id' => 'main', 'html' => $html]],
+            'javascript' => '',
+            'otherdata' => '',
+        ];
+    }
+
+    /**
      * Words for a template the app compiles: without the braces and the @ that its compiler would read as its own.
      *
      * @param mixed $value A value of the context.

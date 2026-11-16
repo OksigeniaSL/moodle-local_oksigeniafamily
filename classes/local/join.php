@@ -82,11 +82,6 @@ class join {
             return null;
         }
         $component = 'local_oksigeniafamily';
-        $phones = [];
-        foreach (['ios' => 'iPhone', 'android' => 'Android'] as $key => $name) {
-            $phones[] = ['name' => $name, 'steps' => $join['steps'][$key]];
-        }
-        $same = $join['steps']['ios'] === $join['steps']['android'];
         if ($join['inapp'] > 0) {
             $status = get_string('join:inapp', $component);
         } else if ($join['adults'] > 0) {
@@ -95,9 +90,49 @@ class join {
             $status = '';
         }
 
+        return self::build($join, 'join', $status);
+    }
+
+    /**
+     * What an adult of a family shows another adult of the household to bring them in: the invitation of their family,
+     * which joins it with all its children (so the step of adding another child is not there).
+     *
+     * @param int $userid The adult.
+     * @return array|null The context; null for whoever is not an adult of a family with children.
+     */
+    public static function invite_context(int $userid): ?array {
+        foreach (api::families_of_user($userid) as $family) {
+            $invite = api::invite_for_family((int) $family->id);
+            if ($invite) {
+                foreach ($invite['steps'] as $phone => $steps) {
+                    $invite['steps'][$phone] = array_values(array_filter($steps, fn($step) => $step['kind'] !== 'siblings'));
+                }
+                return self::build($invite, 'invite', '');
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The context of the templates, from what api gives.
+     *
+     * @param array $join From join_for_student() or invite_for_family().
+     * @param string $prefix join or invite: its words.
+     * @param string $status What the page says on top ('' for nothing).
+     * @return array
+     */
+    private static function build(array $join, string $prefix, string $status): array {
+        $component = 'local_oksigeniafamily';
+        $phones = [];
+        foreach (['ios' => 'iPhone', 'android' => 'Android'] as $key => $name) {
+            $phones[] = ['name' => $name, 'steps' => $join['steps'][$key]];
+        }
+        $same = $join['steps']['ios'] === $join['steps']['android'];
+
         return [
-            'heading' => get_string('join:title', $component),
-            'intro' => get_string('join:intro', $component),
+            'heading' => get_string($prefix . ':title', $component),
+            'intro' => get_string($prefix . ':intro', $component),
             'qrsvg' => $join['qrsvg'],
             'codelabel' => get_string('letter:code', $component),
             'code' => $join['code'],
@@ -112,7 +147,7 @@ class join {
             'phones' => $same ? [] : $phones,
             'twophones' => !$same,
             'steps' => $same ? $join['steps']['ios'] : [],
-            'care' => get_string('join:care', $component),
+            'care' => get_string($prefix . ':care', $component),
         ];
     }
 

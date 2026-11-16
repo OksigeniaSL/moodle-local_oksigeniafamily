@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.27-dev)
+
+- «Invite another adult»: an adult of a family shows a QR to another adult of the household (a partner without an account
+  of the site, a grandparent), who joins that same family with all its children, instead of starting a family of their
+  own with one child's code. `api::invite_for_family()`; in the app (`mobile_invite_view`, which Oksigenia Aty opens from
+  its home) and on the site (`invite.php`). The family's adults are told when somebody joins.
+
 ### Changed (0.3.26-dev)
 
 - The short address asks the shortener for a word only where the centre chose one (setting «Word of the short

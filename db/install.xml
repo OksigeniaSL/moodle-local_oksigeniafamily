@@ -82,7 +82,8 @@
         <FIELD NAME="usermodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Who issued it"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="purpose" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="letter" SEQUENCE="false" COMMENT="letter (a letter, a QR at enrolment, WhatsApp) or page (the one the student's own pages show)"/>
-        <FIELD NAME="codesealed" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Only for a page code: the code sealed with the site's key, which lives outside the database, so the page can show it again"/>
+        <FIELD NAME="codesealed" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Only for a page code or an invitation: the code sealed with the site's key, which lives outside the database, so the page can show it again"/>
+        <FIELD NAME="familyid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="An invitation from an adult of this family: whoever claims it joins this family, with all its children"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

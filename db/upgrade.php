@@ -130,5 +130,15 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111601, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026111604) {
+        // An invitation from an adult of a family: whoever claims it joins that family, with all its children.
+        $table = new xmldb_table('local_oksigeniafamily_claim');
+        $field = new xmldb_field('familyid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'codesealed');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2026111604, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }
