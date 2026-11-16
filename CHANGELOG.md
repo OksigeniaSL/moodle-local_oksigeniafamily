@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Fixed (0.3.29-dev)
+
+- Seen on the phone: in the app, «Invite another adult» showed the QR white on black in dark mode and «Your codeABCD»
+  joined up. A page opened from Oksigenia Aty's home does not get this plugin's sheet, and the app drops the spaces
+  between tags: what the QR needs (black on a white tile) and the lines of the code and the address are now on the
+  template itself.
+
 ### Changed (0.3.28-dev)
 
 - One «For your family»: for a student who eats at a canteen, Oksigenia Meals' way without installing anything goes
