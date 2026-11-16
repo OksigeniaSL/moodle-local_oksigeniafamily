@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.28-dev)
+
+- One «For your family»: for a student who eats at a canteen, Oksigenia Meals' way without installing anything goes
+  below the app's (`familyhelp::section()`), and Meals' own page leads here. With `?id=`, the office (whoever prints the
+  letters) sees a student's, to show it to their family. `api::family_page_url()` and `api::family_page_short()` give
+  its address, long and short.
+
 ### Added (0.3.27-dev)
 
 - «Invite another adult»: an adult of a family shows a QR to another adult of the household (a partner without an account

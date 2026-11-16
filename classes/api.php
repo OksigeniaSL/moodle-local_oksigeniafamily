@@ -1053,6 +1053,38 @@ class api {
     }
 
     /**
+     * Where «For your family» is: the student's own page, or, with a student, the office's view of theirs.
+     *
+     * @param int $userid A student, for the office's view; 0 for whoever looks.
+     * @return string
+     */
+    public static function family_page_url(int $userid = 0): string {
+        return (new \moodle_url('/local/oksigeniafamily/join.php', $userid ? ['id' => $userid] : []))->out(false);
+    }
+
+    /**
+     * «For your family», short, for a message to families (they open it signed in as the student): made once with the
+     * site's link shortener and kept; the full address where there is none.
+     *
+     * @return string
+     */
+    public static function family_page_short(): string {
+        $long = self::family_page_url();
+        $saved = (string) get_config('local_oksigeniafamily', 'joinshort');
+        if (str_starts_with($saved, $long . ' ')) {
+            return substr($saved, strlen($long) + 1);
+        }
+        $shortener = local\shortener::of_site();
+        $short = $shortener ? (string) $shortener->shorten($long, get_string('join:title', 'local_oksigeniafamily')) : '';
+        if ($short === '') {
+            return $long;
+        }
+        set_config('joinshort', $long . ' ' . $short, 'local_oksigeniafamily');
+
+        return $short;
+    }
+
+    /**
      * The student a code is for, while it still joins: to check it before anything is sent, without claiming it.
      *
      * @param string $code The code, as typed.

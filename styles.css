@@ -2054,3 +2054,9 @@
 .local-oksigeniafamily.okf-join ol li {
     margin-bottom: .4rem;
 }
+
+.local-oksigeniafamily.okf-join-canteen {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+}

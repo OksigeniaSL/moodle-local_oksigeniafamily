@@ -232,4 +232,15 @@ final class join_test extends \advanced_testcase {
         // Somebody with no family has nothing to invite to.
         $this->assertNull(join::invite_context((int) $gen->create_user()->id));
     }
+
+    /**
+     * Where the page is, for Meals and for a message to families: without a shortener, the full address.
+     */
+    public function test_page_address(): void {
+        $this->resetAfterTest();
+
+        $this->assertStringEndsWith('/local/oksigeniafamily/join.php', api::family_page_url());
+        $this->assertStringEndsWith('/local/oksigeniafamily/join.php?id=42', api::family_page_url(42));
+        $this->assertSame(api::family_page_url(), api::family_page_short());
+    }
 }
