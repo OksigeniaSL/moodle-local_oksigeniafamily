@@ -912,6 +912,21 @@ class api {
     }
 
     /**
+     * The student a code is for, while it still joins: to check it before anything is sent, without claiming it.
+     *
+     * @param string $code The code, as typed.
+     * @return int|null The student's account; null if the code does not join anyone.
+     */
+    public static function code_student(string $code): ?int {
+        global $DB;
+
+        $code = strtoupper(preg_replace('/[\s-]+/', '', $code));
+        $claim = $DB->get_record('local_oksigeniafamily_claim', ['codehash' => hash('sha256', $code)]);
+
+        return $claim && $claim->status === self::ACTIVE && $claim->expires >= time() ? (int) $claim->userid : null;
+    }
+
+    /**
      * Stop a student's codes from joining anyone (a letter that went astray). Who already joined stays.
      *
      * @param int $childuserid The student whose codes are revoked.

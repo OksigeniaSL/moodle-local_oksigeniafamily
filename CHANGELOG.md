@@ -5,6 +5,18 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.23-dev)
+
+- From the pilot with families in a school:
+  - A code claimed with the address of an account of the site (a teacher who is also a parent) no longer makes a second
+    account with the same address: a link goes to that address, and opening it puts the child into that account. Plugins
+    learn that the account is proven theirs (a third argument to `_oksigeniafamily_links`), and Oksigenia Aty then leads
+    into the app with it.
+  - Where families get into the app, the letter's first step is installing it: people tapped «Open in the app» before
+    they had it.
+  - The letter prints the claim page's address short where the site has a link shortener (nur.click/familia, with the
+    common `shortener` piece), and without «https://».
+
 ### Changed (0.3.22-dev)
 
 - A letter names the student with first name and surnames, whatever order the site uses for its lists: the school's

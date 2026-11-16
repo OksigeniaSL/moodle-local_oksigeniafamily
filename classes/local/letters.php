@@ -105,6 +105,16 @@ class letters {
         $claim = new \moodle_url('/local/oksigeniafamily/claim.php');
         $site = format_string(get_site()->fullname);
         $label = get_string('letter:qr', 'local_oksigeniafamily');
+        // Where families get into the app, installing it comes first: people tap «Open in the app» before they have it.
+        $app = self::app() !== null;
+        $steps = array_merge(
+            $app ? [get_string('letter:stepinstall', 'local_oksigeniafamily')] : [],
+            [
+                get_string('letter:step1', 'local_oksigeniafamily', self::claim_address()),
+                get_string($app ? 'letter:step2app' : 'letter:step2', 'local_oksigeniafamily'),
+                get_string('letter:step3', 'local_oksigeniafamily'),
+            ]
+        );
         $letters = [];
         foreach ($issued as $letter) {
             $code = self::show_code($letter['code']);
@@ -119,11 +129,37 @@ class letters {
                     $letter['expires'],
                     get_string('strftimedate', 'langconfig')
                 )),
-                'step1' => get_string('letter:step1', 'local_oksigeniafamily', $claim->out(false)),
+                'steps' => $steps,
             ];
         }
 
         return $letters;
+    }
+
+    /**
+     * The claim page's address as a letter prints it, for whoever types it: short where the site has a link shortener
+     * (nur.click/familia), made once and kept; the full one otherwise. Without «https://», which nobody needs to type.
+     *
+     * @return string
+     */
+    public static function claim_address(): string {
+        $long = (new \moodle_url('/local/oksigeniafamily/claim.php'))->out(false);
+        // Kept with the address it stands for: a site that moves gets a new one.
+        $saved = (string) get_config('local_oksigeniafamily', 'claimshort');
+        $short = str_starts_with($saved, $long . ' ') ? substr($saved, strlen($long) + 1) : '';
+        if ($short === '' && ($shortener = shortener::of_site())) {
+            $short = (string) $shortener->shorten(
+                $long,
+                get_string('letter:shorttitle', 'local_oksigeniafamily'),
+                false,
+                get_string('letter:shortkeyword', 'local_oksigeniafamily')
+            );
+            if ($short !== '') {
+                set_config('claimshort', $long . ' ' . $short, 'local_oksigeniafamily');
+            }
+        }
+
+        return preg_replace('~^https?://~', '', $short !== '' ? $short : $long);
     }
 
     /**

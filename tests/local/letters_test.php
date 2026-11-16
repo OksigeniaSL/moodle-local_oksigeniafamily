@@ -131,7 +131,10 @@ final class letters_test extends \advanced_testcase {
         $this->assertStringContainsString('Ana Ruiz', $context[0]['title']);
         $this->assertSame('Year 5', $context[0]['group']);
         $this->assertMatchesRegularExpression('/^[2-9A-HJKMNP-Z]{4}-[2-9A-HJKMNP-Z]{4}$/', $context[0]['code']);
-        $this->assertStringNotContainsString($issued[0]['code'], $context[0]['step1']);
+        $this->assertStringNotContainsString($issued[0]['code'], implode(' ', $context[0]['steps']));
+        // Without a shortener, the full address, without «https://».
+        $steps = implode(' ', $context[0]['steps']);
+        $this->assertStringContainsString(' www.example.com/moodle/local/oksigeniafamily/claim.php.', $steps);
 
         $svg = letters::qr_svg('https://example.com/local/oksigeniafamily/claim.php#code=ABCD-EFGH', 'QR');
         $this->assertStringStartsWith('<svg', $svg);

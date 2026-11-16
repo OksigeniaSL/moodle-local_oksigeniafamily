@@ -22,7 +22,8 @@ namespace local_oksigeniafamily\local;
  * in their lib.php that returns a list of ['label' => string, 'url' => string, 'pin' => string (optional), 'note' =>
  * string (optional, free text)], one or several per child (one per canteen, for instance). It is called only when the
  * family claims the code, since that is the only time a PIN is shown. A function from Moodle 4.3 on, rather than a hook,
- * so plugins that support older versions can give it too.
+ * so plugins that support older versions can give it too. A third argument, `bool $proven`, says whether whoever claimed
+ * has shown the adult's account of the site is theirs; a function with two arguments simply does not get it.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -34,15 +35,17 @@ class links {
      *
      * @param \stdClass $adult The adult record.
      * @param int $childuserid The child's account.
+     * @param bool $proven Whether whoever claimed has shown the adult's account is theirs (signed in to it, or come through
+     *     the link sent to its address): a plugin may then lead them into it, as Oksigenia Aty does into the app.
      * @return array A list of ['component', 'label', 'url', 'pin', 'note'].
      */
-    public static function for_child(\stdClass $adult, int $childuserid): array {
+    public static function for_child(\stdClass $adult, int $childuserid, bool $proven = false): array {
         $links = [];
         foreach (get_plugins_with_function('oksigeniafamily_links') as $type => $plugins) {
             foreach ($plugins as $name => $function) {
                 // Called once the code is claimed: a plugin that fails must not show the adult an error after they joined.
                 try {
-                    $given = self::clean($function($adult, $childuserid));
+                    $given = self::clean($function($adult, $childuserid, $proven));
                 } catch (\Throwable $e) {
                     debugging('Family links of ' . $type . '_' . $name . ': ' . $e->getMessage(), DEBUG_DEVELOPER);
                     continue;

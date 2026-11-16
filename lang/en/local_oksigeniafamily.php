@@ -61,6 +61,22 @@ $string['claim:submit'] = 'Join';
 $string['claim:title'] = 'Join a student\'s family';
 $string['claim:toomany'] = 'Too many tries. Wait a while and try again.';
 $string['claimbusy'] = 'Someone is already using this code right now. Try again in a moment.';
+$string['claimmail:checkheading'] = 'Check your e-mail';
+$string['claimmail:gone'] = 'This link no longer works: it has expired or the code no longer works. Use the code on the letter again.';
+$string['claimmail:html'] = '<p>Hello {$a->name},</p>
+<p>You used the code on {$a->child}\'s letter with the address of your {$a->site} account. To see {$a->child} in that account, tap this link on your phone:</p>
+<p><a href="{$a->url}"><strong>See {$a->child} in my account</strong></a></p>
+<p>It works for {$a->days} days. If it was not you, do nothing: nothing changes.</p>';
+$string['claimmail:other'] = 'If that account is not yours, go back and type another address, or leave it blank.';
+$string['claimmail:sent'] = '{$a->email} already has an account at {$a->site}. So that you do not have two accounts, your child will go into that one. We have sent you an e-mail: open it on your phone and tap the link.';
+$string['claimmail:subject'] = 'Your family, in your {$a->site} account';
+$string['claimmail:text'] = 'Hello {$a->name},
+
+You used the code on {$a->child}\'s letter with the address of your {$a->site} account. To see {$a->child} in that account, tap this link on your phone:
+
+{$a->url}
+
+It works for {$a->days} days. If it was not you, do nothing: nothing changes.';
 $string['claimself'] = 'This is your own code: it is for the adults of your family. Give them the letter.';
 $string['claiminvalid'] = 'This code does not work: it may be mistyped, out of date or withdrawn by the school.';
 $string['code:until'] = 'Code in use until {$a->date} · uses: {$a->claims}';
@@ -436,16 +452,20 @@ $string['import:stat:childrennew'] = 'New children';
 $string['import:stat:errors'] = 'Errors';
 $string['import:stat:familiesnew'] = 'New families';
 $string['import:tofamilies'] = 'Go to the families';
-$string['letter:apptext'] = 'Find it on the App Store or Google Play. Once you use this code, you get in without a username or password.';
+$string['letter:apptext'] = 'With this code you get into it without a username or password.';
 $string['letter:apptitle'] = 'Everything on your phone, with the Oksigenia Aty app.';
 $string['letter:care'] = 'Keep this letter safe: whoever has the code can join the family. If it gets lost, tell the school, which will give you another one.';
 $string['letter:code'] = 'Your code';
 $string['letter:expires'] = 'It works until {$a}.';
 $string['letter:intro'] = 'With this code you can join the family of {$a->student} at {$a->site} and get what the school offers families. You do not need an account.';
 $string['letter:qr'] = 'QR code to join the family';
+$string['letter:shortkeyword'] = 'family';
+$string['letter:shorttitle'] = 'Families: joining with the code on the letter';
 $string['letter:step1'] = 'Point your phone\'s camera at the QR, or open {$a}.';
 $string['letter:step2'] = 'Check the code, or type it in, and add your details.';
+$string['letter:step2app'] = 'Check the code, add your details and tap "Open in the app".';
 $string['letter:step3'] = 'Each adult of the family can use this same code.';
+$string['letter:stepinstall'] = 'Install the Oksigenia Aty app: look for it on the App Store or Google Play.';
 $string['letter:title'] = 'For the family of {$a->student}';
 $string['letters'] = 'Letters';
 $string['letters:back'] = 'Back';

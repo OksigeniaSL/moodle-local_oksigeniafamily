@@ -61,6 +61,22 @@ $string['claim:submit'] = 'Unirme';
 $string['claim:title'] = 'Únete a la familia de un alumno';
 $string['claim:toomany'] = 'Demasiados intentos. Espera un rato y vuelve a probar.';
 $string['claimbusy'] = 'Ahora mismo se está usando este código. Prueba otra vez en un momento.';
+$string['claimmail:checkheading'] = 'Mira tu correo';
+$string['claimmail:gone'] = 'Este enlace ya no sirve: ha caducado o el código ya no funciona. Vuelve a usar el código de la carta.';
+$string['claimmail:html'] = '<p>Hola, {$a->name}:</p>
+<p>Has usado el código de la carta de {$a->child} con el correo de tu cuenta de {$a->site}. Para ver a {$a->child} en esa cuenta, toca este enlace desde tu móvil:</p>
+<p><a href="{$a->url}"><strong>Ver a {$a->child} en mi cuenta</strong></a></p>
+<p>Sirve durante {$a->days} días. Si no has sido tú, no hagas nada: no cambia nada.</p>';
+$string['claimmail:other'] = 'Si esa cuenta no es tuya, vuelve atrás y escribe otro correo, o déjalo en blanco.';
+$string['claimmail:sent'] = '{$a->email} ya tiene cuenta en {$a->site}. Para que no tengas dos cuentas, tu hijo irá a esa. Te hemos mandado un correo: ábrelo en el móvil y toca el enlace.';
+$string['claimmail:subject'] = 'Tu familia, en tu cuenta de {$a->site}';
+$string['claimmail:text'] = 'Hola, {$a->name}:
+
+Has usado el código de la carta de {$a->child} con el correo de tu cuenta de {$a->site}. Para ver a {$a->child} en esa cuenta, toca este enlace desde tu móvil:
+
+{$a->url}
+
+Sirve durante {$a->days} días. Si no has sido tú, no hagas nada: no cambia nada.';
 $string['claimself'] = 'Este código es el tuyo: es para los adultos de tu familia. Dales la carta.';
 $string['claiminvalid'] = 'Este código no funciona: puede que esté mal escrito, que haya caducado o que el centro lo haya retirado.';
 $string['code:until'] = 'Código en vigor hasta el {$a->date} · usos: {$a->claims}';
@@ -436,16 +452,20 @@ $string['import:stat:childrennew'] = 'Hijos nuevos';
 $string['import:stat:errors'] = 'Errores';
 $string['import:stat:familiesnew'] = 'Familias nuevas';
 $string['import:tofamilies'] = 'Ir a las familias';
-$string['letter:apptext'] = 'Búscala en el App Store o en Google Play. Al usar este código, entras en ella sin usuario ni contraseña.';
+$string['letter:apptext'] = 'Al usar este código, entras en ella sin usuario ni contraseña.';
 $string['letter:apptitle'] = 'Todo en el móvil, con la app Oksigenia Aty.';
 $string['letter:care'] = 'Guarda bien esta carta: quien tenga el código puede unirse a la familia. Si se pierde, avisa al centro y te dará otra.';
 $string['letter:code'] = 'Tu código';
 $string['letter:expires'] = 'Sirve hasta el {$a}.';
 $string['letter:intro'] = 'Con este código puedes unirte a la familia de {$a->student} en {$a->site} y recibir lo que el centro ofrece a las familias. No necesitas cuenta.';
 $string['letter:qr'] = 'Código QR para unirte a la familia';
+$string['letter:shortkeyword'] = 'familia';
+$string['letter:shorttitle'] = 'Familias: unirse con el código de la carta';
 $string['letter:step1'] = 'Apunta con la cámara del móvil al QR, o abre {$a}.';
 $string['letter:step2'] = 'Comprueba el código, o escríbelo, y añade tus datos.';
+$string['letter:step2app'] = 'Comprueba el código, añade tus datos y toca «Abrir en la app».';
 $string['letter:step3'] = 'Cada adulto de la familia puede usar este mismo código.';
+$string['letter:stepinstall'] = 'Instala la app Oksigenia Aty: búscala en el App Store o en Google Play.';
 $string['letter:title'] = 'Para la familia de {$a->student}';
 $string['letters'] = 'Cartas';
 $string['letters:back'] = 'Volver';

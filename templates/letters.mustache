@@ -24,7 +24,8 @@
     * ready - How many, and what to do.
     * backurl - Where to go back to.
     * logo, site - The site, at the top of each letter.
-    * letters - Each with title, intro, group, qr (SVG), code, expires and step1.
+    * letters - Each with title, intro, group, qr (SVG), code, expires and steps (installing the app first, where
+      families get into it).
 
     Example context (json):
     {
@@ -32,7 +33,7 @@
         "backurl": "#", "logo": "", "site": "Example School",
         "letters": [{"title": "For the family of Ana Ruiz", "intro": "With this code...", "group": "Year 5",
             "qr": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1' role='img' aria-label='QR'><path d='M0 0h1v1h-1z'/></svg>",
-            "code": "ABCD-EFGH", "expires": "It works until 2 January 2027.", "step1": "Point your camera at the code."}]
+            "code": "ABCD-EFGH", "expires": "It works until 2 January 2027.", "steps": ["Point your camera at the code."]}]
     }
 }}
 <div class="local-oksigeniafamily okf-letters">
@@ -61,9 +62,7 @@
             </div>
         </div>
         <ol>
-            <li>{{step1}}</li>
-            <li>{{#str}} letter:step2, local_oksigeniafamily {{/str}}</li>
-            <li>{{#str}} letter:step3, local_oksigeniafamily {{/str}}</li>
+            {{#steps}}<li>{{.}}</li>{{/steps}}
         </ol>
         <p class="okf-letter-care">{{#str}} letter:care, local_oksigeniafamily {{/str}}</p>
         {{#app}}
