@@ -1,0 +1,49 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/mobile_join
+
+    «For your family» in the app: the student shows this screen, and their family scans the QR with their own phone. A
+    template the app compiles: everything in it is the plugin's own words and the QR's path, made inert.
+
+    Context variables required for this template:
+    * As local_oksigeniafamily/join.
+
+    Example context (json):
+    {
+        "intro": "Show this to your family.", "qrsvg": "", "codelabel": "Your code", "code": "ABCD-EFGH",
+        "addresslabel": "Or open", "address": "example.org/family", "expires": "It works until 2 January 2027.",
+        "hasstatus": false, "status": "", "care": "Keep it for your family.", "twophones": false, "phones": [],
+        "steps": [{"kind": "scan", "text": "Point your phone's camera at the QR."}]
+    }
+}}
+<div class="ion-padding okf-app okf-join">
+    <p class="okf-join-intro">{{intro}}</p>
+    {{#hasstatus}}<p class="okf-join-status">{{status}}</p>{{/hasstatus}}
+    <div class="okf-join-qr">{{{qrsvg}}}</div>
+    <p class="okf-join-codeline"><span class="okf-join-label">{{codelabel}}</span> <b class="okf-join-value">{{code}}</b></p>
+    <p class="okf-join-codeline"><span class="okf-join-label">{{addresslabel}}</span> <b>{{address}}</b></p>
+    <p class="okf-join-until">{{expires}}</p>
+    {{#twophones}}
+    {{#phones}}
+    <h3 class="okf-join-phone">{{name}}</h3>
+    <ol class="okf-join-steps">{{#steps}}<li>{{text}}</li>{{/steps}}</ol>
+    {{/phones}}
+    {{/twophones}}
+    {{^twophones}}<ol class="okf-join-steps">{{#steps}}<li>{{text}}</li>{{/steps}}</ol>{{/twophones}}
+    <p class="okf-join-care">{{care}}</p>
+</div>

@@ -20,6 +20,7 @@ use local_oksigeniafamily\api;
 use local_oksigeniafamily\local\consent;
 use local_oksigeniafamily\local\consent_notices;
 use local_oksigeniafamily\local\consent_view;
+use local_oksigeniafamily\local\join;
 use local_oksigeniafamily\local\page;
 
 /**
@@ -50,6 +51,58 @@ class mobile {
             'otherdata' => '',
             'disabled' => !consent::for_user((int) $USER->id, time()),
         ];
+    }
+
+    /**
+     * «For your family» in the app's menu: only for a student.
+     *
+     * @param array $args What the app sends.
+     * @return array
+     */
+    public static function mobile_join_init(array $args): array {
+        global $USER;
+
+        return [
+            'templates' => [],
+            'javascript' => '',
+            'otherdata' => '',
+            'disabled' => !join::eligible((int) $USER->id),
+        ];
+    }
+
+    /**
+     * «For your family»: the QR the family scans from this screen, the code and the steps.
+     *
+     * @param array $args What the app sends.
+     * @return array
+     */
+    public static function mobile_join_view(array $args): array {
+        global $OUTPUT, $USER;
+
+        $context = join::eligible((int) $USER->id) ? join::context((int) $USER->id) : null;
+        $html = $context
+            ? $OUTPUT->render_from_template('local_oksigeniafamily/mobile_join', self::inert($context))
+            : '<p class="ion-padding">' . s(get_string('join:none', self::COMPONENT)) . '</p>';
+
+        return [
+            'templates' => [['id' => 'main', 'html' => $html]],
+            'javascript' => '',
+            'otherdata' => '',
+        ];
+    }
+
+    /**
+     * Words for a template the app compiles: without the braces and the @ that its compiler would read as its own.
+     *
+     * @param mixed $value A value of the context.
+     * @return mixed
+     */
+    private static function inert($value) {
+        if (is_array($value)) {
+            return array_map([self::class, 'inert'], $value);
+        }
+
+        return is_string($value) ? strtr($value, ['{' => '&#123;', '}' => '&#125;', '@' => '&#64;']) : $value;
     }
 
     /**

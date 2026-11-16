@@ -4,3 +4,50 @@ ion-textarea.okf-app-comment textarea.native-textarea {
     height: auto;
     min-height: 4.5rem;
 }
+
+/* «For your family» in the app: the QR on a white tile with black ink, in light and dark alike, since not every camera
+   reads a QR the other way round. */
+.okf-join .okf-join-qr {
+    width: 240px;
+    max-width: 80%;
+    margin: 12px auto 16px;
+    padding: 12px;
+    border-radius: 16px;
+    background: #fff;
+    color: #000;
+}
+.okf-join .okf-join-qr svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.okf-join .okf-join-codeline {
+    margin: 4px 0;
+    text-align: center;
+}
+.okf-join .okf-join-label {
+    color: var(--ion-color-medium);
+}
+.okf-join .okf-join-value {
+    font-size: 1.5rem;
+    letter-spacing: .08em;
+}
+.okf-join .okf-join-until,
+.okf-join .okf-join-care {
+    color: var(--ion-color-medium);
+    font-size: .9rem;
+    text-align: center;
+}
+.okf-join .okf-join-status {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(var(--ion-color-success-rgb), .14);
+}
+.okf-join .okf-join-phone {
+    margin: 18px 0 6px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.okf-join .okf-join-steps li {
+    margin-bottom: 6px;
+}

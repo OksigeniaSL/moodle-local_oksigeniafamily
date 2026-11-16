@@ -31,4 +31,9 @@ $callbacks = [
         'hook' => '\local_oksigeniamarandu\hook\answer_received',
         'callback' => '\local_oksigeniafamily\local\consent_marandu::answer_received',
     ],
+    // «Family» in the top bar of a student: the QR their family joins with.
+    [
+        'hook' => \core\hook\navigation\primary_extend::class,
+        'callback' => '\local_oksigeniafamily\local\join::primary_extend',
+    ],
 ];

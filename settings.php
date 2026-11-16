@@ -112,6 +112,13 @@ if ($hassiteconfig) {
             1
         ));
         // One photo per student for the plugins that show children, with the families' consent to the use of the image.
+        // Every student has «For your family»: their QR, code and steps, for their family to join from the student's screen.
+        $settings->add(new admin_setting_configcheckbox(
+            'local_oksigeniafamily/studentpage',
+            new lang_string('settings:studentpage', 'local_oksigeniafamily'),
+            new lang_string('settings:studentpage_desc', 'local_oksigeniafamily'),
+            1
+        ));
         $settings->add(new admin_setting_configcheckbox(
             'local_oksigeniafamily/photos',
             new lang_string('settings:photos', 'local_oksigeniafamily'),

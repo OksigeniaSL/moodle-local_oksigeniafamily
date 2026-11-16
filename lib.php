@@ -174,13 +174,39 @@ function local_oksigeniafamily_oksigeniaaty_child_cards(int $adultuserid, int $c
 
 /**
  * For the home of the app (local_oksigeniaaty): the requests for consent that still wait for this adult's answer, each
- * with a button to answer it.
+ * with a button to answer it; and, for a student whose family has not joined yet, «For your family».
  *
  * @param int $userid The person.
  * @return array The card, or none.
  */
 function local_oksigeniafamily_oksigeniaaty_home_cards(int $userid): array {
-    return \local_oksigeniafamily\local\consent_view::home_card($userid, time());
+    return array_merge(
+        \local_oksigeniafamily\local\consent_view::home_card($userid, time()),
+        // A student whose family has not joined yet: «For your family».
+        \local_oksigeniafamily\local\join::home_card($userid)
+    );
+}
+
+/**
+ * «For your family» on a student's own profile.
+ *
+ * @param \core_user\output\myprofile\tree $tree The profile.
+ * @param stdClass $user Whose profile it is.
+ * @param bool $iscurrentuser Whether it is the user's own.
+ * @param stdClass|null $course The course, if any.
+ * @return void
+ */
+function local_oksigeniafamily_myprofile_navigation(\core_user\output\myprofile\tree $tree, $user, $iscurrentuser, $course) {
+    if (!$iscurrentuser || !\local_oksigeniafamily\local\join::eligible((int) $user->id)) {
+        return;
+    }
+    $tree->add_node(new \core_user\output\myprofile\node(
+        'miscellaneous',
+        'local_oksigeniafamily_join',
+        get_string('join:title', 'local_oksigeniafamily'),
+        null,
+        new moodle_url('/local/oksigeniafamily/join.php')
+    ));
 }
 
 /**

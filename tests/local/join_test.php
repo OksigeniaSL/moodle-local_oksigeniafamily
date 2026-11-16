@@ -27,6 +27,8 @@ use local_oksigeniafamily\api;
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \local_oksigeniafamily\api::join_for_student
  * @covers     \local_oksigeniafamily\local\letters::join_steps
+ * @covers     \local_oksigeniafamily\local\join
+ * @covers     \local_oksigeniafamily\output\mobile
  */
 final class join_test extends \advanced_testcase {
     /**
@@ -103,5 +105,85 @@ final class join_test extends \advanced_testcase {
 
         $this->assertSame(['install', 'scan', 'form', 'open', 'pin', 'siblings'], array_column($steps['ios'], 'kind'));
         $this->assertSame(['scan', 'form', 'open', 'pin', 'siblings'], array_column($steps['android'], 'kind'));
+    }
+
+    /**
+     * Who gets «For your family»: a student, or a child of a family; not a teacher, an adult of a family or a family's
+     * own account; and only where the centre has it on.
+     */
+    public function test_who_gets_the_page(): void {
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        set_config('studentpage', 1, 'local_oksigeniafamily');
+        $gen = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $student = $gen->create_user();
+        $teacher = $gen->create_user();
+        $both = $gen->create_user();
+        $gen->enrol_user($student->id, $course->id, 'student');
+        $gen->enrol_user($teacher->id, $course->id, 'editingteacher');
+        $gen->enrol_user($both->id, $course->id, 'student');
+        $gen->enrol_user($both->id, $gen->create_course()->id, 'teacher');
+        $nobody = $gen->create_user();
+        $own = $gen->create_user(['auth' => 'webservice']);
+
+        $this->assertTrue(join::eligible((int) $student->id));
+        $this->assertFalse(join::eligible((int) $teacher->id));
+        $this->assertFalse(join::eligible((int) $both->id));
+        $this->assertFalse(join::eligible((int) $nobody->id));
+        $this->assertFalse(join::eligible((int) $own->id));
+        $this->assertFalse(join::eligible((int) get_admin()->id));
+
+        // A child of a family has it, with or without a course.
+        $family = api::create_family();
+        api::add_child($family, (int) $nobody->id);
+        $this->assertTrue(join::eligible((int) $nobody->id));
+
+        // An adult of a family does not, even enrolled as a student somewhere.
+        $parent = $gen->create_user();
+        $gen->enrol_user($parent->id, $course->id, 'student');
+        api::add_adult($family, ['firstname' => 'Eva', 'userid' => (int) $parent->id]);
+        $this->assertFalse(join::eligible((int) $parent->id));
+
+        set_config('studentpage', 0, 'local_oksigeniafamily');
+        $this->assertFalse(join::eligible((int) $student->id));
+    }
+
+    /**
+     * The page, on the site and in the app; and the card on Aty's home until somebody of the family joins.
+     */
+    public function test_page_and_card(): void {
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        set_config('studentpage', 1, 'local_oksigeniafamily');
+        $gen = $this->getDataGenerator();
+        $student = $gen->create_user();
+        $gen->enrol_user($student->id, $gen->create_course()->id, 'student');
+        $this->setUser($student);
+
+        $context = join::context((int) $student->id);
+        $this->assertFalse($context['twophones']);
+        $this->assertSame(['scan', 'form', 'check'], array_column($context['steps'], 'kind'));
+        $this->assertFalse($context['hasstatus']);
+
+        $view = \local_oksigeniafamily\output\mobile::mobile_join_view([]);
+        $this->assertStringContainsString($context['code'], $view['templates'][0]['html']);
+        $this->assertStringContainsString('<svg', $view['templates'][0]['html']);
+        $this->assertFalse(\local_oksigeniafamily\output\mobile::mobile_join_init([])['disabled']);
+
+        $card = join::home_card((int) $student->id);
+        $this->assertCount(1, $card);
+        $this->assertSame('mobile_join_view', $card[0]['items'][0]['method']);
+
+        // Once somebody of the family joins, the card goes and the page says so.
+        api::claim($context['code'], ['firstname' => 'Ana', 'lastname' => 'Paz']);
+        $this->assertSame([], join::home_card((int) $student->id));
+        $this->assertSame(get_string('join:joined', 'local_oksigeniafamily'), join::context((int) $student->id)['status']);
+
+        // A teacher has no page in the app's menu.
+        $teacher = $gen->create_user();
+        $gen->enrol_user($teacher->id, $gen->create_course()->id, 'editingteacher');
+        $this->setUser($teacher);
+        $this->assertTrue(\local_oksigeniafamily\output\mobile::mobile_join_init([])['disabled']);
     }
 }

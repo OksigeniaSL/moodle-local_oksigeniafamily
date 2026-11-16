@@ -1990,3 +1990,67 @@
         grid-row: 1;
     }
 }
+
+/* «For your family»: the QR the family scans from the student's screen. Black on a white tile in light and dark alike:
+   not every camera reads a QR the other way round. */
+.local-oksigeniafamily.okf-join .okf-join-code {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+    margin: 1rem 0 1.5rem;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-qr {
+    flex: none;
+    width: 220px;
+    max-width: 100%;
+    padding: 12px;
+    border-radius: 16px;
+    background: #fff;
+    color: #000;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-qr svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-label {
+    color: var(--bs-secondary-color, #6a737b);
+    font-size: .9rem;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-value {
+    margin-bottom: .75rem;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-address {
+    margin-bottom: .75rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-status {
+    padding: .75rem 1rem;
+    border-radius: 12px;
+    background: var(--bs-success-bg-subtle, #e6f4ea);
+}
+
+.local-oksigeniafamily.okf-join .okf-join-phones {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-phone h3 {
+    font-size: 1.15rem;
+}
+
+.local-oksigeniafamily.okf-join ol li {
+    margin-bottom: .4rem;
+}

@@ -44,9 +44,26 @@ $addons = [
                     'version' => crc32((string) file_get_contents($CFG->dirroot . '/local/oksigeniafamily/app/mobile.css')),
                 ],
             ],
+            // A student's «For your family»: the QR their family scans from the student's screen.
+            'join' => [
+                'delegate' => 'CoreMainMenuDelegate',
+                'method' => 'mobile_join_view',
+                'init' => 'mobile_join_init',
+                'displaydata' => [
+                    'title' => 'join:title',
+                    'icon' => 'fas-qrcode',
+                ],
+                'priority' => 390,
+                'styles' => [
+                    'url' => $CFG->wwwroot . '/local/oksigeniafamily/mobilecss.php?v=' .
+                        crc32((string) file_get_contents($CFG->dirroot . '/local/oksigeniafamily/app/mobile.css')),
+                    'version' => crc32((string) file_get_contents($CFG->dirroot . '/local/oksigeniafamily/app/mobile.css')),
+                ],
+            ],
         ],
         'lang' => [
             ['consent:title', 'local_oksigeniafamily'],
+            ['join:title', 'local_oksigeniafamily'],
         ],
     ],
 ];

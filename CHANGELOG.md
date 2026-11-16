@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.25-dev)
+
+- «For your family» for every student, not only those who eat at the canteen: a page with their QR, code, short
+  address and steps, for their family to join from the student's screen. In the top bar («Family»), on their profile,
+  in the app's menu, and in Oksigenia Aty as a card on the home until somebody of the family joins. Students are those
+  with a student role and none that runs courses, or children of a family; a setting turns it off.
+
 ### Added (0.3.24-dev)
 
 - `api::join_for_student()`: what a student's family needs to join, for a page of the student's own («For your family»
