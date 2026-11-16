@@ -200,8 +200,9 @@ class shortener {
             'title' => \core_text::substr($title, 0, 200)]);
         if (!str_starts_with((string) ($answer['message'] ?? ''), 'success')) {
             // An address that does not exist is answered with a message and a 404, not with a code: said as one.
-            if ($this->code === '' && ((int) ($answer['statusCode'] ?? 0) === 404
-                    || str_contains(strtolower((string) ($answer['message'] ?? '')), 'not found'))) {
+            $notfound = (int) ($answer['statusCode'] ?? 0) === 404
+                || str_contains(strtolower((string) ($answer['message'] ?? '')), 'not found');
+            if ($this->code === '' && $notfound) {
                 $this->code = 'error:notfound';
             }
             return false;
