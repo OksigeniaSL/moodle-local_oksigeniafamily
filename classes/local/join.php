@@ -102,7 +102,7 @@ class join {
      */
     public static function invite_context(int $userid): ?array {
         foreach (api::families_of_user($userid) as $family) {
-            $invite = api::invite_for_family((int) $family->id);
+            $invite = api::invite_for_family((int) $family->familyid);
             if ($invite) {
                 foreach ($invite['steps'] as $phone => $steps) {
                     $invite['steps'][$phone] = array_values(array_filter($steps, fn($step) => $step['kind'] !== 'siblings'));
