@@ -137,6 +137,46 @@ class letters {
     }
 
     /**
+     * The steps of joining, as a family follows them from a page that shows the student's code: on an iPhone the app is
+     * installed first; on Android, «Open in the app» takes them to Google Play if they do not have it. Where families do
+     * not get into the app, the letter's steps, the same for both.
+     *
+     * @param string $address The claim page's address, as claim_address() gives it.
+     * @return array ['ios' => [...], 'android' => [...]], each step ['kind' => install, scan, form, open, pin, siblings
+     *     or check, 'text' => plain text].
+     */
+    public static function join_steps(string $address): array {
+        $component = 'local_oksigeniafamily';
+        $step = fn(string $kind, string $key, $a = null): array => ['kind' => $kind, 'text' => get_string($key, $component, $a)];
+        if (self::app() === null) {
+            $steps = [
+                $step('scan', 'letter:step1', $address),
+                $step('form', 'letter:step2'),
+                $step('check', 'letter:step3'),
+            ];
+            return ['ios' => $steps, 'android' => $steps];
+        }
+
+        return [
+            'ios' => [
+                $step('install', 'join:installios'),
+                $step('scan', 'letter:step1', $address),
+                $step('form', 'join:form'),
+                $step('open', 'join:openios'),
+                $step('pin', 'join:pin'),
+                $step('siblings', 'join:siblings'),
+            ],
+            'android' => [
+                $step('scan', 'letter:step1', $address),
+                $step('form', 'join:form'),
+                $step('open', 'join:openandroid'),
+                $step('pin', 'join:pin'),
+                $step('siblings', 'join:siblings'),
+            ],
+        ];
+    }
+
+    /**
      * The claim page's address as a letter prints it, for whoever types it: short where the site has a link shortener
      * (nur.click/familia), made once and kept; the full one otherwise. Without «https://», which nobody needs to type.
      *
@@ -212,9 +252,10 @@ class letters {
      *
      * @param string $text What it says.
      * @param string $label What it is, for screen readers.
+     * @param string $ink The colour of the modules: black on paper; currentColor where the page decides.
      * @return string The SVG.
      */
-    public static function qr_svg(string $text, string $label): string {
+    public static function qr_svg(string $text, string $label, string $ink = '#000'): string {
         $array = (new \core_qrcode($text))->getBarcodeArray();
         $path = '';
         foreach ($array['bcode'] as $y => $row) {
@@ -237,6 +278,6 @@ class letters {
         $size = (int) $array['num_cols'] + 8;
 
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 ' . $size . ' ' . $size . '" role="img" aria-label="'
-            . s($label) . '" shape-rendering="crispEdges"><path fill="#000" d="' . $path . '"/></svg>';
+            . s($label) . '" shape-rendering="crispEdges"><path fill="' . s($ink) . '" d="' . $path . '"/></svg>';
     }
 }

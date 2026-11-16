@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.24-dev)
+
+- `api::join_for_student()`: what a student's family needs to join, for a page of the student's own («For your family»
+  in Meals, also shown by the office): a code for these pages, kept and shown again until it is near its end (sealed
+  with the site's key; a letter's code is never touched), its QR without a size or colour of its own, the short address,
+  how many of the family have joined and use the app, and the steps on an iPhone and on Android (`letters::join_steps()`).
+
 ### Changed (0.3.23-dev)
 
 - From the pilot with families in a school:

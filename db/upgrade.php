@@ -116,5 +116,19 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111304, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026111601) {
+        // The code a student's own pages show their family («For your family»), which can be shown again.
+        $table = new xmldb_table('local_oksigeniafamily_claim');
+        $purpose = new xmldb_field('purpose', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, 'letter', 'timecreated');
+        if (!$dbman->field_exists($table, $purpose)) {
+            $dbman->add_field($table, $purpose);
+        }
+        $sealed = new xmldb_field('codesealed', XMLDB_TYPE_TEXT, null, null, null, null, null, 'purpose');
+        if (!$dbman->field_exists($table, $sealed)) {
+            $dbman->add_field($table, $sealed);
+        }
+        upgrade_plugin_savepoint(true, 2026111601, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

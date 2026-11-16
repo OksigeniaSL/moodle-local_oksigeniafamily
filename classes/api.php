@@ -912,6 +912,90 @@ class api {
     }
 
     /**
+     * What a student's family needs to join, for a page of the student's own («For your family» in Meals): their code, its
+     * QR and the steps. The code is one for these pages, kept until it is near its end, and then a new one; a letter's
+     * code is never touched. Shown to the student, as the letter they take home is. The caller checks that whoever looks
+     * is the student or the centre's staff.
+     *
+     * @param int $userid The student.
+     * @return array|null code (as people read it), url (the claim page with the code), address (short, to type), qrsvg (no
+     *     size of its own and currentColor: the page sizes and colours it, on a light ground), expires (a time), adults
+     *     (how many of the family have joined), inapp (how many of them use the app), app (whether families get into the
+     *     app here) and steps (letters::join_steps()); null without Family, or for an account that is not there.
+     */
+    public static function join_for_student(int $userid): ?array {
+        global $DB;
+
+        $user = \core_user::get_user($userid);
+        if (!self::is_available() || !$user || $user->deleted || isguestuser($user)) {
+            return null;
+        }
+
+        $now = time();
+        $code = null;
+        $claims = $DB->get_records_select(
+            'local_oksigeniafamily_claim',
+            'userid = :userid AND purpose = :purpose AND status = :status AND expires > :soon',
+            ['userid' => $userid, 'purpose' => 'page', 'status' => self::ACTIVE, 'soon' => $now + 7 * DAYSECS],
+            'expires DESC'
+        );
+        foreach ($claims as $claim) {
+            try {
+                $plain = \core\encryption::decrypt((string) $claim->codesealed);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            if (hash('sha256', $plain) === $claim->codehash) {
+                $code = $plain;
+                $expires = (int) $claim->expires;
+                break;
+            }
+        }
+        if ($code === null) {
+            // One page code at a time: the one before goes, the letters' stay.
+            $DB->set_field_select(
+                'local_oksigeniafamily_claim',
+                'status',
+                self::REVOKED,
+                'userid = :userid AND purpose = :purpose AND status = :status',
+                ['userid' => $userid, 'purpose' => 'page', 'status' => self::ACTIVE]
+            );
+            $code = self::issue_claim_code($userid);
+            $claim = $DB->get_record('local_oksigeniafamily_claim', ['codehash' => hash('sha256', $code)], '*', MUST_EXIST);
+            $DB->update_record('local_oksigeniafamily_claim', (object) [
+                'id' => $claim->id, 'purpose' => 'page', 'codesealed' => \core\encryption::encrypt($code),
+            ]);
+            $expires = (int) $claim->expires;
+        }
+
+        $shown = local\letters::show_code($code);
+        $url = (new \moodle_url('/local/oksigeniafamily/claim.php'))->out(false) . '#code=' . $shown;
+        $address = local\letters::claim_address();
+        $adults = self::adults_of_child($userid);
+        $inapp = 0;
+        // Whether they use the app, Oksigenia Aty knows, where it is installed.
+        $aty = '\\local_oksigeniaaty\\local\\familyaccount';
+        $canask = class_exists($aty) && method_exists($aty, 'in_app');
+        foreach ($adults as $adult) {
+            if ($canask && !empty($adult->userid) && $aty::in_app((int) $adult->userid)) {
+                $inapp++;
+            }
+        }
+
+        return [
+            'code' => $shown,
+            'url' => $url,
+            'address' => $address,
+            'qrsvg' => local\letters::qr_svg($url, get_string('letter:qr', 'local_oksigeniafamily'), 'currentColor'),
+            'expires' => $expires,
+            'adults' => count($adults),
+            'inapp' => $inapp,
+            'app' => local\letters::app() !== null,
+            'steps' => local\letters::join_steps($address),
+        ];
+    }
+
+    /**
      * The student a code is for, while it still joins: to check it before anything is sent, without claiming it.
      *
      * @param string $code The code, as typed.
