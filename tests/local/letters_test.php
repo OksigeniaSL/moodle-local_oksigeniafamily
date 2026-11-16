@@ -208,6 +208,14 @@ final class letters_test extends \advanced_testcase {
             $this->assertNull(letters::app());
             return;
         }
+        // With the setting on but the official app's scheme, families would not get in: nothing is said.
+        $this->assertNull(letters::app());
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        set_config('enablewebservices', 1);
+        set_config('enablemobilewebservice', 1);
+        set_config('forcedurlscheme', 'oksigeniaaty', 'tool_mobile');
+        set_config('typeoflogin', 1, 'tool_mobile');
+        \core\plugininfo\auth::enable_plugin('webservice', 1);
         $app = letters::app();
         $this->assertStringContainsString('aty', $app['icon']);
         $this->assertSame(get_string('letter:apptitle', 'local_oksigeniafamily'), $app['title']);

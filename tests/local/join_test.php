@@ -92,6 +92,12 @@ final class join_test extends \advanced_testcase {
         }
         $this->resetAfterTest();
         set_config('familyapp', 1, 'local_oksigeniaaty');
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        set_config('enablewebservices', 1);
+        set_config('enablemobilewebservice', 1);
+        set_config('forcedurlscheme', 'oksigeniaaty', 'tool_mobile');
+        set_config('typeoflogin', 1, 'tool_mobile');
+        \core\plugininfo\auth::enable_plugin('webservice', 1);
 
         $steps = letters::join_steps('example.org/familia');
 

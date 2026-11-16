@@ -225,7 +225,10 @@ class letters {
     public static function app(): ?array {
         global $OUTPUT;
 
-        if (!class_exists('\\local_oksigeniaaty\\api') || !get_config('local_oksigeniaaty', 'familyapp')) {
+        // The same test as the claim page's «Open in the app»: a letter never sends families to an app that will not let
+        // them in (the setting on, and the site's app scheme Aty's, among others).
+        $aty = '\\local_oksigeniaaty\\local\\familyaccount';
+        if (!class_exists($aty) || !$aty::available()) {
             return null;
         }
 

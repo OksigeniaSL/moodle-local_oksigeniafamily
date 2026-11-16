@@ -12,6 +12,12 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   with the site's key; a letter's code is never touched), its QR without a size or colour of its own, the short address,
   how many of the family have joined and use the app, and the steps on an iPhone and on Android (`letters::join_steps()`).
 
+### Fixed (0.3.24-dev)
+
+- The letters and the steps name the app only where Oksigenia Aty lets families in (the same test as the claim page's
+  «Open in the app»): with the setting on but the official app's scheme, a letter sent families to an app that would not
+  let them in.
+
 ### Changed (0.3.23-dev)
 
 - From the pilot with families in a school:
