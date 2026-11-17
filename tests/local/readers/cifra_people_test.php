@@ -71,8 +71,30 @@ final class cifra_people_test extends \basic_testcase {
         $this->assertSame(['cifra:900', 'cifra:mail:ramon@example.invalid'], array_column($families, 'key'));
         $this->assertSame(['key' => 'cifra:900', 'firstname' => 'Marta', 'lastname' => 'Arenas Faro',
             'email' => 'marta@example.invalid', 'phone' => '600000001', 'relation' => 'Madre', 'guardian' => true,
-            'children' => ['cifra:10', 'cifra:11']], $families[0]);
-        $this->assertSame(['Faro Lago', false, ['cifra:11']], [$families[1]['lastname'], $families[1]['guardian'],
-            $families[1]['children']]);
+            'children' => ['cifra:10', 'cifra:11'], 'guardianof' => ['cifra:10', 'cifra:11']], $families[0]);
+        $this->assertSame(['Faro Lago', false, ['cifra:11'], []], [$families[1]['lastname'], $families[1]['guardian'],
+            $families[1]['children'], $families[1]['guardianof']]);
+    }
+
+    /**
+     * Cifra lists a student's brothers and sisters among their relatives: they are not adults of the family, and neither
+     * is a relative who is a student or whose account left. A brother who is the legal guardian is.
+     */
+    public function test_families_without_siblings(): void {
+        $now = strtotime('2026-11-17 12:00:00 UTC');
+        $records = [
+            ['id' => 20, 'familiares' => [
+                ['parentesco' => 'Madre', 'tutor' => true, 'usuario' => ['id' => 950, 'nombre' => 'Rosa']],
+                ['parentesco' => 'Hermano', 'tutor' => false, 'usuario' => ['id' => 21, 'nombre' => 'Leo']],
+                ['parentesco' => 'Otro', 'tutor' => false, 'usuario' => ['id' => 22, 'nombre' => 'Iker',
+                    'caracteristicas' => ['alumno' => true]]],
+                ['parentesco' => 'Padre', 'tutor' => true, 'usuario' => ['id' => 951, 'nombre' => 'Dario',
+                    'fecha_baja' => '2026-01-31']],
+                ['parentesco' => 'Hermana', 'tutor' => 'Sí', 'usuario' => ['id' => 952, 'nombre' => 'Alba']],
+            ]],
+        ];
+        $families = cifra_people::families($records, $now);
+        $this->assertSame(['cifra:950', 'cifra:952'], array_column($families, 'key'));
+        $this->assertSame([['cifra:20'], ['cifra:20']], array_column($families, 'guardianof'));
     }
 }

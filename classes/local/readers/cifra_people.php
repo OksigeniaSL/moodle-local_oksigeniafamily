@@ -77,12 +77,13 @@ final class cifra_people {
      * each adult once, with the students they are family of, their kinship and whether they are a legal guardian. An
      * adult is known by their id in Cifra, which every user has, the same as a person's (Enrique, 31 October 2026); a
      * relative without one, by their email or mobile. So the same parent of two brothers is one. Students who left
-     * bring no family.
+     * bring no family. Cifra lists a student's brothers and sisters among their relatives too: they are children of the
+     * family, not adults of it, and are left out, as is a relative who is a student or whose account has left.
      *
      * @param array[] $records The records of the students, as Cifra gives them.
      * @param int $now
      * @return array[] key, firstname, lastname, email, phone (the mobile first), relation (as Cifra says it), guardian
-     *     and children (their keys); keys as cifra:<id>.
+     *     (of any), children (their keys) and guardianof (the children they are a legal guardian of); keys as cifra:<id>.
      */
     public static function families(array $records, int $now): array {
         $adults = [];
@@ -94,6 +95,9 @@ final class cifra_people {
             }
             foreach ((array) ($record['familiares'] ?? []) as $relative) {
                 $person = (array) ($relative['usuario'] ?? $relative);
+                if (!self::adult_relative((array) $relative, $person, $now)) {
+                    continue;
+                }
                 $email = mb_strtolower(trim((string) ($person['email'] ?? '')), 'UTF-8');
                 $phone = preg_replace(
                     '/[^\d+]/',
@@ -119,14 +123,48 @@ final class cifra_people {
                     'email' => $email,
                     'phone' => $phone,
                     'relation' => trim((string) ($relative['parentesco'] ?? '')),
-                ], fn($v) => $v !== '') + ['guardian' => false, 'children' => []];
+                ], fn($v) => $v !== '') + ['guardian' => false, 'children' => [], 'guardianof' => []];
                 $adults[$key]['guardian'] = $adults[$key]['guardian'] || $guardian;
                 $adults[$key]['children'][] = 'cifra:' . $id;
+                if ($guardian) {
+                    $adults[$key]['guardianof'][] = 'cifra:' . $id;
+                }
             }
         }
         foreach ($adults as $key => $adult) {
             $adults[$key]['children'] = array_values(array_unique($adult['children']));
+            $adults[$key]['guardianof'] = array_values(array_unique($adult['guardianof']));
         }
         return array_values($adults);
+    }
+
+    /** Kinships of a brother or a sister, in lower case and without accents. */
+    private const SIBLINGS = ['hermano', 'hermana', 'hermanos', 'hermanas', 'hermano/a', 'brother', 'sister', 'sibling'];
+
+    /**
+     * Whether a relative of a student is an adult of their family: not a brother or sister (unless their legal
+     * guardian), not a student, and with an account that has not left.
+     *
+     * @param array $relative The relative, as Cifra gives it.
+     * @param array $person Their account (usuario), or the relative itself.
+     * @param int $now
+     * @return bool
+     */
+    private static function adult_relative(array $relative, array $person, int $now): bool {
+        $kinship = mb_strtolower(trim((string) ($relative['parentesco'] ?? '')), 'UTF-8');
+        $kinship = strtr($kinship, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u']);
+        $guardian = ($relative['tutor'] ?? null) === true || in_array(
+            mb_strtolower(trim((string) ($relative['tutor'] ?? '')), 'UTF-8'),
+            ['1', 'true', 'si', 'sí', 's', 'yes'],
+            true
+        );
+        if (in_array($kinship, self::SIBLINGS, true) && !$guardian) {
+            return false;
+        }
+        if (!empty(((array) ($person['caracteristicas'] ?? []))['alumno'])) {
+            return false;
+        }
+        $left = (string) ($person['fecha_baja'] ?? '');
+        return $left === '' || strtotime($left) === false || strtotime($left) > $now;
     }
 }

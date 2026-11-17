@@ -49,11 +49,14 @@ class importer {
      * @param string $source Where they come from: csv, cifra, oneroster.
      * @param bool $complete Whether they are the whole list of that source, so children without an account who are not in
      *     them leave. Those with an account leave on their own with their account.
+     * @param int[] $joined Family key => the id of an open family that the source's household is already in, made some
+     *     other way (a letter's code, by hand, admissions): that family takes its rows, as it is, instead of a new one.
+     *     It keeps its own source, so whatever made it still finds it; the source finds it again by its children.
      * @return array errors (each with line and message), families (those with something to say, see below), leaving (the
-     *     children who would leave) and counts (familiesnew, adultsnew, adultschanged, childrennew, childrenleaving,
-     *     errors and same, the people already there as they are).
+     *     children who would leave) and counts (familiesnew, familiesjoined, adultsnew, adultschanged, childrennew,
+     *     childrenleaving, errors and same, the people already there as they are).
      */
-    public static function plan(array $rows, string $source = 'csv', bool $complete = false): array {
+    public static function plan(array $rows, string $source = 'csv', bool $complete = false, array $joined = []): array {
         $errors = [];
         $families = [];
         $keys = [];
@@ -67,7 +70,8 @@ class importer {
             $error = self::row_error($row, $values);
             if ($error === null) {
                 $family = $values['family'];
-                $families[$family] = $families[$family] ?? self::open_family($family, $source, $row['line']);
+                $families[$family] = $families[$family]
+                    ?? self::open_family($family, $source, $row['line'], (int) ($joined[$family] ?? 0));
                 $error = $values['type'] === 'adult'
                     ? self::plan_adult($families[$family], $values, $row['line'])
                     : self::plan_child($families[$family], $values, $row['line']);
@@ -251,14 +255,16 @@ class importer {
     }
 
     /**
-     * A family as the plan keeps it: found by its key in its source, or to be made.
+     * A family as the plan keeps it: found by its key in its source, or else the open family the household is already in,
+     * or to be made.
      *
      * @param string $key The family's key.
      * @param string $source The source.
      * @param int $line The first row of the family.
+     * @param int $joined The open family the household is already in, made some other way, or 0.
      * @return array
      */
-    private static function open_family(string $key, string $source, int $line): array {
+    private static function open_family(string $key, string $source, int $line, int $joined = 0): array {
         global $DB;
 
         $active = ['status' => api::ACTIVE];
@@ -268,7 +274,13 @@ class importer {
             'id',
             IGNORE_MULTIPLE
         );
-        $family = ['key' => $key, 'line' => $line, 'id' => $found ? (int) $found->id : 0, 'adults' => [], 'children' => []];
+        $isjoined = false;
+        if (!$found && $joined) {
+            $found = $DB->get_record('local_oksigeniafamily_family', ['id' => $joined] + $active, 'id');
+            $isjoined = (bool) $found;
+        }
+        $family = ['key' => $key, 'line' => $line, 'id' => $found ? (int) $found->id : 0, 'joined' => $isjoined,
+            'adults' => [], 'children' => []];
         if ($found) {
             $conditions = ['familyid' => $found->id] + $active;
             foreach ($DB->get_records('local_oksigeniafamily_adult', $conditions) as $adult) {
@@ -514,10 +526,11 @@ class importer {
      * @return int[]
      */
     private static function counts(array $families, array $leaving, int $errors): array {
-        $counts = ['familiesnew' => 0, 'adultsnew' => 0, 'adultschanged' => 0, 'childrennew' => 0, 'childrenchanged' => 0,
-            'childrenleaving' => count($leaving), 'errors' => $errors, 'same' => 0];
+        $counts = ['familiesnew' => 0, 'familiesjoined' => 0, 'adultsnew' => 0, 'adultschanged' => 0, 'childrennew' => 0,
+            'childrenchanged' => 0, 'childrenleaving' => count($leaving), 'errors' => $errors, 'same' => 0];
         foreach ($families as $family) {
             $counts['familiesnew'] += $family['id'] ? 0 : 1;
+            $counts['familiesjoined'] += empty($family['joined']) ? 0 : 1;
             foreach ($family['adults'] as $adult) {
                 if (empty($adult['id'])) {
                     $counts['adultsnew']++;

@@ -36,6 +36,16 @@ $tasks = [
         'dayofweek' => '*',
     ],
     [
+        // The households of Cifra, when the school turns it on: new students join their families on their own.
+        'classname' => 'local_oksigeniafamily\\task\\cifra_households',
+        'blocking' => 0,
+        'minute' => 'R',
+        'hour' => '1',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '*',
+    ],
+    [
         // Requests for consent: the reminder the day before the deadline, and erasing those past their retention.
         'classname' => 'local_oksigeniafamily\\task\\consent_round',
         'blocking' => 0,

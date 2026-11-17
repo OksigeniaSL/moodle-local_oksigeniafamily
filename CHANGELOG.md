@@ -5,6 +5,28 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.30-dev)
+
+- The households of the school's management program every night, when it is Cifra (`local\import\cifra_households`,
+  through the same importer as a CSV file): brothers and sisters together, and a child who starts years later joins
+  the household their family already has, on their own. Off by default (`cifrahouseholds`), with how the last round
+  went on the settings page; `cli/cifra_households.php` lists first every household a round would make or change and
+  every child who would leave, and `--apply` does it.
+  - A household is the students with the same legal guardians, with every adult Cifra gives for any of them; a parent
+    with a child of each partner is in two. Brothers and sisters that Cifra lists among the relatives are children,
+    never adults (`cifra_people::families()`, which now also says whom each adult is a guardian of).
+  - Where it goes, so it is never made twice: the open family that already has its children, by their key or their
+    account (a family from a letter's code or made by hand takes it and keeps its own source); then the household made
+    for the same guardians; then one whose adults are all among the child's and that has all their guardians, by their
+    id in Cifra, then their e-mail, then their mobile. `importer::plan()` takes, for that, the families a source's
+    households are already in.
+  - Accounts by e-mail, only when one active account has it, and an adult's never a student's. Without one, the child
+    goes by their key and gets their name and group (`set_child_details()`); nothing is created and nothing is sent.
+  - The list is complete: a child without an account who is no longer in it leaves, with the importer's brake. Cifra is
+    read whole or not at all, one record at a time with a pause, and the round waits for any import going in.
+  - The connection is the shared reader of Cifra (`local\cifra`, from moodle-tools), set once for every Oksigenia plugin
+    of the site; this plugin has its own settings for a site without another one.
+
 ### Fixed (0.3.29-dev)
 
 - Seen on the phone: in the app, «Invite another adult» showed the QR white on black in dark mode and «Your codeABCD»

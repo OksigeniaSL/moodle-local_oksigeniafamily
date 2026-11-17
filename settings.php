@@ -136,5 +136,57 @@ if ($hassiteconfig) {
             new lang_string('settings:photos_desc', 'local_oksigeniafamily'),
             1
         ));
+
+        // The households of the school's management program every night, when it is Cifra, and the connection with it:
+        // optional, and once for every Oksigenia plugin of the site (local\cifra::of_site()).
+        $p = 'local_oksigeniafamily';
+        $settings->add(new admin_setting_heading(
+            "$p/cifra",
+            new lang_string('cifra', $p),
+            new lang_string('cifra_desc', $p)
+        ));
+        $settings->add(new admin_setting_configcheckbox(
+            "$p/" . \local_oksigeniafamily\local\import\cifra_households::SETTING,
+            new lang_string('settings:cifrahouseholds', $p),
+            new lang_string('settings:cifrahouseholds_desc', $p),
+            0
+        ));
+        $settings->add(new admin_setting_description(
+            "$p/cifrahouseholdsview",
+            '',
+            \local_oksigeniafamily\local\import\cifra_households::status_text()
+        ));
+        $settings->add(new admin_setting_configselect("$p/ciframode", new lang_string('ciframode', $p), '', '', [
+            '' => new lang_string('ciframode_auto', $p),
+            'oauth' => new lang_string('ciframode_oauth', $p),
+            'key' => new lang_string('ciframode_key', $p),
+        ]));
+        $settings->add(new admin_setting_configtext(
+            "$p/cifraurl",
+            new lang_string('cifraurl', $p),
+            new lang_string('cifraurl_desc', $p),
+            '',
+            PARAM_URL
+        ));
+        $settings->add(new admin_setting_configtext(
+            "$p/cifraclientid",
+            new lang_string('cifraclientid', $p),
+            '',
+            '',
+            PARAM_TEXT
+        ));
+        $settings->add(new admin_setting_encryptedpassword("$p/cifrasecret", new lang_string('cifrasecret', $p), ''));
+        $settings->add(new admin_setting_encryptedpassword(
+            "$p/cifrakey",
+            new lang_string('cifrakey', $p),
+            new lang_string('cifrakey_desc', $p)
+        ));
+        $settings->add(new admin_setting_configtext(
+            "$p/cifrainternalhosts",
+            new lang_string('cifrainternalhosts', $p),
+            new lang_string('cifrainternalhosts_desc', $p),
+            '',
+            PARAM_TEXT
+        ));
     }
 }
