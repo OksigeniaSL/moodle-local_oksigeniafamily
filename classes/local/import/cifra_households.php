@@ -353,7 +353,7 @@ final class cifra_households {
             foreach (array_chunk($plan['families'], self::BATCH) as $families) {
                 $transaction = $DB->start_delegated_transaction();
                 try {
-                    foreach (importer::apply_families($families, self::SOURCE) as $name => $value) {
+                    foreach (importer::apply_families($families, self::SOURCE, true) as $name => $value) {
                         $done[$name] += $value;
                     }
                     $transaction->allow_commit();

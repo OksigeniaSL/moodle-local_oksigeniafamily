@@ -162,14 +162,16 @@ class importer {
      *
      * @param array $families Families of a plan, from plan().
      * @param string $source The same source as the plan.
+     * @param bool $quiet Whether the adults it adds stay quiet until they join or are welcomed (a nightly source, which
+     *     nobody looks at before it goes in); a file someone imports by hand brings them reachable.
      * @return int[] What it did: familiesnew, adultsnew, adultschanged, childrennew and childrenchanged.
      */
-    public static function apply_families(array $families, string $source = 'csv'): array {
+    public static function apply_families(array $families, string $source = 'csv', bool $quiet = false): array {
         foreach ($families as $family) {
             $familyid = $family['id'] ?: api::create_family($source, $family['key']);
             foreach ($family['adults'] as $adult) {
                 if (empty($adult['id'])) {
-                    api::add_adult($familyid, array_filter($adult['data']) + ['phoneverified' => true]);
+                    api::add_adult($familyid, array_filter($adult['data']) + ['phoneverified' => true, 'quiet' => $quiet]);
                     continue;
                 }
                 $changes = array_intersect_key($adult['data'], array_flip($adult['changes']));

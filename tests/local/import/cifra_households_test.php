@@ -157,6 +157,10 @@ final class cifra_households_test extends \advanced_testcase {
         $this->assertSame([null, 'Hugo', 'INF 5 A'], [$children['cifra:102']->userid, $children['cifra:102']->firstname,
             $children['cifra:102']->groupname]);
 
+        // Nobody writes to them before the school's own welcome: they come quiet.
+        $this->assertSame([], api::adults_of_child((int) $leo->id));
+        $this->assertSame(3, $DB->count_records('local_oksigeniafamily_adult', ['quiet' => 1]));
+
         $again = cifra_households::run(self::NOW + DAYSECS, $this->cifra($records), null, 0);
         $this->assertSame('done', $again['state']);
         foreach (['familiesnew', 'adultsnew', 'adultschanged', 'childrennew', 'childrenchanged', 'childrenleaving'] as $name) {

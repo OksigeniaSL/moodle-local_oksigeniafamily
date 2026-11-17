@@ -130,7 +130,8 @@ class api {
     }
 
     /**
-     * The adults of a student, to tell them something (a late book, a new adult).
+     * The adults of a student, to tell them something (a late book, a new adult). Not those the school's data brought who
+     * have not joined nor been welcomed yet (quiet): nobody writes to a family before the school does.
      *
      * @param int $childuserid The student's account.
      * @return stdClass[] Adult records (id, familyid, firstname, lastname, email, phone, userid), keyed by id.
@@ -141,7 +142,7 @@ class api {
         $sql = "SELECT a.id, a.familyid, a.firstname, a.lastname, a.email, a.phone, a.userid
                   FROM {local_oksigeniafamily_child} c
                   JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
-                  JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive
+                  JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive AND a.quiet = 0
                  WHERE c.userid = :userid AND c.status = :cactive";
 
         return $DB->get_records_sql($sql, [
@@ -195,7 +196,7 @@ class api {
                FROM {local_oksigeniafamily_adult} a
                JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
                JOIN {user} u ON u.id = a.userid AND u.deleted = 0 AND u.suspended = 0
-              WHERE a.familyid = :familyid AND a.status = :aactive
+              WHERE a.familyid = :familyid AND a.status = :aactive AND a.quiet = 0
            ORDER BY a.id",
             ['familyid' => $familyid, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]
         );
@@ -204,8 +205,8 @@ class api {
     }
 
     /**
-     * The adults of many students at once, as adults_of_child() gives them for one: for a request to a whole school,
-     * where one query per student would be tens of thousands.
+     * The adults of many students at once, as adults_of_child() gives them for one (without the quiet ones): for a request
+     * to a whole school, where one query per student would be tens of thousands.
      *
      * @param int[] $childuserids The students' accounts.
      * @return array Student's user id => [adult id => adult record], with an empty list for a student with no adult.
@@ -220,7 +221,7 @@ class api {
                 "SELECT c.userid AS childuserid, a.id, a.familyid, a.firstname, a.lastname, a.email, a.phone, a.userid
                    FROM {local_oksigeniafamily_child} c
                    JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
-                   JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive
+                   JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive AND a.quiet = 0
                   WHERE c.userid $in AND c.status = :cactive
                ORDER BY a.id",
                 $params + ['factive' => self::ACTIVE, 'aactive' => self::ACTIVE, 'cactive' => self::ACTIVE]
@@ -327,7 +328,7 @@ class api {
             if ($withadults) {
                 $adults = $DB->get_records_sql(
                     "SELECT a.id, a.familyid, a.userid, a.firstname, a.lastname, a.email, a.phone, a.phoneverified, a.status,
-                            u.firstname AS ufirstname, u.lastname AS ulastname, u.email AS uemail
+                            a.quiet, u.firstname AS ufirstname, u.lastname AS ulastname, u.email AS uemail
                        FROM {local_oksigeniafamily_adult} a
                   LEFT JOIN {user} u ON u.id = a.userid AND u.deleted = 0
                       WHERE a.familyid $in" . ($activeonly ? ' AND a.status = :aactive' : '') . "
@@ -344,6 +345,8 @@ class api {
                         'phone' => $adult->phone,
                         'phoneverified' => (bool) $adult->phoneverified,
                         'status' => $adult->status,
+                        // Brought by the school's data, not yet joined nor welcomed: not to be written to yet.
+                        'quiet' => (bool) $adult->quiet,
                     ];
                 }
             }
@@ -522,7 +525,8 @@ class api {
      *
      * @param int $familyid The family.
      * @param array $data Any of firstname, lastname, email, phone (E.164), phoneverified (the school or WhatsApp vouches for
-     *     the number), sourcekey and userid.
+     *     the number), sourcekey, userid and quiet (brought by the school's data: no plugin writes to them until they join
+     *     or wake_adult()).
      * @return int The adult's id.
      */
     public static function add_adult(int $familyid, array $data): int {
@@ -534,6 +538,7 @@ class api {
             $record->$field = isset($data[$field]) && $data[$field] !== '' ? $data[$field] : null;
         }
         $record->phoneverified = !empty($data['phoneverified']) && !empty($data['phone']) ? 1 : 0;
+        $record->quiet = empty($data['quiet']) ? 0 : 1;
         $record->id = $DB->insert_record('local_oksigeniafamily_adult', $record);
 
         event\adult_added::create([
@@ -686,6 +691,27 @@ class api {
             'id' => $adultid, 'userid' => $userid ?: null, 'timemodified' => time(),
         ]);
         roles::sync_family($familyid);
+    }
+
+    /**
+     * An adult the school's data brought stops being quiet: they joined, or the school welcomed them (its own e-mail, sent
+     * by whoever sends it). From then on the other plugins reach them as any other adult.
+     *
+     * @param int $adultid The adult.
+     * @return bool Whether they were quiet.
+     */
+    public static function wake_adult(int $adultid): bool {
+        global $DB;
+
+        $adult = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid], 'id, quiet', MUST_EXIST);
+        if (!$adult->quiet) {
+            return false;
+        }
+        $DB->update_record('local_oksigeniafamily_adult', (object) [
+            'id' => $adultid, 'quiet' => 0, 'timemodified' => time(),
+        ]);
+
+        return true;
     }
 
     /**
@@ -890,13 +916,25 @@ class api {
         if (!$known && $phoneverified && !empty($adult['phone'])) {
             $known = self::adult_by_phone($adult['phone']);
         }
+        // A household the school's data brought where nobody has joined yet: whoever has one of its children's codes joins
+        // it, with every child in it, brothers and sisters too; as one of its adults when their account has that adult's
+        // e-mail.
+        $waiting = $known ? [] : self::waiting_families((int) $claim->userid);
+        if ($waiting && !empty($adult['userid'])) {
+            $known = self::quiet_adult_of_user($waiting, (int) $adult['userid']);
+            if ($known && empty($known->userid)) {
+                self::set_adult_user((int) $known->id, (int) $adult['userid']);
+            }
+        }
         $isnew = !$known;
         if ($isnew) {
-            $familyid = self::create_family('claim');
-            $adultid = self::add_adult($familyid, ['phoneverified' => $phoneverified] + $adult);
+            $familyid = $waiting ? reset($waiting) : self::create_family('claim');
+            $data = ['phoneverified' => $phoneverified] + array_diff_key($adult, ['quiet' => 0]);
+            $adultid = self::add_adult($familyid, $data);
         } else {
             $familyid = (int) $known->familyid;
             $adultid = (int) $known->id;
+            self::wake_adult($adultid);
             // An adult known by their account who now gives a phone keeps it, so WhatsApp finds them.
             if (!empty($adult['phone']) && $adult['phone'] !== $known->phone) {
                 self::update_adult($adultid, ['phone' => $adult['phone'], 'phoneverified' => $phoneverified]);
@@ -912,6 +950,67 @@ class api {
         $record->childid = $childid;
 
         return $record;
+    }
+
+    /**
+     * The open households of a student that the school's data brought and nobody has joined yet: every adult in them is
+     * quiet.
+     *
+     * @param int $childuserid The student.
+     * @return int[] Family ids, the oldest first.
+     */
+    private static function waiting_families(int $childuserid): array {
+        global $DB;
+
+        $ids = $DB->get_fieldset_sql(
+            "SELECT f.id
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
+              WHERE c.userid = :userid AND c.status = :cactive
+                AND EXISTS (SELECT 1 FROM {local_oksigeniafamily_adult} q
+                             WHERE q.familyid = f.id AND q.status = :qactive AND q.quiet = 1)
+                AND NOT EXISTS (SELECT 1 FROM {local_oksigeniafamily_adult} a
+                                 WHERE a.familyid = f.id AND a.status = :aactive AND a.quiet = 0)
+           ORDER BY f.id",
+            [
+                'userid' => $childuserid, 'factive' => self::ACTIVE, 'cactive' => self::ACTIVE, 'qactive' => self::ACTIVE,
+                'aactive' => self::ACTIVE,
+            ]
+        );
+
+        return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    /**
+     * The quiet adult of some households who is an account, by that account's e-mail as the school's data has it.
+     *
+     * @param int[] $familyids Households.
+     * @param int $userid The account.
+     * @return stdClass|null The adult record, or null.
+     */
+    private static function quiet_adult_of_user(array $familyids, int $userid): ?stdClass {
+        global $DB;
+
+        $user = \core_user::get_user($userid);
+        $email = $user && empty($user->deleted) ? \core_text::strtolower(trim((string) $user->email)) : '';
+        if ($email === '' || !$familyids) {
+            return null;
+        }
+        [$in, $params] = $DB->get_in_or_equal($familyids, SQL_PARAMS_NAMED, 'family');
+        $quiet = $DB->get_records_select(
+            'local_oksigeniafamily_adult',
+            "familyid $in AND status = :active AND quiet = 1",
+            $params + ['active' => self::ACTIVE],
+            'id'
+        );
+        foreach ($quiet as $adult) {
+            $theirs = empty($adult->userid) || (int) $adult->userid === $userid;
+            if ($theirs && \core_text::strtolower(trim((string) $adult->email)) === $email) {
+                return $adult;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -1127,8 +1226,13 @@ class api {
             '*',
             IGNORE_MULTIPLE
         );
-        $others = $DB->get_records('local_oksigeniafamily_adult', ['familyid' => $familyid, 'status' => self::ACTIVE]);
-        $adultid = $known ? (int) $known->id : self::add_adult($familyid, ['phoneverified' => $phoneverified] + $adult);
+        $others = $DB->get_records(
+            'local_oksigeniafamily_adult',
+            ['familyid' => $familyid, 'status' => self::ACTIVE, 'quiet' => 0]
+        );
+        $adultid = $known ? (int) $known->id
+            : self::add_adult($familyid, ['phoneverified' => $phoneverified] + array_diff_key($adult, ['quiet' => 0]));
+        self::wake_adult($adultid);
         $DB->set_field('local_oksigeniafamily_claim', 'claims', (int) $claim->claims + 1, ['id' => $claim->id]);
 
         $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid], '*', MUST_EXIST);

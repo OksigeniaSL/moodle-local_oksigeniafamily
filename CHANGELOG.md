@@ -5,6 +5,17 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.31-dev)
+
+- Quiet adults: those the households of Cifra bring stay out of reach of every other plugin until they join or the
+  school welcomes them (`api::wake_adult()`), so nobody writes to a family before the school does (a library's
+  postcard, a canteen's notice). `adults_of_child()`, `adults_of_children()` and `adult_users_of_family()` leave them
+  out; `each_household()` says who is quiet; their own account still sees their children. A file imported by hand
+  brings its adults reachable, as before.
+- Whoever has a child's code finds the household the school's data brought, while nobody of it has joined: they join it
+  with every child in it, brothers and sisters too, instead of a family of their own; as one of its adults when they
+  come signed in with that adult's account or e-mail, which wakes them.
+
 ### Added (0.3.30-dev)
 
 - The households of the school's management program every night, when it is Cifra (`local\import\cifra_households`,
