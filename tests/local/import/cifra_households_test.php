@@ -220,8 +220,8 @@ final class cifra_households_test extends \advanced_testcase {
         $result = cifra_households::run(self::NOW + 3 * YEARSECS, $this->cifra($records), null, 0);
         $this->assertSame('done', $result['state']);
         foreach (['302', '303'] as $id) {
-            $this->assertSame($familyid, (int) $DB->get_field('local_oksigeniafamily_child', 'familyid',
-                ['sourcekey' => 'cifra:' . $id, 'status' => api::ACTIVE]), $id);
+            $where = ['sourcekey' => 'cifra:' . $id, 'status' => api::ACTIVE];
+            $this->assertSame($familyid, (int) $DB->get_field('local_oksigeniafamily_child', 'familyid', $where), $id);
         }
         $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_child', 'status', ['sourcekey' => 'cifra:301']));
         $this->assertSame(1, $result['counts']['childrenleaving']);
@@ -329,7 +329,7 @@ final class cifra_households_test extends \advanced_testcase {
         $result = cifra_households::run(self::NOW);
         $this->assertSame('error', $result['state']);
         $this->assertSame([0, 0, 0], $this->totals());
-        $this->assertStringContainsString(get_string('cifraerrorsettings', 'local_oksigeniafamily'),
-            cifra_households::status_text());
+        $said = get_string('cifraerrorsettings', 'local_oksigeniafamily');
+        $this->assertStringContainsString($said, cifra_households::status_text());
     }
 }
