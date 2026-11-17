@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Fixed (0.3.32-dev)
+
+- After joining with a child's code, the page names every child of the family they joined, brothers and sisters too
+  ("You are now family of Ana and Leo"), and gives each one's links under their name (a canteen's link and PIN for
+  each child); the app's, which is the adult's own, comes once and first (`links::for_children()`). Before, it named
+  and gave the links of the child of the code alone.
+
 ### Added (0.3.31-dev)
 
 - Quiet adults: those the households of Cifra bring stay out of reach of every other plugin until they join or the

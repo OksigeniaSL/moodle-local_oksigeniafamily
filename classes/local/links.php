@@ -60,6 +60,53 @@ class links {
     }
 
     /**
+     * Every plugin's links for an adult and all the children of their family, each link once.
+     *
+     * @param \stdClass $adult The adult record.
+     * @param int[] $childuserids The children's accounts, in the order to show them.
+     * @param bool $proven As for for_child().
+     * @return array As group() returns.
+     */
+    public static function for_children(\stdClass $adult, array $childuserids, bool $proven = false): array {
+        $each = [];
+        foreach ($childuserids as $childuserid) {
+            $each[(int) $childuserid] = self::for_child($adult, (int) $childuserid, $proven);
+        }
+
+        return self::group($each);
+    }
+
+    /**
+     * The links of several children, each once: one that every child gets alike and without a PIN (the app, which is the
+     * adult's own) goes once, first; the rest (a canteen's link and PIN) stay with the child they are for.
+     *
+     * @param array $each Child's account => their links, as for_child() returns them.
+     * @return array [the links every child shares, [child's account => their own links]]
+     */
+    public static function group(array $each): array {
+        $key = fn(array $link) => $link['pin'] === '' ? $link['component'] . "\n" . $link['label'] . "\n" . $link['note'] : '';
+        $shared = [];
+        foreach (reset($each) ?: [] as $link) {
+            $mine = $key($link);
+            if ($mine === '' || isset($shared[$mine])) {
+                continue;
+            }
+            foreach ($each as $links) {
+                if (!in_array($mine, array_map($key, $links), true)) {
+                    continue 2;
+                }
+            }
+            $shared[$mine] = $link;
+        }
+        $own = [];
+        foreach ($each as $childuserid => $links) {
+            $own[$childuserid] = array_values(array_filter($links, fn($link) => !isset($shared[$key($link)])));
+        }
+
+        return [array_values($shared), $own];
+    }
+
+    /**
      * What a plugin returned, checked: only items with a label and a web address.
      *
      * @param mixed $returned What the plugin returned.

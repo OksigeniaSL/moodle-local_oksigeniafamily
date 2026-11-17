@@ -142,17 +142,42 @@ $PAGE->requires->js_amd_inline("
 
 echo $OUTPUT->header();
 if ($done) {
-    $child = core_user::get_user($done->childuserid);
-    $links = links::for_child($done, (int) $done->childuserid, $proven);
+    // Every child of the family they joined, the one of the code first: in a household the school's data brought, the
+    // brothers and sisters came too, and each one's canteen link and PIN are shown only now.
+    $accounts = [(int) $done->childuserid];
+    $names = [];
+    foreach (\local_oksigeniafamily\api::children_of_adult((int) $done->id) as $kid) {
+        if (empty($kid->userid)) {
+            $names[] = (string) $kid->firstname;
+        } else if ((int) $kid->userid !== (int) $done->childuserid) {
+            $accounts[] = (int) $kid->userid;
+        }
+    }
+    $users = $DB->get_records_list('user', 'id', $accounts, '', 'id, firstname');
+    $accounts = array_values(array_filter($accounts, fn($id) => isset($users[$id])));
+    $names = array_values(array_filter(array_merge(array_map(fn($id) => $users[$id]->firstname, $accounts), $names), 'strlen'));
+    $many = count($names) > 1;
+    $last = $many ? array_pop($names) : null;
+    $together = $last === null ? (string) reset($names) : get_string('consent:and', 'local_oksigeniafamily', (object) [
+        'list' => implode(', ', $names),
+        'last' => $last,
+    ]);
+    [$shared, $own] = links::for_children($done, $accounts, $proven);
+    $groups = $shared ? [['name' => '', 'links' => $shared]] : [];
+    foreach ($own as $userid => $links) {
+        if ($links) {
+            $groups[] = ['name' => $many ? $users[$userid]->firstname : '', 'links' => $links];
+        }
+    }
     echo $OUTPUT->render_from_template('local_oksigeniafamily/claim_done', [
         'done' => get_string('claim:done', 'local_oksigeniafamily', (object) [
-            'child' => $child ? $child->firstname : '',
+            'child' => $together,
             'site' => format_string(get_site()->fullname),
         ]),
         'linksheading' => get_string('claim:links', 'local_oksigeniafamily'),
         'pinlabel' => get_string('claim:pin', 'local_oksigeniafamily'),
-        'links' => $links,
-        'haslinks' => !empty($links),
+        'groups' => $groups,
+        'haslinks' => !empty($groups),
         'nolinks' => get_string('claim:nolinks', 'local_oksigeniafamily'),
     ]);
 } else if ($mailed !== '') {

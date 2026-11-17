@@ -17,21 +17,36 @@
 {{!
     @template local_oksigeniafamily/claim_done
 
-    After a family claims a code: who they are family of now, and what each plugin gives them for that child.
+    After a family claims a code: who they are family of now (brothers and sisters too), and what each plugin gives them:
+    first what is the adult's own (the app), then what is for each child, under their name when there are several.
 
     Context variables required for this template:
     * done - Who they are family of now.
     * linksheading - The heading of the links.
-    * links - A list of { label, url, pin, note } from the plugins.
+    * groups - A list of { name, links }: name is empty for the adult's own and when there is one child; links is a list
+      of { label, url, pin, note } from the plugins.
     * pinlabel - How the PIN is introduced.
     * haslinks - Whether there are any.
     * nolinks - What to say when there are none.
 
     Example context (json):
     {
-        "done": "You are now family of Ana at Colegio Ejemplo.",
+        "done": "You are now family of Ana and Leo at Colegio Ejemplo.",
         "linksheading": "What you have now:",
-        "links": [{ "label": "Canteen menu", "url": "https://example.com/local/oksigeniameals/k.php", "pin": "4826", "note": "" }],
+        "groups": [
+            {
+                "name": "",
+                "links": [{ "label": "Open the app", "url": "https://example.com/local/oksigeniaaty/family.php", "pin": "" }]
+            },
+            {
+                "name": "Ana",
+                "links": [{ "label": "Canteen", "url": "https://example.com/local/oksigeniameals/k.php", "pin": "4826" }]
+            },
+            {
+                "name": "Leo",
+                "links": [{ "label": "Canteen", "url": "https://example.com/local/oksigeniameals/k.php", "pin": "1937" }]
+            }
+        ],
         "pinlabel": "PIN",
         "haslinks": true,
         "nolinks": "The school will tell you how to go on."
@@ -41,6 +56,8 @@
     <p class="lead">{{done}}</p>
     {{#haslinks}}
     <h3 class="h5">{{linksheading}}</h3>
+    {{#groups}}
+    {{#name}}<h4 class="h6 mt-3 mb-2">{{name}}</h4>{{/name}}
     <ul class="list-unstyled">
         {{#links}}
         <li class="mb-3">
@@ -50,6 +67,7 @@
         </li>
         {{/links}}
     </ul>
+    {{/groups}}
     {{/haslinks}}
     {{^haslinks}}
     <p>{{nolinks}}</p>
