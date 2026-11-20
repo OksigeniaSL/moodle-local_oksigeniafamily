@@ -5,6 +5,12 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.33-dev)
+
+- `api::household($familyid, $withadults = false, $activeonly = true)`: one household, as `households()` gives each,
+  for whoever starts from one family (a chat that found the adult who writes, by phone or e-mail, and shows their
+  children with their group) without walking the whole roll. `each_household()` and it share the same loading.
+
 ### Fixed (0.3.32-dev)
 
 - After joining with a child's code, the page names every child of the family they joined, brothers and sisters too

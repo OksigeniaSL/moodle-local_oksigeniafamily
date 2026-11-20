@@ -546,6 +546,33 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * One household, the same as in the whole roll: without adults unless asked, and none for a closed family or one that
+     * is not there, unless the gone are wanted too.
+     */
+    public function test_household(): void {
+        $this->resetAfterTest();
+
+        $familyid = api::create_family();
+        api::add_adult($familyid, ['firstname' => 'Marta', 'phone' => '+34600000001']);
+        api::add_child($familyid, null, 'cifra:41');
+        api::set_child_details('cifra:41', 'Lucía', 'Pérez', 'INF 3ºA');
+        $other = api::create_family();
+        api::add_child($other, null, 'cifra:42');
+
+        $one = api::household($familyid);
+        $this->assertSame([], $one->adults);
+        $lucia = $one->children[0];
+        $this->assertSame(['Lucía', 'Pérez', 'INF 3ºA'], [$lucia->firstname, $lucia->lastname, $lucia->group]);
+        $this->assertEquals(api::households()[$familyid], api::household($familyid, true));
+        $this->assertSame('Marta', api::household($familyid, true)->adults[0]->firstname);
+
+        api::close_family($other);
+        $this->assertNull(api::household($other));
+        $this->assertSame($other, api::household($other, false, false)->familyid);
+        $this->assertNull(api::household($other + 1000));
+    }
+
+    /**
      * Moodle's parent role follows the records: given to each adult with an account over each child, taken away when
      * the child leaves, and none at all while the site chooses no role.
      */
