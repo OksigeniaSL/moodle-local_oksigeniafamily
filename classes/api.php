@@ -16,6 +16,8 @@
 
 namespace local_oksigeniafamily;
 
+use local_oksigeniafamily\local\phone;
+use local_oksigeniafamily\local\readers\stage_guesser;
 use local_oksigeniafamily\local\roles;
 use stdClass;
 
@@ -244,12 +246,13 @@ class api {
      * Names, e-mail and phone are the adult's own record; an adult with an account and none of their own takes them from
      * the account. A child with an account carries the account's name; a child known only by a key in the school's data
      * (cifra:123) carries the name the school's data gave (set_child_details()), or none. The group is the school's own
-     * name for it (INF 3ºA), when its data gave one.
+     * name for it (INF 3ºA), when its data gave one; the stage, a guess from that name (INF), to group or to say, never to
+     * decide.
      *
      * @param bool $activeonly Only active households, children and adults; false brings the closed and the gone too.
      * @return stdClass[] Households keyed by family id, each with familyid, status, source, sourcekey, timeclosed, children
-     *     (childid, userid, sourcekey, firstname, lastname, group, status, timeleft) and adults (adultid, userid, firstname,
-     *     lastname, email, phone, phoneverified, status), in the order they were added.
+     *     (childid, userid, sourcekey, firstname, lastname, group, stage, status, timeleft) and adults (adultid, userid,
+     *     firstname, lastname, email, phone, phoneverified, status), in the order they were added.
      */
     public static function households(bool $activeonly = true): array {
         $households = [];
@@ -359,6 +362,8 @@ class api {
                 'firstname' => $child->firstname ?? $child->cfirstname,
                 'lastname' => $child->lastname ?? $child->clastname,
                 'group' => $child->groupname,
+                // The school's own name for the stage, when the group's name has one (PRI 5º B: PRI), or ''.
+                'stage' => $child->groupname === null ? '' : stage_guesser::guess($child->groupname),
                 'status' => $child->status,
                 'timeleft' => $child->timeleft === null ? null : (int) $child->timeleft,
             ];
@@ -462,6 +467,33 @@ class api {
                   JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
                  WHERE a.phone = :phone AND a.phoneverified = 1 AND a.status = :aactive
               ORDER BY a.id ASC";
+
+        return $DB->get_records_sql($sql, ['phone' => $phone, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]);
+    }
+
+    /**
+     * Every adult with a phone number in their record, whether or not it is known to be theirs: a hint for a person to
+     * confirm (who may be the one writing on WhatsApp, for the staff who answer), never who is writing nor a reason to show
+     * or send them anything, as adults_by_email(). A number typed on the claim page may be someone else's: each record
+     * says whether it is vouched for (phoneverified) and whether it is still quiet (brought by the school's data, not yet
+     * joined nor welcomed), and those vouched for come first. Their household, with household($record->familyid).
+     *
+     * @param string $phone The number in E.164 form (+34600000001), as the records keep it; spaces, signs and a leading 00
+     *     are taken, a number without its country code is not.
+     * @return stdClass[] Adult records, keyed by id: the vouched for first, then in the order they were added.
+     */
+    public static function adults_by_phone_hint(string $phone): array {
+        global $DB;
+
+        $phone = phone::normalise($phone);
+        if ($phone === '') {
+            return [];
+        }
+        $sql = "SELECT a.*
+                  FROM {local_oksigeniafamily_adult} a
+                  JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
+                 WHERE a.phone = :phone AND a.status = :aactive
+              ORDER BY a.phoneverified DESC, a.id ASC";
 
         return $DB->get_records_sql($sql, ['phone' => $phone, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE]);
     }

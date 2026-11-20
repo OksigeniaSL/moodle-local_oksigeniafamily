@@ -563,6 +563,9 @@ final class api_test extends \advanced_testcase {
         $this->assertSame([], $one->adults);
         $lucia = $one->children[0];
         $this->assertSame(['Lucía', 'Pérez', 'INF 3ºA'], [$lucia->firstname, $lucia->lastname, $lucia->group]);
+        // The stage, guessed from the group's name; none without a group.
+        $this->assertSame('INF', $lucia->stage);
+        $this->assertSame('', api::household($other)->children[0]->stage);
         $this->assertEquals(api::households()[$familyid], api::household($familyid, true));
         $this->assertSame('Marta', api::household($familyid, true)->adults[0]->firstname);
 
@@ -570,6 +573,46 @@ final class api_test extends \advanced_testcase {
         $this->assertNull(api::household($other));
         $this->assertSame($other, api::household($other, false, false)->familyid);
         $this->assertNull(api::household($other + 1000));
+    }
+
+    /**
+     * A phone as a hint for the staff: whoever has it in their record, vouched for or typed, the vouched for first; never
+     * one who left or a closed household, and nothing for a number without its country code.
+     */
+    public function test_adults_by_phone_hint(): void {
+        $this->resetAfterTest();
+        $number = '+34600000077';
+
+        $typedfamily = api::create_family();
+        $typed = api::add_adult($typedfamily, ['firstname' => 'Typed', 'phone' => $number]);
+        $schoolfamily = api::create_family('cifra', 'H-77');
+        $school = api::add_adult(
+            $schoolfamily,
+            ['firstname' => 'School', 'phone' => $number, 'phoneverified' => true, 'quiet' => true]
+        );
+        $gone = api::add_adult($schoolfamily, ['firstname' => 'Gone', 'phone' => $number, 'phoneverified' => true]);
+        api::remove_adult($gone);
+        $closed = api::create_family();
+        api::add_adult($closed, ['firstname' => 'Closed', 'phone' => $number, 'phoneverified' => true]);
+        api::close_family($closed);
+
+        $found = api::adults_by_phone_hint($number);
+        $this->assertSame([$school, $typed], array_map('intval', array_keys($found)));
+        $this->assertSame(['1', '0'], array_map(fn($adult) => (string) $adult->phoneverified, array_values($found)));
+        $this->assertSame(
+            [$schoolfamily, $typedfamily],
+            array_map(fn($adult) => (int) $adult->familyid, array_values($found))
+        );
+        $this->assertSame('1', (string) $found[$school]->quiet);
+        // Only the one vouched for answers to who is writing.
+        $this->assertSame([$school], array_map('intval', array_keys(api::adults_by_phone($number))));
+
+        // Written as people write it, and from abroad with 00.
+        $this->assertSame(array_keys($found), array_keys(api::adults_by_phone_hint('+34 600 00 00 77')));
+        $this->assertSame(array_keys($found), array_keys(api::adults_by_phone_hint('0034600000077')));
+        $this->assertSame([], api::adults_by_phone_hint('600000077'));
+        $this->assertSame([], api::adults_by_phone_hint(''));
+        $this->assertSame([], api::adults_by_phone_hint('+34600000078'));
     }
 
     /**

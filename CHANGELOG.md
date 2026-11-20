@@ -5,6 +5,16 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.34-dev)
+
+- `api::adults_by_phone_hint($phone)`: every active adult with that number in their record, vouched for or not, as a
+  hint for the staff who answer a chat (who may be writing), never who is writing nor a reason to show them anything, as
+  `adults_by_email()`. Each record says whether the number is vouched for (`phoneverified`) and whether the adult is
+  still quiet; the vouched for come first. The number in E.164, as the records keep it; spaces and a leading 00 are
+  taken.
+- The children of `households()`, `each_household()` and `household()` carry `stage`: a guess from the group's name
+  (`PRI 5º B` gives `PRI`), or empty, to group or to say, never to decide.
+
 ### Added (0.3.33-dev)
 
 - `api::household($familyid, $withadults = false, $activeonly = true)`: one household, as `households()` gives each,
