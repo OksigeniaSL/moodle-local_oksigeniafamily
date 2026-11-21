@@ -1,0 +1,51 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template local_oksigeniafamily/notyours
+
+    «Not of my family»: the question with its two answers, or what happened.
+
+    Example context (json):
+    {
+        "ask": true,
+        "question": "Is Laura Gil not of your family?",
+        "explain": "If you take Laura Gil out, they stop seeing your children, and the code they joined with stops working.",
+        "remove": "Not of my family: take them out",
+        "keep": "Yes, they are of my family",
+        "keepurl": "https://example.com/",
+        "formurl": "https://example.com/local/oksigeniafamily/notyours.php",
+        "adultid": 7,
+        "sesskey": "x",
+        "message": ""
+    }
+}}
+<div class="local-oksigeniafamily-notyours">
+    {{#ask}}
+    <p class="lead">{{question}}</p>
+    <p>{{explain}}</p>
+    <form method="post" action="{{formurl}}" class="mb-3">
+        <input type="hidden" name="a" value="{{adultid}}">
+        <input type="hidden" name="remove" value="1">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <button type="submit" class="btn btn-danger w-100">{{remove}}</button>
+    </form>
+    <a class="btn btn-outline-secondary w-100" href="{{keepurl}}">{{keep}}</a>
+    {{/ask}}
+    {{^ask}}
+    <p class="lead" role="status">{{message}}</p>
+    {{/ask}}
+</div>

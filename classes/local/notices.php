@@ -27,7 +27,7 @@ class notices {
     /**
      * A new adult joined a student with the student's code: the student's other adults (those with an account) and
      * whoever manages the families of the school are told, so a code that went astray is found at once. Those who manage
-     * them get a link to the record, where they can remove the adult.
+     * them get a link to the record; the adults, «Not of my family», to take the newcomer out themselves.
      *
      * @param \stdClass $adult The adult who joined.
      * @param int $childuserid The student.
@@ -66,7 +66,9 @@ class notices {
             $message->userfrom = \core_user::get_noreply_user();
             $message->userto = $userid;
             $message->subject = get_string('notice:newadult:subject', 'local_oksigeniafamily', $a);
-            $message->fullmessage = get_string('notice:newadult', 'local_oksigeniafamily', $a);
+            // Whoever manages the families gets the record; an adult of the family, «Not of my family», which takes the
+            // newcomer out without the school (local\notyours).
+            $message->fullmessage = get_string($manages ? 'notice:newadult' : 'notice:newadult:adult', 'local_oksigeniafamily', $a);
             $message->fullmessageformat = FORMAT_PLAIN;
             $message->fullmessagehtml = '';
             $message->smallmessage = $message->subject;
@@ -74,6 +76,9 @@ class notices {
             if ($manages) {
                 $message->contexturl = $record->out(false);
                 $message->contexturlname = get_string('notice:newadult:record', 'local_oksigeniafamily');
+            } else {
+                $message->contexturl = (new \moodle_url('/local/oksigeniafamily/notyours.php', ['a' => $adult->id]))->out(false);
+                $message->contexturlname = get_string('notice:newadult:notyours', 'local_oksigeniafamily');
             }
             // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
             $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];

@@ -5,6 +5,14 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.38-dev)
+
+- «Not of my family» (`notyours.php`, `local\notyours`): the notice that someone joined a family with a code takes the
+  family's other adults to a page where they take the newcomer out themselves, and the code they came with stops working.
+  Before, the notice said to tell the school, which had to do it. Only someone who joined with a code in the last month:
+  an adult the school's data brought stays the school's, so that one parent cannot take the other out. The code still
+  serves several adults (a father, then a mother, then a grandmother); each one who joins is told to the others.
+
 ### Changed (0.3.37-dev)
 
 - Its notices in the app (a request for consent, a conflict between answers, a new adult, an import that ended) carry
