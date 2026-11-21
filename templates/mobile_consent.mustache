@@ -49,14 +49,18 @@
                 <ion-card-title>{{ child.fullname }}</ion-card-title>
             </ion-card-header>
             <ion-card-content>
-                <div *ngIf="child.answered" class="okf-consent-dicho" [class.okf-consent-no]="!child.saidyes" role="status">
+                <ng-container *ngIf="child.answered">
+                <okf-dicho class="okf-consent-dicho" [class.okf-consent-no]="!child.saidyes" role="status">
                     <span class="okf-consent-marca" aria-hidden="true">{{ child.saidyes ? '✓' : '✕' }}</span>
                     <p>{{ child.answertext }}</p>
-                </div>
+                </okf-dicho>
+                </ng-container>
                 <ng-container *ngIf="CONTENT_OTHERDATA.request.open">
-                    <button type="button" class="okf-consent-cambiar"
-                        *ngIf="child.answered &amp;&amp; !CONTENT_OTHERDATA.changing[child.key]"
-                        (click)="CONTENT_OTHERDATA.changing[child.key] = true"><%#str%>consent:changeanswer, local_oksigeniafamily<%/str%></button>
+                    <ng-container *ngIf="child.answered &amp;&amp; !CONTENT_OTHERDATA.changing[child.key]">
+                    <okf-boton class="okf-consent-cambiar" role="button" tabindex="0"
+                        (click)="CONTENT_OTHERDATA.changing[child.key] = true"
+                        (keydown.enter)="CONTENT_OTHERDATA.changing[child.key] = true"><%#str%>consent:changeanswer, local_oksigeniafamily<%/str%></okf-boton>
+                    </ng-container>
                     <ng-container *ngIf="!child.answered || CONTENT_OTHERDATA.changing[child.key]">
                         <div class="okf-consent-botones">
                             <ion-button color="success" [attr.aria-label]="child.yesaria" core-site-plugins-call-ws
@@ -76,8 +80,11 @@
                                 aria-label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>"
                                 [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
                         </details>
-                        <button type="button" class="okf-consent-dejar" *ngIf="child.answered"
-                            (click)="CONTENT_OTHERDATA.changing[child.key] = false"><%#str%>consent:leaveasis, local_oksigeniafamily<%/str%></button>
+                        <ng-container *ngIf="child.answered">
+                        <okf-boton class="okf-consent-dejar" role="button" tabindex="0"
+                            (click)="CONTENT_OTHERDATA.changing[child.key] = false"
+                            (keydown.enter)="CONTENT_OTHERDATA.changing[child.key] = false"><%#str%>consent:leaveasis, local_oksigeniafamily<%/str%></okf-boton>
+                        </ng-container>
                     </ng-container>
                 </ng-container>
             </ion-card-content>

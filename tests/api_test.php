@@ -269,7 +269,7 @@ final class api_test extends \advanced_testcase {
 
     /**
      * Those who manage the families get the notice with a link to the record, where they can remove the adult; the
-     * student's other adults get it without one.
+     * student's other adults, with «Not of my family», to take the newcomer out themselves.
      */
     public function test_claim_notice_links_to_the_record(): void {
         global $DB;
@@ -294,7 +294,7 @@ final class api_test extends \advanced_testcase {
             $messages[(int) $message->useridto] = $message;
         }
         $this->assertStringContainsString('family.php?id=' . $joined->familyid, $messages[$manager->id]->contexturl);
-        $this->assertEmpty($messages[$mother->id]->contexturl);
+        $this->assertStringContainsString('notyours.php?a=', $messages[$mother->id]->contexturl);
     }
 
     /**

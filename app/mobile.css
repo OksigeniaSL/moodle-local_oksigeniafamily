@@ -68,7 +68,7 @@ ion-textarea.okf-app-comment textarea.native-textarea {
     background: var(--ion-color-success, #2d8a4e); color: #fff; font-size: 16px; font-weight: 800; line-height: 1; }
 .okf-consent-no .okf-consent-marca { background: var(--ion-color-danger, #c42b1c); }
 .okf-consent-dicho p { margin: 3px 0 0; font-size: 1rem; font-weight: 700; line-height: 1.35; }
-.okf-consent-cambiar, .okf-consent-dejar { display: inline-block; margin: 12px 0 0; padding: 6px 0; border: 0;
+.okf-consent-cambiar, .okf-consent-dejar { display: inline-block; cursor: pointer; margin: 12px 0 0; padding: 6px 0; border: 0;
     background: transparent; color: var(--ion-color-primary); font: inherit; font-weight: 700; text-decoration: underline;
     text-underline-offset: 3px; }
 .okf-consent-comentario { margin: 14px 0 0; }
