@@ -64,7 +64,7 @@ $string['cifraerrorstatus'] = 'Cifra answered with an error (HTTP {$a}).';
 $string['cifraerrorunknownarea'] = 'Cifra does not know the area «{$a}».';
 $string['cifraerrorunreachable'] = 'Cifra: there is no answer from the address (no connection, or it took too long).';
 $string['cifrahouseholds:busy'] = 'Last round, {$a->time}: another import was going in, so it goes again the next night.';
-$string['cifrahouseholds:done'] = 'Last round, {$a->time}: {$a->students} students in Cifra, {$a->households} households. {$a->familiesnew} new households and {$a->familiesjoined} that were already in Family; {$a->adultsnew} adults and {$a->childrennew} children added; {$a->childrenleaving} children who left.';
+$string['cifrahouseholds:done'] = 'Last round, {$a->time}: {$a->students} students in Cifra, {$a->households} households. {$a->familiesnew} new households and {$a->familiesjoined} that were already in Family; {$a->adultsnew} adults and {$a->childrennew} children added; {$a->childrenleaving} children who left, and {$a->adultsleaving} adults who are no longer in their household in Cifra and had not joined.';
 $string['cifrahouseholds:error'] = 'Last round, {$a->time}: {$a->error}';
 $string['cifrahouseholds:never'] = 'It has not run yet.';
 $string['cifrahouseholds:stopped'] = 'Last round, {$a->time}: the brake of a complete list stopped it ({$a->childrenleaving} children would leave, {$a->errors} rows not understood), and nothing changed. To see it: php local/oksigeniafamily/cli/cifra_households.php; to apply it: the same with --apply --confirm={$a->childrenleaving}.';
@@ -93,11 +93,15 @@ $string['claim:title'] = 'Join a student\'s family';
 $string['claim:toomany'] = 'Too many tries. Wait a while and try again.';
 $string['claimbusy'] = 'Someone is already using this code right now. Try again in a moment.';
 $string['claimmail:checkheading'] = 'Check your e-mail';
-$string['claimmail:gone'] = 'This link no longer works: it has expired or the code no longer works. Use the code on the letter again.';
+$string['claimmail:confirm'] = '{$a->name}, tap «Confirm» and {$a->child} will be in your {$a->site} account.';
+$string['claimmail:confirmbutton'] = 'Confirm';
+$string['claimmail:confirmheading'] = 'One more step';
+$string['claimmail:confirmnot'] = 'If it was not you who used the code, close this page: nothing changes.';
+$string['claimmail:gone'] = 'This link no longer works: it has been used already, it has expired or the code no longer works. Use the code on the letter again.';
 $string['claimmail:html'] = '<p>Hello {$a->name},</p>
 <p>You used the code on {$a->child}\'s letter with the address of your {$a->site} account. To see {$a->child} in that account, tap this link on your phone:</p>
 <p><a href="{$a->url}"><strong>See {$a->child} in my account</strong></a></p>
-<p>It works for {$a->days} days. If it was not you, do nothing: nothing changes.</p>';
+<p>It works once, for {$a->days} days. If it was not you, do nothing: nothing changes.</p>';
 $string['claimmail:other'] = 'If that account is not yours, go back and type another address, or leave it blank.';
 $string['claimmail:sent'] = '{$a->email} already has an account at {$a->site}. So that you do not have two accounts, your child will go into that one. We have sent you an e-mail: open it on your phone and tap the link.';
 $string['claimmail:subject'] = 'Your family, in your {$a->site} account';
@@ -107,7 +111,7 @@ You used the code on {$a->child}\'s letter with the address of your {$a->site} a
 
 {$a->url}
 
-It works for {$a->days} days. If it was not you, do nothing: nothing changes.';
+It works once, for {$a->days} days. If it was not you, do nothing: nothing changes.';
 $string['claimself'] = 'This is your own code: it is for the adults of your family. Give them the letter.';
 $string['claiminvalid'] = 'This code does not work: it may be mistyped, out of date or withdrawn by the school.';
 $string['code:until'] = 'Code in use until {$a->date} · uses: {$a->claims}';
@@ -646,7 +650,7 @@ $string['privacy:metadata:target:userid'] = 'The student.';
 $string['privacy:metadata:timecreated'] = 'When the record was made.';
 $string['privacy:photo'] = 'Photo';
 $string['settings:cifrahouseholds'] = 'Households from Cifra every night';
-$string['settings:cifrahouseholds_desc'] = 'Every night the families come from Cifra: the students with the same legal guardians share a household, with every adult Cifra gives for them, and a child who starts later joins theirs. A household that is already in Family, from a letter\'s code or made by hand, is the same one. A child without an account who leaves Cifra leaves their family. Nobody is sent anything. To see first what it would do: php local/oksigeniafamily/cli/cifra_households.php';
+$string['settings:cifrahouseholds_desc'] = 'Every night the families come from Cifra: the students with the same legal guardians share a household, with those guardians (every relative Cifra gives, only for a student for whom it marks no guardian), and a child who starts later joins theirs. A household that is already in Family, from a letter\'s code or made by hand, is the same one. A child without an account who leaves Cifra leaves their family, and so does an adult who is no longer in their household in Cifra and has not joined. Nobody is sent anything. To see first what it would do: php local/oksigeniafamily/cli/cifra_households.php';
 $string['settings:claimdays'] = 'Codes last (days)';
 $string['settings:claimdays_desc'] = 'How many days a student\'s code joins families after it is issued.';
 $string['settings:claimkeyword'] = 'Word of the short address';

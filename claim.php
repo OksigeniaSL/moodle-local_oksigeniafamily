@@ -37,6 +37,8 @@ $PAGE->set_url(new moodle_url('/local/oksigeniafamily/claim.php'));
 $PAGE->set_pagelayout('login');
 $PAGE->set_title(get_string('claim:title', 'local_oksigeniafamily'));
 $PAGE->set_heading(format_string(get_site()->fullname));
+// What this page shows after a claim (a canteen's link and PIN) is never kept by the browser nor by a proxy.
+$PAGE->set_cacheable(false);
 
 $signedin = isloggedin() && !isguestuser();
 // It goes once: a double tap would otherwise claim twice.
@@ -53,12 +55,21 @@ $proven = $signedin;
 // The address a link went to, for a code claimed with the address of an account of the site.
 $mailed = '';
 $address = getremoteaddr();
+// The link sent to an account's address, while its owner has not confirmed it yet: who it is for and which child.
+$asking = null;
 $confirm = optional_param('confirm', '', PARAM_ALPHANUMEXT);
 if ($confirm !== '') {
-    // The link sent to an account's address: the child goes into that account.
+    // The link sent to an account's address: the child goes into that account. Opening it changes nothing (a mail
+    // scanner or a preview opens links too): its owner confirms with a button, and then it is used up.
     $pending = claimmail::read($confirm);
     $account = $pending ? core_user::get_user($pending['userid']) : null;
-    if (!$account || $account->deleted || $account->suspended) {
+    $student = $pending ? \local_oksigeniafamily\api::code_student($pending['code']) : null;
+    $child = $student ? core_user::get_user($student) : null;
+    if (!$account || $account->deleted || $account->suspended || !$child || $child->deleted) {
+        $error = get_string('claimmail:gone', 'local_oksigeniafamily');
+    } else if (!data_submitted() || !confirm_sesskey()) {
+        $asking = ['account' => $account, 'child' => $child];
+    } else if (!claimmail::spend($confirm)) {
         $error = get_string('claimmail:gone', 'local_oksigeniafamily');
     } else {
         try {
@@ -71,6 +82,10 @@ if ($confirm !== '') {
             ]);
             $proven = true;
         } catch (moodle_exception $e) {
+            if ($e->errorcode !== 'claimself' && $e->errorcode !== 'claiminvalid') {
+                // Nothing went in (someone was claiming the same at that moment): the link can be tried again.
+                claimmail::unspend($confirm);
+            }
             if ($e->errorcode === 'claimbusy' || $e->errorcode === 'claimself') {
                 $error = get_string($e->errorcode, 'local_oksigeniafamily');
             } else if ($e->errorcode === 'claiminvalid') {
@@ -140,7 +155,11 @@ $PAGE->requires->js_amd_inline("
     });
 ");
 
-echo $OUTPUT->header();
+$header = $OUTPUT->header();
+// Sent after Moodle's own headers, so that it is this one that counts: the link's seal, in the address of the page,
+// never goes to another site in the Referer, nor do the links this page shows after a claim.
+@header('Referrer-Policy: no-referrer');
+echo $header;
 if ($done) {
     // Every child of the family they joined, the one of the code first: in a household the school's data brought, the
     // brothers and sisters came too, and each one's canteen link and PIN are shown only now.
@@ -180,6 +199,32 @@ if ($done) {
         'haslinks' => !empty($groups),
         'nolinks' => get_string('claim:nolinks', 'local_oksigeniafamily'),
     ]);
+} else if ($asking) {
+    echo $OUTPUT->heading(get_string('claimmail:confirmheading', 'local_oksigeniafamily'));
+    echo html_writer::tag('p', get_string('claimmail:confirm', 'local_oksigeniafamily', (object) [
+        'name' => format_string($asking['account']->firstname),
+        'child' => format_string($asking['child']->firstname),
+        'site' => format_string(get_site()->fullname),
+    ]));
+    // A form of its own, by POST and with the session's key: it goes once, and nothing else can send it for its owner.
+    echo html_writer::start_tag('form', [
+        'method' => 'post',
+        'action' => (new moodle_url('/local/oksigeniafamily/claim.php'))->out(false),
+        'data-okf-once' => 1,
+    ]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'confirm', 'value' => $confirm]);
+    echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+    echo html_writer::tag(
+        'button',
+        get_string('claimmail:confirmbutton', 'local_oksigeniafamily'),
+        ['type' => 'submit', 'class' => 'btn btn-primary']
+    );
+    echo html_writer::end_tag('form');
+    echo html_writer::tag(
+        'p',
+        get_string('claimmail:confirmnot', 'local_oksigeniafamily'),
+        ['class' => 'text-muted mt-3']
+    );
 } else if ($mailed !== '') {
     echo $OUTPUT->heading(get_string('claimmail:checkheading', 'local_oksigeniafamily'));
     echo html_writer::tag('p', get_string('claimmail:sent', 'local_oksigeniafamily', (object) [

@@ -86,4 +86,95 @@ final class claimmail_test extends \advanced_testcase {
         api::revoke_claim_codes((int) $student->id);
         $this->assertNull(api::code_student($code));
     }
+
+    /**
+     * The link sent to an address.
+     *
+     * @param string $code The code.
+     * @param \stdClass $user The account.
+     * @param int $childuserid The student.
+     * @param string $phone The phone typed.
+     * @return string The link's «confirm».
+     */
+    private function link(string $code, \stdClass $user, int $childuserid, string $phone = ''): string {
+        $sink = $this->redirectEmails();
+        claimmail::send($code, $user, $childuserid, $phone);
+        $emails = $sink->get_messages();
+        $sink->close();
+        preg_match(
+            '~/local/oksigeniafamily/claim\.php\?confirm=([A-Za-z0-9_-]+)~',
+            quoted_printable_decode($emails[0]->body),
+            $found
+        );
+
+        return $found[1];
+    }
+
+    /**
+     * A link works once: used, it says nothing more, and using it again fails; given back (the claim could not be done
+     * at that moment), it works again. Another link for the same code is a link of its own.
+     */
+    public function test_spend_once(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $gen = $this->getDataGenerator();
+        $teacher = $gen->create_user(['firstname' => 'Eva', 'email' => 'eva@school.example']);
+        $student = $gen->create_user(['firstname' => 'Leo']);
+        $code = api::issue_claim_code((int) $student->id);
+        $sealed = $this->link($code, $teacher, (int) $student->id);
+
+        $this->assertTrue(claimmail::spend($sealed));
+        $this->assertNull(claimmail::read($sealed));
+        $this->assertFalse(claimmail::spend($sealed));
+        $this->assertFalse(claimmail::spend('rubbish'));
+        // What is kept is a hash, never the link nor what it says.
+        $kept = $DB->get_records('local_oksigeniafamily_spent');
+        $this->assertCount(1, $kept);
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', reset($kept)->stamp);
+
+        claimmail::unspend($sealed);
+        $this->assertNotNull(claimmail::read($sealed));
+        $this->assertTrue(claimmail::spend($sealed));
+
+        $this->waitForSecond();
+        $again = $this->link($code, $teacher, (int) $student->id);
+        $this->assertNotSame($sealed, $again);
+        $this->assertTrue(claimmail::spend($again));
+
+        // Those used longer ago than a link lasts go when another is used.
+        $DB->set_field('local_oksigeniafamily_spent', 'timecreated', time() - claimmail::DAYS * DAYSECS - 1);
+        $this->waitForSecond();
+        $this->assertTrue(claimmail::spend($this->link($code, $teacher, (int) $student->id)));
+        $this->assertSame(1, $DB->count_records('local_oksigeniafamily_spent'));
+    }
+
+    /**
+     * The phone a link carries was only typed: it never takes the place of a number someone vouched for, though it
+     * fills in an adult who had none.
+     */
+    public function test_link_phone_never_replaces_a_vouched_one(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $gen = $this->getDataGenerator();
+        $teacher = $gen->create_user(['email' => 'eva@school.example']);
+        $leo = $gen->create_user();
+        $lola = $gen->create_user();
+        $familyid = api::create_family('csv', 'F1');
+        $eva = api::add_adult($familyid, ['userid' => (int) $teacher->id, 'phone' => '+34600111000', 'phoneverified' => true]);
+        api::add_child($familyid, (int) $leo->id);
+
+        $claimed = api::claim(api::issue_claim_code((int) $lola->id), ['userid' => (int) $teacher->id, 'phone' => '+34600999999']);
+
+        $this->assertSame($eva, (int) $claimed->id);
+        $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $eva]);
+        $this->assertSame(['+34600111000', 1], [$record->phone, (int) $record->phoneverified]);
+        $this->assertTrue(api::adult_has_child($eva, (int) $lola->id));
+
+        // Without a number of their own, the one given stays, as typed.
+        $mother = $gen->create_user();
+        $ana = api::add_adult(api::create_family(), ['userid' => (int) $mother->id]);
+        api::claim(api::issue_claim_code((int) $leo->id), ['userid' => (int) $mother->id, 'phone' => '+34600222000']);
+        $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $ana]);
+        $this->assertSame(['+34600222000', 0], [$record->phone, (int) $record->phoneverified]);
+    }
 }

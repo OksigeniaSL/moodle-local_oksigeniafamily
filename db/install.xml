@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/oksigeniafamily/db" VERSION="20261113" COMMENT="XMLDB file for local_oksigeniafamily"
+<XMLDB PATH="local/oksigeniafamily/db" VERSION="20261122" COMMENT="XMLDB file for local_oksigeniafamily"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -243,6 +243,20 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="requestroundadult" UNIQUE="true" FIELDS="requestid, roundid, adultid"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_oksigeniafamily_spent" COMMENT="The links sent to an account's address to claim a code that have been used: each works once">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="stamp" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="The SHA-256 of what the link says, never the link"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="When it was used; kept while the link could still be good"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="stamp" UNIQUE="true" FIELDS="stamp"/>
+        <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>
   </TABLES>

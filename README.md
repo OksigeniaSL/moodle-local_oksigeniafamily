@@ -24,10 +24,11 @@ Everything is under *Site administration ▸ Users ▸ Accounts ▸ Families*, f
   Codes are only kept as a hash, so a letter can only be printed from the page that issues it; a lost letter is replaced
   by a new code, and the old one stops working.
 - **From the school's management program, every night**, when it is Cifra (one source next to the file; the code leaves
-  room for others). The students with the same legal guardians share a household, with every adult the program gives
-  for them; a child who starts years later joins the household their family already has, and a household already in
-  Family from a letter's code is the same one. Nothing is sent to anyone. It is off by default; the connection is set
-  once for every Oksigenia plugin of the site, and `cli/cifra_households.php` says first what a round would do.
+  room for others). The students with the same legal guardians share a household, with those guardians as its adults
+  (every relative the program gives, only for a student for whom it marks no guardian); a child who starts years later
+  joins the household their family already has, and a household already in Family from a letter's code is the same
+  one. Nothing is sent to anyone. It is off by default; the connection is set once for every Oksigenia plugin of the
+  site, and `cli/cifra_households.php` says first what a round would do.
 - **By hand**, for the odd case.
 
 Students who leave take care of themselves: when their account is suspended or deleted they leave their families, and a

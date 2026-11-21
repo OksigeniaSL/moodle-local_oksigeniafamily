@@ -26,9 +26,10 @@ use local_oksigeniafamily\local\readers\cifra_people;
  * file, and the same importer takes them. Brothers and sisters come in together, and a child who starts school years
  * later joins the household their family already has, on their own.
  *
- * How a household is made: the students who have the same legal guardians in Cifra share one (all their relatives when
- * Cifra marks none), with every adult Cifra gives for any of them. A parent of two households (a child with each partner)
- * is in both. Brothers and sisters that Cifra lists among the relatives are children, never adults.
+ * How a household is made: the students who have the same legal guardians in Cifra share one, with those guardians as
+ * its adults; a relative who is not one (a grandmother, a parent without custody) is not an adult of it. Only for a
+ * child for whom Cifra marks no guardian are all their relatives. A parent of two households (a child with each
+ * partner) is in both. Brothers and sisters that Cifra lists among the relatives are children, never adults.
  *
  * Where it goes, in this order, so that a household is never made twice:
  * - the open family that already has its children (by their key in Cifra or their account), made by this source or
@@ -41,6 +42,7 @@ use local_oksigeniafamily\local\readers\cifra_people;
  * A student's account is the one with their e-mail in Cifra, when only one has it; an adult's, likewise, when it is not
  * a student's. Without one, the child is known by their key and the adult has no account: nothing is created or sent.
  * The list of Cifra is complete, so a child without an account who is no longer in it leaves, with the importer's brake.
+ * So does an adult it brought who is no longer in their household in Cifra while they are still quiet (gone_adults()).
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -118,12 +120,15 @@ final class cifra_households {
     }
 
     /**
-     * The households of some records: the children with the same guardians together, with all their adults.
+     * The households of some records: the children with the same guardians together, with those guardians as their
+     * adults. A relative Cifra does not mark as a legal guardian of the child (a grandmother, an uncle, a parent
+     * without custody) is not an adult of the household, who would see the child: only when Cifra marks nobody for the
+     * child are all their relatives.
      *
      * @param array[] $records The records of the students, by id.
      * @param int $now
-     * @return array[] Each with signature, guardians (keys), children (keys) and adults (as cifra_people::families()
-     *     gives them, by key), in the order of their signatures.
+     * @return array[] Each with signature, guardians (keys), children (keys) and adults (the guardians, as
+     *     cifra_people::families() gives them, by key, in the order of Cifra), in the order of their signatures.
      */
     public static function groups(array $records, int $now): array {
         $adults = [];
@@ -140,14 +145,15 @@ final class cifra_households {
         }
         $groups = [];
         foreach ($ofchild as $child => $keys) {
-            $guardians = array_values(array_unique($guardiansof[$child] ?? $keys));
+            $members = array_values(array_unique($guardiansof[$child] ?? $keys));
+            $guardians = $members;
             sort($guardians, SORT_STRING);
             $signature = sha1(implode('|', $guardians));
             $groups[$signature] = $groups[$signature] ?? [
                 'signature' => $signature, 'guardians' => $guardians, 'children' => [], 'adults' => [],
             ];
             $groups[$signature]['children'][] = $child;
-            foreach ($keys as $key) {
+            foreach ($members as $key) {
                 $groups[$signature]['adults'][$key] = $adults[$key];
             }
         }
@@ -156,9 +162,6 @@ final class cifra_households {
             $children = array_values(array_unique($group['children']));
             sort($children, SORT_NATURAL);
             $groups[$signature]['children'] = $children;
-            // The guardians first, as Cifra has them, and then the other relatives.
-            $first = array_intersect_key($group['adults'], array_flip($group['guardians']));
-            $groups[$signature]['adults'] = $first + $group['adults'];
         }
 
         return array_values($groups);
@@ -280,7 +283,8 @@ final class cifra_households {
      * @param int $now
      * @param cifra|null $client The connection; the site's when null.
      * @param int $pause Microseconds between two records.
-     * @return array plan (from importer::plan()), names (as rows() gives them), students and households (how many).
+     * @return array plan (from importer::plan()), gone (as gone_adults() gives them), names (as rows() gives them),
+     *     students and households (how many).
      * @throws \moodle_exception When there is no connection or Cifra does not answer well.
      */
     public static function dry_run(int $now, ?cifra $client = null, int $pause = self::PAUSE): array {
@@ -291,9 +295,11 @@ final class cifra_households {
         $read = self::read($client, $now, $pause);
         $groups = self::groups($read['records'], $now);
         $rows = self::rows($groups, $read['students']);
+        $plan = importer::plan($rows['rows'], self::SOURCE, true, $rows['joined']);
 
         return [
-            'plan' => importer::plan($rows['rows'], self::SOURCE, true, $rows['joined']),
+            'plan' => $plan,
+            'gone' => self::gone_adults($plan, $rows['rows']),
             'names' => $rows['names'],
             'students' => count($read['students']),
             'households' => count($groups),
@@ -302,9 +308,81 @@ final class cifra_households {
     }
 
     /**
-     * A round: Cifra is read, and what it says goes into Family by batches, unless the brake of a complete list stops it
-     * (too many children would leave, or rows were not understood): then nothing changes until someone confirms how many
-     * leave. Then the students without an account get their name and group. Nothing is sent to anyone.
+     * The adults this source brought to a household of the plan who are no longer in it in Cifra: a relative who is not
+     * a legal guardian (who came in before 0.3.35, when every relative did), or one taken off the student's record.
+     *
+     * Those still quiet leave it: they never joined nor were welcomed, so all they have (the parent role through an
+     * account with their e-mail, their number vouched for) came from the school's data alone, and goes with it. If they
+     * should be there, the school marks them as guardians in Cifra and the next night brings them back. Those who have
+     * joined, or whom the school welcomed, stay, for a person to look at: a parent without custody may still have the
+     * right to know, or a reason not to, that Cifra does not say. A household with a row of Cifra that was not
+     * understood is left as it is, since an adult of that row would look gone.
+     *
+     * @param array $plan From importer::plan(), with this source's rows.
+     * @param array[] $rows The rows of the plan, as rows() gives them.
+     * @return array leaving (adult ids, to take out) and review (each with familyid, adultid and name, to look at).
+     */
+    public static function gone_adults(array $plan, array $rows): array {
+        $wrong = array_flip(array_map('intval', array_column($plan['errors'], 'line')));
+        $unclear = [];
+        foreach ($rows as $row) {
+            if (isset($wrong[(int) $row['line']])) {
+                $unclear[(string) ($row['values']['family'] ?? '')] = true;
+            }
+        }
+        $gone = ['leaving' => [], 'review' => []];
+        foreach ($plan['families'] as $family) {
+            if (empty($family['id']) || isset($unclear[(string) $family['key']])) {
+                continue;
+            }
+            foreach ($family['adults'] as $adult) {
+                $data = $adult['data'];
+                $ours = str_starts_with((string) ($data['sourcekey'] ?? ''), self::SOURCE . ':');
+                if (empty($adult['id']) || !empty($adult['seen']) || !$ours) {
+                    continue;
+                }
+                if (!empty($data['quiet'])) {
+                    $gone['leaving'][] = (int) $adult['id'];
+                } else {
+                    $gone['review'][] = [
+                        'familyid' => (int) $family['id'],
+                        'adultid' => (int) $adult['id'],
+                        'name' => trim(($data['firstname'] ?? '') . ' ' . ($data['lastname'] ?? '')),
+                    ];
+                }
+            }
+        }
+
+        return $gone;
+    }
+
+    /**
+     * Take out of their household the adults gone_adults() says leave, those still quiet now (one may have joined since
+     * the plan was made), without a transaction of its own.
+     *
+     * @param int[] $adultids
+     * @return int How many left.
+     */
+    private static function retire_quiet(array $adultids): int {
+        global $DB;
+
+        $left = 0;
+        foreach ($adultids as $adultid) {
+            $quiet = ['id' => $adultid, 'status' => api::ACTIVE, 'quiet' => 1];
+            if ($DB->record_exists('local_oksigeniafamily_adult', $quiet)) {
+                api::remove_adult($adultid, 'import');
+                $left++;
+            }
+        }
+
+        return $left;
+    }
+
+    /**
+     * A round: Cifra is read, and what it says goes into Family by batches, unless the brake of a complete list stops
+     * it (too many children would leave, or rows were not understood): then nothing changes until someone confirms how
+     * many leave. The quiet adults no longer in their household in Cifra leave it (gone_adults()). Then the students
+     * without an account get their name and group. Nothing is sent to anyone.
      *
      * @param int $now
      * @param cifra|null $client The connection; the site's when null.
@@ -348,7 +426,9 @@ final class cifra_households {
                 return self::keep($result, $now);
             }
             \core_php_time_limit::raise();
-            $done = array_fill_keys(importer::DONE, 0) + ['childrenleaving' => 0, 'childrennamed' => 0];
+            $gone = self::gone_adults($plan, $rows['rows']);
+            $done = array_fill_keys(importer::DONE, 0) + ['adultsleaving' => 0, 'childrenleaving' => 0,
+                'childrennamed' => 0];
             // Each batch goes in whole or not at all; a batch that went in stays, and the next round finds it as it is.
             foreach (array_chunk($plan['families'], self::BATCH) as $families) {
                 $transaction = $DB->start_delegated_transaction();
@@ -356,6 +436,15 @@ final class cifra_households {
                     foreach (importer::apply_families($families, self::SOURCE, true) as $name => $value) {
                         $done[$name] += $value;
                     }
+                    $transaction->allow_commit();
+                } catch (\Throwable $e) {
+                    $transaction->rollback($e);
+                }
+            }
+            foreach (array_chunk($gone['leaving'], self::BATCH) as $adultids) {
+                $transaction = $DB->start_delegated_transaction();
+                try {
+                    $done['adultsleaving'] += self::retire_quiet($adultids);
                     $transaction->allow_commit();
                 } catch (\Throwable $e) {
                     $transaction->rollback($e);
@@ -418,7 +507,8 @@ final class cifra_households {
         }
         $counts = (array) ($status['counts'] ?? []);
         $a = ['time' => userdate((int) ($status['time'] ?? 0), get_string('strftimedatetimeshort', 'langconfig'))];
-        foreach (['familiesnew', 'familiesjoined', 'adultsnew', 'childrennew', 'childrenleaving', 'errors'] as $name) {
+        $names = ['familiesnew', 'familiesjoined', 'adultsnew', 'adultsleaving', 'childrennew', 'childrenleaving', 'errors'];
+        foreach ($names as $name) {
             $a[$name] = (int) ($counts[$name] ?? 0);
         }
         $a['students'] = (int) ($status['students'] ?? 0);

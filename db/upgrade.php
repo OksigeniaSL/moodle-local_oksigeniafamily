@@ -151,5 +151,13 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026111701, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026112200) {
+        // A link sent to an account's address to claim a code works once: the used ones are kept while still good.
+        if (!$dbman->table_exists('local_oksigeniafamily_spent')) {
+            $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', 'local_oksigeniafamily_spent');
+        }
+        upgrade_plugin_savepoint(true, 2026112200, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

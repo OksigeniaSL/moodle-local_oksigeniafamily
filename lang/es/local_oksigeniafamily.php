@@ -64,7 +64,7 @@ $string['cifraerrorstatus'] = 'Cifra ha respondido con un error (HTTP {$a}).';
 $string['cifraerrorunknownarea'] = 'Cifra no conoce el área «{$a}».';
 $string['cifraerrorunreachable'] = 'Cifra no responde en esa dirección (sin conexión, o tarda demasiado).';
 $string['cifrahouseholds:busy'] = 'Última vuelta, {$a->time}: estaba entrando otra importación, así que vuelve a pasar la noche siguiente.';
-$string['cifrahouseholds:done'] = 'Última vuelta, {$a->time}: {$a->students} alumnos en Cifra, {$a->households} hogares. {$a->familiesnew} hogares nuevos y {$a->familiesjoined} que ya estaban en Family; {$a->adultsnew} adultos y {$a->childrennew} hijos añadidos; {$a->childrenleaving} hijos que se han ido.';
+$string['cifrahouseholds:done'] = 'Última vuelta, {$a->time}: {$a->students} alumnos en Cifra, {$a->households} hogares. {$a->familiesnew} hogares nuevos y {$a->familiesjoined} que ya estaban en Family; {$a->adultsnew} adultos y {$a->childrennew} hijos añadidos; {$a->childrenleaving} hijos que se han ido, y {$a->adultsleaving} adultos que ya no están en su hogar en Cifra y no se habían unido.';
 $string['cifrahouseholds:error'] = 'Última vuelta, {$a->time}: {$a->error}';
 $string['cifrahouseholds:never'] = 'Todavía no ha pasado.';
 $string['cifrahouseholds:stopped'] = 'Última vuelta, {$a->time}: la ha parado el freno de la lista completa ({$a->childrenleaving} hijos se irían, {$a->errors} filas sin entender) y no ha cambiado nada. Para verla: php local/oksigeniafamily/cli/cifra_households.php; para aplicarla: lo mismo con --apply --confirm={$a->childrenleaving}.';
@@ -93,11 +93,15 @@ $string['claim:title'] = 'Únete a la familia de un alumno';
 $string['claim:toomany'] = 'Demasiados intentos. Espera un rato y vuelve a probar.';
 $string['claimbusy'] = 'Ahora mismo se está usando este código. Prueba otra vez en un momento.';
 $string['claimmail:checkheading'] = 'Mira tu correo';
-$string['claimmail:gone'] = 'Este enlace ya no sirve: ha caducado o el código ya no funciona. Vuelve a usar el código de la carta.';
+$string['claimmail:confirm'] = '{$a->name}, toca «Confirmar» y {$a->child} quedará en tu cuenta de {$a->site}.';
+$string['claimmail:confirmbutton'] = 'Confirmar';
+$string['claimmail:confirmheading'] = 'Un paso más';
+$string['claimmail:confirmnot'] = 'Si no has sido tú quien ha usado el código, cierra esta página: no cambia nada.';
+$string['claimmail:gone'] = 'Este enlace ya no sirve: ya se ha usado, ha caducado o el código ya no funciona. Vuelve a usar el código de la carta.';
 $string['claimmail:html'] = '<p>Hola, {$a->name}:</p>
 <p>Has usado el código de la carta de {$a->child} con el correo de tu cuenta de {$a->site}. Para ver a {$a->child} en esa cuenta, toca este enlace desde tu móvil:</p>
 <p><a href="{$a->url}"><strong>Ver a {$a->child} en mi cuenta</strong></a></p>
-<p>Sirve durante {$a->days} días. Si no has sido tú, no hagas nada: no cambia nada.</p>';
+<p>Sirve una vez, durante {$a->days} días. Si no has sido tú, no hagas nada: no cambia nada.</p>';
 $string['claimmail:other'] = 'Si esa cuenta no es tuya, vuelve atrás y escribe otro correo, o déjalo en blanco.';
 $string['claimmail:sent'] = '{$a->email} ya tiene cuenta en {$a->site}. Para que no tengas dos cuentas, tu hijo irá a esa. Te hemos mandado un correo: ábrelo en el móvil y toca el enlace.';
 $string['claimmail:subject'] = 'Tu familia, en tu cuenta de {$a->site}';
@@ -107,7 +111,7 @@ Has usado el código de la carta de {$a->child} con el correo de tu cuenta de {$
 
 {$a->url}
 
-Sirve durante {$a->days} días. Si no has sido tú, no hagas nada: no cambia nada.';
+Sirve una vez, durante {$a->days} días. Si no has sido tú, no hagas nada: no cambia nada.';
 $string['claimself'] = 'Este código es el tuyo: es para los adultos de tu familia. Dales la carta.';
 $string['claiminvalid'] = 'Este código no funciona: puede que esté mal escrito, que haya caducado o que el centro lo haya retirado.';
 $string['code:until'] = 'Código en vigor hasta el {$a->date} · usos: {$a->claims}';
@@ -646,7 +650,7 @@ $string['privacy:metadata:target:userid'] = 'El alumno.';
 $string['privacy:metadata:timecreated'] = 'Cuándo se creó el registro.';
 $string['privacy:photo'] = 'Foto';
 $string['settings:cifrahouseholds'] = 'Hogares desde Cifra cada noche';
-$string['settings:cifrahouseholds_desc'] = 'Cada noche las familias llegan de Cifra: los alumnos con los mismos tutores legales comparten hogar, con todos los adultos que Cifra da de ellos, y el hijo que empieza más tarde entra en el suyo. Un hogar que ya estaba en Family, por el código de una carta o hecho a mano, es el mismo. Un hijo sin cuenta que sale de Cifra sale de su familia. No se manda nada a nadie. Para ver antes lo que haría: php local/oksigeniafamily/cli/cifra_households.php';
+$string['settings:cifrahouseholds_desc'] = 'Cada noche las familias llegan de Cifra: los alumnos con los mismos tutores legales comparten hogar, con esos tutores (todos los familiares que da Cifra, solo para el alumno al que no le marca ningún tutor), y el hijo que empieza más tarde entra en el suyo. Un hogar que ya estaba en Family, por el código de una carta o hecho a mano, es el mismo. Un hijo sin cuenta que sale de Cifra sale de su familia, y también el adulto que ya no está en su hogar en Cifra y no se ha unido. No se manda nada a nadie. Para ver antes lo que haría: php local/oksigeniafamily/cli/cifra_households.php';
 $string['settings:claimdays'] = 'Duración de los códigos (días)';
 $string['settings:claimdays_desc'] = 'Cuántos días sirve el código de un alumno para unir familias desde que se saca.';
 $string['settings:claimkeyword'] = 'Palabra de la dirección corta';

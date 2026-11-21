@@ -86,12 +86,13 @@ class api {
      * The children of an adult, with or without an account (for adults without one, such as Meals' keys).
      *
      * @param int $adultid The adult.
-     * @return stdClass[] Child records (id, familyid, userid, sourcekey), keyed by id.
+     * @return stdClass[] Child records (id, familyid, userid, sourcekey, and firstname and lastname as the school's
+     *     data gave them to a child without an account, or null), keyed by id.
      */
     public static function children_of_adult(int $adultid): array {
         global $DB;
 
-        $sql = "SELECT c.id, c.familyid, c.userid, c.sourcekey
+        $sql = "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.firstname, c.lastname
                   FROM {local_oksigeniafamily_adult} a
                   JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
                   JOIN {local_oksigeniafamily_child} c ON c.familyid = f.id AND c.status = :cactive
@@ -912,6 +913,11 @@ class api {
      * nothing: anyone with a code who knows another parent's number would get into that adult's family. So it never joins
      * an adult who is already there, nor changes anything of theirs: it is kept with a new adult, in a new family.
      *
+     * A household the school's data brought, while nobody of it has joined, is joined with every child in it only by
+     * one of its own adults: their account, their number vouched for, or an account with the e-mail the school's data
+     * has for them. The code alone gives its student alone, in a new family. A student, signed in, never joins as an
+     * adult a family they or a brother or sister are a child of.
+     *
      * It does not slow down guessing by itself: the claim page does, by the visitor's address. A caller that gets codes
      * from a shared address, such as WhatsApp (everything comes from Meta's addresses), slows down by its own key, such
      * as the phone number.
@@ -979,32 +985,43 @@ class api {
                 ['userid' => $adult['userid'], 'status' => self::ACTIVE],
                 '*',
                 IGNORE_MULTIPLE
-            );
+            ) ?: null;
         }
         if (!$known && $phoneverified && !empty($adult['phone'])) {
+            // Also a quiet adult of a household the school's data brought: the school vouched for their number.
             $known = self::adult_by_phone($adult['phone']);
         }
-        // A household the school's data brought where nobody has joined yet: whoever has one of its children's codes joins
-        // it, with every child in it, brothers and sisters too; as one of its adults when their account has that adult's
-        // e-mail.
+        // A household the school's data brought where nobody has joined yet is joined, with every child in it, brothers
+        // and sisters too, only by one of its own adults: by their account or their number vouched for (above), or by
+        // an account with the e-mail the school's data has for them. The code alone proves nothing about who holds it:
+        // the student sees it on their own page. Whoever else claims it gets that student alone, in a family of their
+        // own, and the household goes on waiting for its adults.
         $waiting = $known ? [] : self::waiting_families((int) $claim->userid);
         if ($waiting && !empty($adult['userid'])) {
             $known = self::quiet_adult_of_user($waiting, (int) $adult['userid']);
-            if ($known && empty($known->userid)) {
-                self::set_adult_user((int) $known->id, (int) $adult['userid']);
-            }
+        }
+        // The letter goes home in the bag of any of the brothers and sisters: a student, signed in, never becomes an
+        // adult of a family they are a child of, nor of a brother's or a sister's.
+        if (!empty($adult['userid']) && self::is_child_near((int) $adult['userid'], (int) $claim->userid, $known)) {
+            throw new \moodle_exception('claimself', 'local_oksigeniafamily');
+        }
+        if ($known && $waiting && empty($known->userid)) {
+            self::set_adult_user((int) $known->id, (int) $adult['userid']);
         }
         $isnew = !$known;
         if ($isnew) {
-            $familyid = $waiting ? reset($waiting) : self::create_family('claim');
+            $familyid = self::create_family('claim');
             $data = ['phoneverified' => $phoneverified] + array_diff_key($adult, ['quiet' => 0]);
             $adultid = self::add_adult($familyid, $data);
         } else {
             $familyid = (int) $known->familyid;
             $adultid = (int) $known->id;
             self::wake_adult($adultid);
-            // An adult known by their account who now gives a phone keeps it, so WhatsApp finds them.
-            if (!empty($adult['phone']) && $adult['phone'] !== $known->phone) {
+            // An adult known by their account who now gives a phone keeps it, so WhatsApp finds them. A number nobody
+            // vouches for (typed on a page, or carried by the link sent to an account) never takes the place of one
+            // somebody vouched for.
+            $replaces = $phoneverified || empty($known->phoneverified);
+            if (!empty($adult['phone']) && $adult['phone'] !== $known->phone && $replaces) {
                 self::update_adult($adultid, ['phone' => $adult['phone'], 'phoneverified' => $phoneverified]);
             }
         }
@@ -1047,6 +1064,35 @@ class api {
         );
 
         return array_values(array_unique(array_map('intval', $ids)));
+    }
+
+    /**
+     * Whether an account is a child of an open family of a student (a brother or a sister, or the student themselves),
+     * or of the family an adult already known to be them is in: then it never joins as an adult, as claim_invite()
+     * refuses a child of the family that invites.
+     *
+     * @param int $userid The account that claims.
+     * @param int $childuserid The student of the code.
+     * @param stdClass|null $known The adult record the claim would join, if any.
+     * @return bool
+     */
+    private static function is_child_near(int $userid, int $childuserid, ?stdClass $known): bool {
+        global $DB;
+
+        return $DB->record_exists_sql(
+            "SELECT 1
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
+              WHERE c.userid = :userid AND c.status = :cactive
+                AND (c.familyid = :familyid
+                     OR c.familyid IN (SELECT s.familyid
+                                         FROM {local_oksigeniafamily_child} s
+                                        WHERE s.userid = :childuserid AND s.status = :sactive))",
+            [
+                'userid' => $userid, 'childuserid' => $childuserid, 'familyid' => $known ? (int) $known->familyid : 0,
+                'factive' => self::ACTIVE, 'cactive' => self::ACTIVE, 'sactive' => self::ACTIVE,
+            ]
+        );
     }
 
     /**

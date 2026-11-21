@@ -15,8 +15,9 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * The households of Cifra: what a round would do, every household it would make or change, and every child who would
- * leave; with --apply, the round itself, as the nightly task does it. Nothing is sent to anyone.
+ * The households of Cifra: what a round would do, every household it would make or change, every child who would
+ * leave and every adult who is no longer in their household in Cifra; with --apply, the round itself, as the nightly task
+ * does it. Nothing is sent to anyone.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -40,8 +41,9 @@ if ($unrecognised) {
 if ($options['help']) {
     echo "The households of Cifra, the school management program.
 
-Without options, it reads Cifra and says what a round would do: every household it would make or change, and every
-child who would leave. Nothing changes.
+Without options, it reads Cifra and says what a round would do: every household it would make or change, every
+child who would leave, every adult who would leave their household because Cifra no longer has them in it (those who
+never joined), and every adult in that case who has joined, for a person to look at. Nothing changes.
 
 Options:
   --summary      Only the counts.
@@ -69,9 +71,11 @@ try {
 }
 $plan = $dry['plan'];
 $counts = $plan['counts'];
+$gone = $dry['gone'];
 echo "Students in Cifra: {$dry['students']}. Households: {$dry['households']}.\n";
 echo "Would make {$counts['familiesnew']} new households; {$counts['familiesjoined']} were already in Family. "
-    . "Adults added: {$counts['adultsnew']}, with changes: {$counts['adultschanged']}. "
+    . "Adults added: {$counts['adultsnew']}, with changes: {$counts['adultschanged']}, "
+    . "leaving: " . count($gone['leaving']) . ", to look at: " . count($gone['review']) . ". "
     . "Children added: {$counts['childrennew']}, with changes: {$counts['childrenchanged']}, "
     . "leaving: {$counts['childrenleaving']}. "
     . "As they are: {$counts['same']}. Rows not understood: {$counts['errors']}.\n";
@@ -114,6 +118,20 @@ foreach ($plan['families'] as $family) {
 }
 foreach ($plan['leaving'] as $child) {
     echo "\nLeaving: " . ($dry['names'][$child->sourcekey] ?? $child->sourcekey) . " (household {$child->familyid})\n";
+}
+if ($gone['leaving']) {
+    [$in, $params] = $DB->get_in_or_equal($gone['leaving']);
+    $adults = $DB->get_records_select('local_oksigeniafamily_adult', "id $in", $params, 'familyid, id');
+    foreach ($adults as $adult) {
+        $who = trim($adult->firstname . ' ' . $adult->lastname) ?: $adult->sourcekey;
+        echo "\nAdult leaving, no longer in the household in Cifra and never joined: $who (household {$adult->familyid})\n";
+    }
+}
+foreach ($gone['review'] as $adult) {
+    // They have joined, or the school welcomed them: a person decides, from the household's page in Family.
+    $who = $adult['name'] !== '' ? $adult['name'] : "adult {$adult['adultid']}";
+    echo "\nTo look at, no longer in the household in Cifra but already joined: $who "
+        . "(household {$adult['familyid']}: /local/oksigeniafamily/family.php?id={$adult['familyid']})\n";
 }
 foreach ($plan['errors'] as $error) {
     echo "\nRow {$error['line']}: {$error['message']}\n";

@@ -5,6 +5,49 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Security (0.3.35-dev)
+
+- A household the school's data brought (Cifra), while nobody of it has joined, is joined with its children only by
+  one of its own adults: by their account, by their number vouched for, or with an account that has the e-mail the
+  school's data has for them. A student's code alone gives that student alone, in a family of their own, as before
+  0.3.31, and the household goes on waiting for its adults. Before, anyone with the code (the student sees it on «For
+  your family») who typed any name joined the household with every brother and sister, got each one's canteen link and
+  PIN (and, with the app, a link that makes an account with the parent role), and the household's adults, being quiet,
+  were not told.
+- A student, signed in, never joins as an adult a family they or a brother or sister are a child of (`claimself`), as
+  an invitation already refused. Before, a sister with her brother's code became an adult of her own household.
+- The households of Cifra bring as adults only the legal guardians Cifra marks for each student, and all of their
+  relatives only for a student for whom it marks none. Before, every relative came (a grandmother, an uncle, a parent
+  without custody), with their number vouched for and, when an account of the site had their e-mail, the parent role.
+  A child who starts later with only one of their brother's guardians is now a household of their own, with that
+  parent in both, also when the other is among their relatives without being their guardian (before, they joined the
+  brother's household, where that other adult would see them).
+  - Those brought before: every night the round takes out of their household (`api::remove_adult(..., 'import')`) the
+    adults it brought who are no longer in it in Cifra, while they are still quiet, and counts them (`adultsleaving`,
+    on the settings page and in the task's log). Those who have joined or whom the school welcomed stay:
+    `cli/cifra_households.php` lists them as «To look at», with their household's page, where a person at the school
+    removes them or not. A household with a row of Cifra that was not understood is left as it is.
+  - Why the round and not a clean-up by hand, and why only the quiet ones: a quiet adult never joined and nobody wrote
+    to them, so all they have (the parent role, the number vouched for) came from the import alone, and taking them
+    out undoes only that; if Cifra was wrong one night, the school marks them as guardians and the next night brings
+    them back. One who joined (with the student's code) or was welcomed may be a parent without custody who still has
+    the right to know, or one who must not: Cifra does not say which, so a person decides, never the round.
+  - On upgrading, before the first night: `php local/oksigeniafamily/cli/cifra_households.php` lists every adult who
+    would leave and every one to look at, without changing anything.
+- The link sent to an account's address to claim a code (`claim.php?confirm=`) works once. Opening it only shows a
+  «Confirm» button (a mail scanner or a preview opens links too); the claim goes by POST with the session's key, and
+  the hash of what the link says is kept (`local_oksigeniafamily_spent`, `claimmail::spend()`) until it would have
+  expired anyway. Before, every visit within its two days claimed again and gave again the canteen's link and PIN and,
+  in the app's plugin, a new key to sign in. The claim page is never cached (`Cache-Control: no-store`) and sends no
+  `Referer` (`Referrer-Policy: no-referrer`).
+- A number nobody vouches for (typed on the claim page, or carried by that link) never takes the place of an adult's
+  number that someone vouched for; it still fills in an adult who had none.
+
+### Fixed (0.3.35-dev)
+
+- `api::children_of_adult()` gives each child's `firstname` and `lastname` as the school's data gave them to a child
+  without an account: the page after joining named those children with them, and got nothing.
+
 ### Added (0.3.34-dev)
 
 - `api::adults_by_phone_hint($phone)`: every active adult with that number in their record, vouched for or not, as a
