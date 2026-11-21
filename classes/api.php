@@ -1221,7 +1221,8 @@ class api {
     }
 
     /**
-     * The quiet adult of some households who is an account, by that account's e-mail as the school's data has it.
+     * The quiet adult of some households who is an account, by that account's e-mail as the school's data has it, and
+     * with its first name: an address the school's data has for a parent may be a teacher's, typed by mistake.
      *
      * @param int[] $familyids Households.
      * @param int $userid The account.
@@ -1244,7 +1245,8 @@ class api {
         );
         foreach ($quiet as $adult) {
             $theirs = empty($adult->userid) || (int) $adult->userid === $userid;
-            if ($theirs && \core_text::strtolower(trim((string) $adult->email)) === $email) {
+            $named = local\names::same_first((string) $adult->firstname, (string) $user->firstname);
+            if ($theirs && $named && \core_text::strtolower(trim((string) $adult->email)) === $email) {
                 return $adult;
             }
         }

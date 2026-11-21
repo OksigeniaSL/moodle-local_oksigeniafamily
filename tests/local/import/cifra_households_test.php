@@ -127,7 +127,7 @@ final class cifra_households_test extends \advanced_testcase {
 
         $generator = $this->getDataGenerator();
         $leo = $generator->create_user(['email' => 'leo.arenas@school.example.invalid']);
-        $teacher = $generator->create_user(['email' => 'dario.arenas@school.example.invalid']);
+        $teacher = $generator->create_user(['firstname' => 'Dario', 'email' => 'dario.arenas@school.example.invalid']);
         $mother = $this->relative('Madre', true, ['id' => 900, 'nombre' => 'Marta', 'apellido1' => 'Faro',
             'email' => 'marta@example.invalid', 'telefono_movil' => '600 000 001']);
         $father = $this->relative('Padre', true, ['id' => 901, 'nombre' => 'Darío', 'apellido1' => 'Arenas',
@@ -273,7 +273,7 @@ final class cifra_households_test extends \advanced_testcase {
 
         $generator = $this->getDataGenerator();
         $student = $generator->create_user(['email' => 'iker@school.example.invalid']);
-        $parent = $generator->create_user(['email' => 'nerea@example.invalid']);
+        $parent = $generator->create_user(['firstname' => 'Nerea', 'email' => 'nerea@example.invalid']);
         $familyid = api::create_family('claim');
         api::add_adult($familyid, ['firstname' => 'Nerea', 'email' => 'nerea@example.invalid', 'userid' => $parent->id]);
         api::add_child($familyid, (int) $student->id);
@@ -316,7 +316,7 @@ final class cifra_households_test extends \advanced_testcase {
 
         $generator = $this->getDataGenerator();
         $son = $generator->create_user(['email' => 'pau@school.example.invalid']);
-        $father = $generator->create_user(['email' => 'jordi@school.example.invalid']);
+        $father = $generator->create_user(['firstname' => 'Jordi', 'email' => 'jordi@school.example.invalid']);
         $records = [
             '811' => ['nombre' => 'Pau', 'email' => 'pau@school.example.invalid', 'familiares' => [
                 $this->relative('Madre', true, ['id' => 970, 'nombre' => 'Laia']),
@@ -352,7 +352,7 @@ final class cifra_households_test extends \advanced_testcase {
 
         $generator = $this->getDataGenerator();
         $student = $generator->create_user(['email' => 'noa@school.example.invalid']);
-        $grandmother = $generator->create_user(['email' => 'rosa@school.example.invalid']);
+        $grandmother = $generator->create_user(['firstname' => 'Rosa', 'email' => 'rosa@school.example.invalid']);
         $mother = ['id' => 960, 'nombre' => 'Marta'];
         $rosa = ['id' => 961, 'nombre' => 'Rosa', 'email' => 'rosa@school.example.invalid'];
         $felix = ['id' => 962, 'nombre' => 'Félix', 'telefono_movil' => '+34611223344'];
@@ -435,5 +435,41 @@ final class cifra_households_test extends \advanced_testcase {
         $this->assertSame([0, 0, 0], $this->totals());
         $said = get_string('cifraerrorsettings', 'local_oksigeniafamily');
         $this->assertStringContainsString($said, cifra_households::status_text());
+    }
+
+    /**
+     * An e-mail in Cifra that is the account of somebody with another first name (a teacher's, typed for a parent) never
+     * links the adult to it: the adult comes without an account, and the round says so for a person to look at. One
+     * linked to it before stays linked, and waits in «Families» for a person to unlink it.
+     */
+    public function test_email_of_another_account(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $teacher = $generator->create_user([
+            'firstname' => 'Pedro', 'username' => 'pedro', 'email' => 'pedro@school.example.invalid',
+        ]);
+        $mother = $generator->create_user(['firstname' => 'María José', 'email' => 'mj@example.invalid']);
+        $records = ['901' => ['nombre' => 'Sol', 'familiares' => [
+            $this->relative('Madre', true, ['id' => 990, 'nombre' => 'MARIA', 'email' => 'mj@example.invalid']),
+            $this->relative('Padre', true, ['id' => 991, 'nombre' => 'Carmelo', 'email' => 'Pedro@school.example.invalid']),
+        ]]];
+
+        $dry = cifra_households::dry_run(self::NOW, $this->cifra($records), 0);
+        $this->assertSame(['cifra:991'], array_column($dry['unmatched'], 'key'));
+        $this->assertSame(['pedro', 'Carmelo'], [$dry['unmatched'][0]['username'], $dry['unmatched'][0]['name']]);
+
+        $this->assertSame('done', cifra_households::run(self::NOW, $this->cifra($records), null, 0)['state']);
+        $this->assertEquals($mother->id, $DB->get_field('local_oksigeniafamily_adult', 'userid', ['sourcekey' => 'cifra:990']));
+        $this->assertNull($DB->get_field('local_oksigeniafamily_adult', 'userid', ['sourcekey' => 'cifra:991']));
+        $this->assertSame([], api::families_of_user((int) $teacher->id));
+        $this->assertSame([], \local_oksigeniafamily\local\families::review()['account']);
+
+        // One linked before the round asked for the first name: it stays, and waits for a person.
+        $carmelo = (int) $DB->get_field('local_oksigeniafamily_adult', 'id', ['sourcekey' => 'cifra:991']);
+        api::set_adult_user($carmelo, (int) $teacher->id);
+        cifra_households::run(self::NOW + DAYSECS, $this->cifra($records), null, 0);
+        $this->assertSame([$carmelo], \local_oksigeniafamily\local\families::review()['account']);
+        $this->assertEquals($teacher->id, $DB->get_field('local_oksigeniafamily_adult', 'userid', ['id' => $carmelo]));
     }
 }

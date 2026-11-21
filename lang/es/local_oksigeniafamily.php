@@ -670,6 +670,7 @@ $string['privacy:metadata:target'] = 'Los alumnos de los que trata una autorizac
 $string['privacy:metadata:target:userid'] = 'El alumno.';
 $string['privacy:metadata:timecreated'] = 'Cuándo se creó el registro.';
 $string['privacy:photo'] = 'Foto';
+$string['review:account'] = 'Enlazado por su correo a una cuenta con otro nombre';
 $string['review:gone'] = 'Los datos del centro ya no lo ponen en este hogar';
 $string['settings:cifrahouseholds'] = 'Hogares desde Cifra cada noche';
 $string['settings:cifrahouseholds_desc'] = 'Cada noche las familias llegan de Cifra: los alumnos con los mismos tutores legales comparten hogar, con esos tutores (todos los familiares que da Cifra, solo para el alumno al que no le marca ningún tutor), y el hijo que empieza más tarde entra en el suyo. Un hogar que ya estaba en Family, por el código de una carta o hecho a mano, es el mismo. Un hijo sin cuenta que sale de Cifra sale de su familia, y también el adulto que ya no está en su hogar en Cifra y no se ha unido. No se manda nada a nadie. Para ver antes lo que haría: php local/oksigeniafamily/cli/cifra_households.php';

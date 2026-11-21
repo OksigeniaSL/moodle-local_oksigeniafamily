@@ -201,7 +201,7 @@ final class quiet_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $h = $this->household();
-        $marta = $this->getDataGenerator()->create_user(['email' => 'Marta@Example.invalid']);
+        $marta = $this->getDataGenerator()->create_user(['firstname' => 'MARTA', 'email' => 'Marta@Example.invalid']);
 
         $claimed = api::claim(api::issue_claim_code($h['leo']), ['userid' => (int) $marta->id, 'firstname' => 'Marta']);
 
@@ -222,5 +222,25 @@ final class quiet_test extends \advanced_testcase {
         $ana = api::claim(api::issue_claim_code((int) $leo->id), ['firstname' => 'Ana', 'quiet' => true]);
 
         $this->assertSame(0, (int) $DB->get_field('local_oksigeniafamily_adult', 'quiet', ['id' => $ana->id]));
+    }
+
+    /**
+     * An account that has the e-mail the school's data has for the mother, but another first name (a teacher's address,
+     * typed for her by mistake), is not her: it gets the student alone, in a family of its own, and the household goes on
+     * waiting for its adults.
+     */
+    public function test_account_by_email_needs_the_name(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $h = $this->household();
+        $pedro = $this->getDataGenerator()->create_user(['firstname' => 'Pedro', 'email' => 'marta@example.invalid']);
+
+        $claimed = api::claim(api::issue_claim_code($h['leo']), ['userid' => (int) $pedro->id, 'firstname' => 'Pedro']);
+
+        $this->assertNotSame($h['mother'], (int) $claimed->id);
+        $this->assertNotSame($h['familyid'], (int) $claimed->familyid);
+        $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $h['mother']]);
+        $this->assertSame([0, 1], [(int) $record->userid, (int) $record->quiet]);
+        $this->assertCount(1, api::children_of_adult((int) $claimed->id));
     }
 }

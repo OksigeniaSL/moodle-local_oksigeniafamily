@@ -33,6 +33,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 - The import of a file runs in the background as whoever applied it (`set_userid()`), so the log says who changed the
   families. A failed import is erased with its file (names, phones, e-mails) a week after Moodle stops trying it again,
   not a month (`job::FAILEDDAYS`).
+- An adult is linked to an account of the site by an e-mail alone only when the account's first name is theirs too
+  (`names::same_first()`: the same without case nor accents, or one the start of the other, as «María» and «María
+  José»): in the households of Cifra (`cifra_households::rows()`) and when an account signed in joins a household
+  waiting for its adults (`api::quiet_adult_of_user()`). The e-mail Cifra had for some parents was a teacher's account,
+  typed by mistake, and they were linked to it. One that does not match is not linked: `cli/cifra_households.php` lists
+  it as «To look at», and one linked before waits in «Families» (`families::review()`, «Linked by their e-mail to an
+  account with another first name») for a person to unlink it from «Edit».
 - The privacy provider declares the family of each adult and child, whether an adult's phone is vouched for and whether
   they are quiet, the purpose, family and sealed code of the codes the pages show, and the table of the links already
   used (`local_oksigeniafamily_spent`, only hashes).
@@ -59,8 +66,8 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 ### Added (0.3.36-dev)
 
 - «Families» has the tile «To look at» while the last round of Cifra leaves adults for a person to look at: those who
-  joined and are no longer in their household in Cifra (before, only `cli/cifra_households.php` listed them). Their
-  card and the household's page say so (`families::review()`).
+  joined and are no longer in their household in Cifra (before, only `cli/cifra_households.php` listed them), and those
+  linked to an account with another first name. Their card and the household's page say so (`families::review()`).
 - `join::is_student()`: a child of a family, or a student somewhere with nothing that runs courses.
 
 ### Security (0.3.35-dev)

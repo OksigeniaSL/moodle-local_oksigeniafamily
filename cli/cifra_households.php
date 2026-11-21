@@ -43,7 +43,8 @@ if ($options['help']) {
 
 Without options, it reads Cifra and says what a round would do: every household it would make or change, every
 child who would leave, every adult who would leave their household because Cifra no longer has them in it (those who
-never joined), and every adult in that case who has joined, for a person to look at. Nothing changes.
+never joined), and every adult in that case who has joined, for a person to look at; and every adult whose e-mail in
+Cifra is that of an account with another first name, which is never linked by it. Nothing changes.
 
 Options:
   --summary      Only the counts.
@@ -75,7 +76,8 @@ $gone = $dry['gone'];
 echo "Students in Cifra: {$dry['students']}. Households: {$dry['households']}.\n";
 echo "Would make {$counts['familiesnew']} new households; {$counts['familiesjoined']} were already in Family. "
     . "Adults added: {$counts['adultsnew']}, with changes: {$counts['adultschanged']}, "
-    . "leaving: " . count($gone['leaving']) . ", to look at: " . count($gone['review']) . ". "
+    . "leaving: " . count($gone['leaving']) . ", to look at: " . count($gone['review'])
+    . ", with the e-mail of an account with another first name: " . count($dry['unmatched']) . ". "
     . "Children added: {$counts['childrennew']}, with changes: {$counts['childrenchanged']}, "
     . "leaving: {$counts['childrenleaving']}. "
     . "As they are: {$counts['same']}. Rows not understood: {$counts['errors']}.\n";
@@ -132,6 +134,13 @@ foreach ($gone['review'] as $adult) {
     $who = $adult['name'] !== '' ? $adult['name'] : "adult {$adult['adultid']}";
     echo "\nTo look at, no longer in the household in Cifra but already joined: $who "
         . "(household {$adult['familyid']}: /local/oksigeniafamily/family.php?id={$adult['familyid']})\n";
+}
+foreach ($dry['unmatched'] as $adult) {
+    // The e-mail in Cifra is somebody else's account: it is not linked by it. One linked before is unlinked by a person.
+    $linked = households::linked_unmatched([$adult]);
+    $where = $linked ? ' Linked to it in Family: unlink it on /local/oksigeniafamily/adult.php?id=' . reset($linked) . '.' : '';
+    echo "\nTo look at, the e-mail in Cifra is that of an account with another first name: {$adult['name']} "
+        . "({$adult['email']}), account {$adult['username']} ({$adult['accountname']}).$where\n";
 }
 foreach ($plan['errors'] as $error) {
     echo "\nRow {$error['line']}: {$error['message']}\n";

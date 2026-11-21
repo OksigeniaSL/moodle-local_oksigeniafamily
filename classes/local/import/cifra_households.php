@@ -19,6 +19,7 @@ namespace local_oksigeniafamily\local\import;
 use local_oksigeniafamily\api;
 use local_oksigeniafamily\local\cifra;
 use local_oksigeniafamily\local\families;
+use local_oksigeniafamily\local\names;
 use local_oksigeniafamily\local\phone;
 use local_oksigeniafamily\local\readers\cifra_people;
 
@@ -41,7 +42,9 @@ use local_oksigeniafamily\local\readers\cifra_people;
  * - otherwise, a new one.
  *
  * A student's account is the one with their e-mail in Cifra, when only one has it; an adult's, likewise, when it is not
- * a student's. Without one, the child is known by their key and the adult has no account: nothing is created or sent.
+ * a student's and its first name is the adult's (names::same_first()): the e-mail Cifra has for a parent may be a
+ * teacher's, typed by mistake, and then it is never linked, and is left for a person to look at (unmatched). Without
+ * one, the child is known by their key and the adult has no account: nothing is created or sent.
  * The list of Cifra is complete, so a child without an account who is no longer in it leaves, with the importer's brake.
  * So does an adult it brought who is no longer in their household in Cifra while they are still quiet (gone_adults()).
  *
@@ -174,7 +177,9 @@ final class cifra_households {
      * @param array[] $groups From groups().
      * @param array[] $students The students of Cifra, by id, as read() gives them.
      * @return array rows (for importer::plan()), joined (family key => the open family made some other way that takes
-     *     it) and names (each child's key => their name in Cifra, for whoever reads the plan).
+     *     it), names (each child's key => their name in Cifra, for whoever reads the plan) and unmatched (the adults whose
+     *     e-mail in Cifra is that of an account with another first name, each with key, name, email, userid, username
+     *     and accountname; never linked by it).
      */
     public static function rows(array $groups, array $students): array {
         global $DB;
@@ -243,6 +248,7 @@ final class cifra_households {
         }
 
         $rows = [];
+        $unmatched = [];
         $line = 0;
         foreach ($groups as $index => $group) {
             foreach ($group['adults'] as $adult) {
@@ -250,6 +256,18 @@ final class cifra_households {
                 $account = $email !== '' && !isset($studentemails[$email]) ? ($accounts[$email] ?? null) : null;
                 if ($account && isset($childuserids[(int) $account->id])) {
                     // An account that is a student here is never an adult of a family.
+                    $account = null;
+                }
+                if ($account && !names::same_first((string) ($adult['firstname'] ?? ''), (string) $account->firstname)) {
+                    // The address is somebody else's account (a teacher's, typed for a parent): a person looks at it.
+                    $unmatched[(string) $adult['key']] = [
+                        'key' => (string) $adult['key'],
+                        'name' => trim(($adult['firstname'] ?? '') . ' ' . ($adult['lastname'] ?? '')),
+                        'email' => $email,
+                        'userid' => (int) $account->id,
+                        'username' => (string) $account->username,
+                        'accountname' => trim($account->firstname . ' ' . $account->lastname),
+                    ];
                     $account = null;
                 }
                 $phone = phone::normalise((string) ($adult['phone'] ?? ''), $prefix);
@@ -275,7 +293,7 @@ final class cifra_households {
             }
         }
 
-        return ['rows' => $rows, 'joined' => $joined, 'names' => $names];
+        return ['rows' => $rows, 'joined' => $joined, 'names' => $names, 'unmatched' => array_values($unmatched)];
     }
 
     /**
@@ -284,8 +302,8 @@ final class cifra_households {
      * @param int $now
      * @param cifra|null $client The connection; the site's when null.
      * @param int $pause Microseconds between two records.
-     * @return array plan (from importer::plan()), gone (as gone_adults() gives them), names (as rows() gives them),
-     *     students and households (how many).
+     * @return array plan (from importer::plan()), gone (as gone_adults() gives them), names and unmatched (as rows()
+     *     gives them), students and households (how many).
      * @throws \moodle_exception When there is no connection or Cifra does not answer well.
      */
     public static function dry_run(int $now, ?cifra $client = null, int $pause = self::PAUSE): array {
@@ -302,6 +320,7 @@ final class cifra_households {
             'plan' => $plan,
             'gone' => self::gone_adults($plan, $rows['rows']),
             'names' => $rows['names'],
+            'unmatched' => $rows['unmatched'],
             'students' => count($read['students']),
             'households' => count($groups),
             'read' => $read,
@@ -355,6 +374,30 @@ final class cifra_households {
         }
 
         return $gone;
+    }
+
+    /**
+     * The adults of Family linked to the account that rows() found with another first name: those a person has to unlink
+     * (on the household's page, «Edit»). One that is not linked to it needs nothing.
+     *
+     * @param array[] $unmatched As rows() gives them.
+     * @return int[] Adult ids.
+     */
+    public static function linked_unmatched(array $unmatched): array {
+        global $DB;
+
+        $ids = [];
+        foreach ($unmatched as $one) {
+            $found = $DB->get_fieldset_select(
+                'local_oksigeniafamily_adult',
+                'id',
+                'sourcekey = :key AND userid = :userid AND status = :active',
+                ['key' => $one['key'], 'userid' => $one['userid'], 'active' => api::ACTIVE]
+            );
+            $ids = array_merge($ids, array_map('intval', $found));
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**
@@ -475,8 +518,10 @@ final class cifra_households {
         } finally {
             $lock->release();
         }
-        // Those who joined and are no longer in their household in Cifra wait in «Families» for a person to look at.
+        // Those who joined and are no longer in their household in Cifra wait in «Families» for a person to look at, and
+        // so do those linked to an account with another first name that has the e-mail Cifra has for them.
         families::set_review('gone', array_column($gone['review'], 'adultid'));
+        families::set_review('account', self::linked_unmatched($rows['unmatched']));
         $result['state'] = 'done';
         $result['counts'] = $done + [
             'familiesjoined' => $plan['counts']['familiesjoined'],
@@ -710,7 +755,7 @@ final class cifra_households {
                 "deleted = 0 AND LOWER(email) $in",
                 $params,
                 'id',
-                'id, username, email, suspended, mnethostid'
+                'id, username, email, suspended, mnethostid, firstname, lastname'
             );
             foreach ($users as $user) {
                 $email = self::email((string) $user->email);

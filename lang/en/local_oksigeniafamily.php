@@ -670,6 +670,7 @@ $string['privacy:metadata:target'] = 'The students a request for consent is abou
 $string['privacy:metadata:target:userid'] = 'The student.';
 $string['privacy:metadata:timecreated'] = 'When the record was made.';
 $string['privacy:photo'] = 'Photo';
+$string['review:account'] = 'Linked by their e-mail to an account with another first name';
 $string['review:gone'] = 'The school\'s data no longer has them in this household';
 $string['settings:cifrahouseholds'] = 'Households from Cifra every night';
 $string['settings:cifrahouseholds_desc'] = 'Every night the families come from Cifra: the students with the same legal guardians share a household, with those guardians (every relative Cifra gives, only for a student for whom it marks no guardian), and a child who starts later joins theirs. A household that is already in Family, from a letter\'s code or made by hand, is the same one. A child without an account who leaves Cifra leaves their family, and so does an adult who is no longer in their household in Cifra and has not joined. Nobody is sent anything. To see first what it would do: php local/oksigeniafamily/cli/cifra_households.php';

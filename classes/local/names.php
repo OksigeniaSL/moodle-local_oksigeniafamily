@@ -35,4 +35,23 @@ class names {
 
         return trim((string) preg_replace('/[^a-z0-9]+/', ' ', $name));
     }
+
+    /**
+     * Whether two first names can be one person's, as the school's data and an account write them: the same once folded
+     * (case, accents), or one the start of the other («María» and «María José»). An empty one is never the same: an
+     * address alone never links an adult to an account.
+     *
+     * @param string $one A first name.
+     * @param string $other Another.
+     * @return bool
+     */
+    public static function same_first(string $one, string $other): bool {
+        $one = self::fold($one);
+        $other = self::fold($other);
+        if ($one === '' || $other === '') {
+            return false;
+        }
+
+        return str_starts_with($one, $other) || str_starts_with($other, $one);
+    }
 }

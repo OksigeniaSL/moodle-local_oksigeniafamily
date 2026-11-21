@@ -44,11 +44,13 @@ class families {
     private const REVIEW = 'cifrareview';
 
     /** Why an adult is to be looked at, in the order the pages say it. */
-    public const REVIEWS = ['gone'];
+    public const REVIEWS = ['gone', 'account'];
 
     /**
      * The adults to look at, by why: gone (the school's data no longer has them in their household, and they had joined,
-     * so a person decides). The round of the school's data writes each list; an adult who left is no longer in the pages.
+     * so a person decides) and account (linked to an account with another first name that has the e-mail the school's
+     * data has for them, so a person unlinks it). The round of the school's data writes each list; an adult who left is
+     * no longer in the pages.
      *
      * @return int[][] By reason, the adult ids.
      */
