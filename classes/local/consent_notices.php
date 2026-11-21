@@ -235,6 +235,8 @@ class consent_notices {
      * @return bool Whether it went.
      */
     private static function to_user(\stdClass $request, \stdClass $user, array $children, string $site, bool $reminder): bool {
+        global $OUTPUT;
+
         $url = new \moodle_url('/local/oksigeniafamily/consent.php', ['id' => $request->id]);
         // The e-mail's button opens the app for who has it (Aty's link in between): the account Aty makes for an adult
         // never signs in on the web, and would be left at the sign-in page. The notice in the app opens the page itself.
@@ -259,6 +261,8 @@ class consent_notices {
         $message->contexturlname = get_string('consent:mail:button', 'local_oksigeniafamily');
         $message->courseid = SITEID;
 
+        // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
+        $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
         return (bool) message_send($message);
     }
 
@@ -347,6 +351,8 @@ class consent_notices {
      * @return void
      */
     public static function conflict(\stdClass $request, int $childuserid): void {
+        global $OUTPUT;
+
         $user = \core_user::get_user((int) $request->usercreated);
         $child = \core_user::get_user($childuserid);
         if (!$user || !empty($user->deleted) || !empty($user->suspended) || !$child) {
@@ -376,6 +382,8 @@ class consent_notices {
             $message->contexturl = $url->out(false);
             $message->contexturlname = get_string('consent:seeanswers', 'local_oksigeniafamily');
             $message->courseid = SITEID;
+            // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
+            $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
             message_send($message);
         } finally {
             force_current_language($previous);

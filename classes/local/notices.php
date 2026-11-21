@@ -35,6 +35,8 @@ class notices {
      * @return void
      */
     public static function new_adult(\stdClass $adult, int $childuserid, array $others): void {
+        global $OUTPUT;
+
         $child = \core_user::get_user($childuserid);
         if (!$child) {
             return;
@@ -73,6 +75,8 @@ class notices {
                 $message->contexturl = $record->out(false);
                 $message->contexturlname = get_string('notice:newadult:record', 'local_oksigeniafamily');
             }
+            // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
+            $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
             message_send($message);
         }
     }

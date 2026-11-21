@@ -569,6 +569,8 @@ class job {
      * @return void
      */
     private static function notify(\stdClass $job): void {
+        global $OUTPUT;
+
         $user = \core_user::get_user((int) $job->userid);
         if (!$user || !empty($user->deleted) || !empty($user->suspended)) {
             return;
@@ -605,6 +607,8 @@ class job {
             $message->contexturl = $url->out(false);
             $message->contexturlname = get_string('import:notify:see', $component);
             $message->courseid = SITEID;
+            // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
+            $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
             message_send($message);
         } finally {
             force_current_language($previous);
