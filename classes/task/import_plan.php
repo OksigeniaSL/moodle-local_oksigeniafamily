@@ -30,14 +30,18 @@ use local_oksigeniafamily\local\import\job;
  */
 class import_plan extends \core\task\adhoc_task {
     /**
-     * Queue the preview of an import.
+     * Queue the preview of an import, to run as whoever loaded it.
      *
      * @param int $jobid The import.
+     * @param int $userid Who loaded it; 0 for the user of cron.
      * @return void
      */
-    public static function queue(int $jobid): void {
+    public static function queue(int $jobid, int $userid = 0): void {
         $task = new self();
         $task->set_custom_data((object) ['jobid' => $jobid]);
+        if ($userid > 0) {
+            $task->set_userid($userid);
+        }
         \core\task\manager::queue_adhoc_task($task);
     }
 

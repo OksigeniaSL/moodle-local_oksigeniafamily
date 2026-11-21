@@ -220,4 +220,47 @@ final class letters_test extends \advanced_testcase {
         $this->assertStringContainsString('aty', $app['icon']);
         $this->assertSame(get_string('letter:apptitle', 'local_oksigeniafamily'), $app['title']);
     }
+
+    /**
+     * The letters go to whoever has nobody who joined and no letter: the adults the school's data brought who have not
+     * come in yet are not a family yet, and a student's own page code is not a letter given.
+     */
+    public function test_state_counts_joined_and_letters(): void {
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        $leo = $this->getDataGenerator()->create_user();
+        $familyid = api::create_family('cifra', 'cifra:hogar:1');
+        api::add_adult($familyid, ['firstname' => 'Marta', 'quiet' => true]);
+        api::add_child($familyid, (int) $leo->id);
+        api::join_for_student((int) $leo->id);
+        $now = time();
+
+        $state = students::state([(int) $leo->id], $now);
+        $this->assertSame([0, 0], [$state[$leo->id]['adults'], $state[$leo->id]['expires']]);
+        $this->assertSame(1, letters::counts($state)[letters::PENDING]);
+        $this->assertCount(1, letters::issue([(int) $leo->id => $leo], letters::PENDING, $now));
+        $this->assertGreaterThan($now, students::state([(int) $leo->id], $now)[$leo->id]['expires']);
+    }
+
+    /**
+     * When the shortener gives no short address, the pages use the long one for a while instead of asking it again at
+     * every view; a new word asks again at once.
+     */
+    public function test_short_address_rests(): void {
+        $this->resetAfterTest();
+        set_config('shortenerapi', 'https://short.example/yourls-api.php', 'local_oksigeniafamily');
+        set_config('shortenerkey', 'secret', 'local_oksigeniafamily');
+        $long = preg_replace('~^https?://~', '', (new \moodle_url('/local/oksigeniafamily/claim.php'))->out(false));
+
+        \curl::mock_response(json_encode(['status' => 'fail', 'code' => 'error:limit']));
+        $this->assertSame($long, letters::claim_address());
+
+        // A good answer waits: no page asks for it while the shortener rests.
+        \curl::mock_response(json_encode(['status' => 'success', 'shorturl' => 'https://short.example/familias']));
+        $this->assertSame($long, letters::claim_address());
+
+        letters::short_again();
+        $this->assertSame('short.example/familias', letters::claim_address());
+        $this->assertSame('short.example/familias', letters::claim_address());
+    }
 }

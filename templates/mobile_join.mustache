@@ -22,6 +22,9 @@
     needs to be read (black on a white tile, in dark mode too) is written on it: a page opened from another plugin
     (Oksigenia Aty's «Invite another adult») does not get this plugin's sheet, and the app drops the spaces between tags.
 
+    For an invitation, the code goes by WhatsApp (outside the app, core-link) or is copied with the app's own
+    core-copy-to-clipboard, which says «Copied» itself.
+
     Context variables required for this template:
     * As local_oksigeniafamily/join.
 
@@ -30,7 +33,11 @@
         "intro": "Show this to your family.", "qrsvg": "", "codelabel": "Your code", "code": "ABCD-EFGH",
         "addresslabel": "Or open", "address": "example.org/family", "expires": "It works until 2 January 2027.",
         "hasstatus": false, "status": "", "care": "Keep it for your family.", "twophones": false, "phones": [],
-        "steps": [{"kind": "scan", "text": "Point your phone's camera at the QR."}]
+        "steps": [{"kind": "scan", "text": "Point your phone's camera at the QR."}],
+        "share": {"text": "Join our family.", "whatsappurl": "https://wa.me/?text=Join", "whatsapp": "Send by WhatsApp",
+            "copy": "Copy", "copied": "Copied"},
+        "hasadults": true, "adultsheading": "Adults of your family", "youlabel": "you",
+        "adults": [{"initial": "E", "name": "Eva Gil", "you": true}]
     }
 }}
 <div class="ion-padding okf-app okf-join">
@@ -40,6 +47,16 @@
     <p class="okf-join-codeline" style="margin: 4px 0 0; text-align: center;"><span class="okf-join-label" style="display: block; color: var(--ion-color-medium);">{{codelabel}}</span><b class="okf-join-value" style="display: block; font-size: 1.5rem; letter-spacing: .08em;">{{code}}</b></p>
     <p class="okf-join-codeline" style="margin: 10px 0 0; text-align: center;"><span class="okf-join-label" style="display: block; color: var(--ion-color-medium);">{{addresslabel}}</span><b style="display: block;">{{address}}</b></p>
     <p class="okf-join-until" style="margin: 10px 0 0; text-align: center; color: var(--ion-color-medium); font-size: .9rem;">{{expires}}</p>
+    {{#share}}
+    <div class="okf-share" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0 4px;">
+        <a class="okf-share-wa" href="{{whatsappurl}}" core-link [capture]="false" autoLogin="no" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); font-weight: 600; text-decoration: none;">{{whatsapp}}</a>
+        <ion-button class="okf-share-copy" shape="round" fill="outline" core-copy-to-clipboard="{{text}}" message="{{copied}}">{{copy}}</ion-button>
+    </div>
+    {{/share}}
+    {{#hasadults}}
+    <h3 class="okf-join-adults" style="margin: 18px 0 8px; font-size: 1.05rem;">{{adultsheading}}</h3>
+    <div class="okf-join-people" style="display: flex; flex-wrap: wrap; gap: 8px;">{{#adults}}<span class="okf-join-person" style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 999px; background: var(--ion-color-light);"><span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); font-weight: 700;">{{initial}}</span><span>{{name}}</span>{{#you}}<span style="color: var(--ion-color-medium);">· {{youlabel}}</span>{{/you}}</span>{{/adults}}</div>
+    {{/hasadults}}
     {{#twophones}}
     {{#phones}}
     <h3 class="okf-join-phone">{{name}}</h3>

@@ -653,4 +653,94 @@ final class api_test extends \advanced_testcase {
         api::unlink_child($childid, 'manual');
         $this->assertFalse(user_has_role_assignment((int) $parent->id, $roleid, $context->id));
     }
+
+    /**
+     * An adult a person takes out of a family cannot come back with what the pages showed them: the family's invitation
+     * and its children's own page codes stop, and the pages make new ones; a letter's code stays, for the school to
+     * withdraw. Taken out by the school's data, only the invitation stops. A child a person takes out of a family loses
+     * their page code, and the family its invitation.
+     */
+    public function test_removing_stops_shown_codes(): void {
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        $gen = $this->getDataGenerator();
+        $leo = $gen->create_user();
+        $parent = $gen->create_user();
+        $letter = api::issue_claim_code((int) $leo->id);
+        $eva = api::claim($letter, ['userid' => (int) $parent->id, 'firstname' => 'Eva']);
+        $familyid = (int) $eva->familyid;
+        $page = api::join_for_student((int) $leo->id)['code'];
+        $invite = api::invite_for_family($familyid)['code'];
+
+        api::remove_adult(api::add_adult($familyid, ['firstname' => 'Luis']), 'import');
+        $this->assertNull(api::code_student($invite));
+        $this->assertSame((int) $leo->id, api::code_student($page));
+
+        $invite = api::invite_for_family($familyid)['code'];
+        api::remove_adult(api::add_adult($familyid, ['firstname' => 'Rosa']));
+        $this->assertNull(api::code_student($invite));
+        $this->assertNull(api::code_student($page));
+        $this->assertSame((int) $leo->id, api::code_student($letter));
+        // The pages make new ones.
+        $page = api::join_for_student((int) $leo->id)['code'];
+        $invite = api::invite_for_family($familyid)['code'];
+        $this->assertSame((int) $leo->id, api::code_student($page));
+        $this->assertSame((int) $leo->id, api::code_student($invite));
+
+        api::add_child($familyid, (int) $gen->create_user()->id);
+        api::unlink_child((int) $eva->childid, 'manual');
+        $this->assertNull(api::code_student($page));
+        $this->assertNull(api::code_student($invite));
+        $this->assertSame((int) $leo->id, api::code_student($letter));
+    }
+
+    /**
+     * The claim page sent again (a reload) is the same adult, not another one, and nobody is told twice; another name with
+     * the same number is somebody else. An invitation whose child has left the family gives one who is still in it.
+     */
+    public function test_reload_is_the_same_adult(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        $gen = $this->getDataGenerator();
+        $leo = $gen->create_user();
+        $mother = $gen->create_user();
+        $code = api::issue_claim_code((int) $leo->id);
+        api::claim($code, ['userid' => (int) $mother->id, 'firstname' => 'Marta']);
+        $juan = ['firstname' => 'Juan', 'lastname' => 'Peña', 'phone' => '+34600000002'];
+
+        $first = api::claim($code, $juan);
+        $sink = $this->redirectMessages();
+        $again = api::claim($code, ['firstname' => 'juan', 'lastname' => 'Pena'] + $juan);
+        $this->assertSame(0, $sink->count());
+        $sink->close();
+        $this->assertSame((int) $first->id, (int) $again->id);
+        $this->assertCount(2, api::adults_of_child((int) $leo->id));
+        $other = api::claim($code, ['firstname' => 'Pedro'] + $juan);
+        $this->assertNotSame((int) $first->id, (int) $other->id);
+
+        // An invitation, twice from the same page: one adult.
+        $lola = $gen->create_user();
+        api::add_child((int) $first->familyid, (int) $lola->id);
+        $invite = api::invite_for_family((int) $first->familyid)['code'];
+        $rosa = ['firstname' => 'Rosa', 'email' => 'rosa@example.com'];
+        $one = api::claim($invite, $rosa);
+        $this->assertSame((int) $one->id, (int) api::claim($invite, $rosa)->id);
+        $this->assertSame((int) $leo->id, $one->childuserid);
+
+        // Leo leaves that family: the invitation gives Lola.
+        $leochild = (int) $DB->get_field(
+            'local_oksigeniafamily_child',
+            'id',
+            ['familyid' => $first->familyid, 'userid' => $leo->id]
+        );
+        api::unlink_child($leochild, 'import');
+        $ana = api::claim($invite, ['firstname' => 'Ana']);
+        $this->assertSame((int) $lola->id, $ana->childuserid);
+        $this->assertSame((int) $DB->get_field(
+            'local_oksigeniafamily_child',
+            'id',
+            ['familyid' => $first->familyid, 'userid' => $lola->id]
+        ), $ana->childid);
+    }
 }

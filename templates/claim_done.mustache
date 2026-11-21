@@ -28,6 +28,8 @@
     * pinlabel - How the PIN is introduced.
     * haslinks - Whether there are any.
     * nolinks - What to say when there are none.
+    * mailnote - When the visitor typed an address: that a link went to it if it is an account's ('' for nothing). It
+      says the same whether it is or not.
 
     Example context (json):
     {
@@ -49,7 +51,8 @@
         ],
         "pinlabel": "PIN",
         "haslinks": true,
-        "nolinks": "The school will tell you how to go on."
+        "nolinks": "The school will tell you how to go on.",
+        "mailnote": "If that address has an account at Colegio Ejemplo, we have sent it a link to see Ana and Leo there too."
     }
 }}
 <div class="local-oksigeniafamily-claimdone">
@@ -72,4 +75,5 @@
     {{^haslinks}}
     <p>{{nolinks}}</p>
     {{/haslinks}}
+    {{#mailnote}}<p class="text-muted mt-3">{{mailnote}}</p>{{/mailnote}}
 </div>

@@ -26,7 +26,8 @@
     * question - What is about to happen, when asked: title, text, text2 and buttons, each with label, danger and hidden
       (name and value).
     * action, cancelurl, sesskey - For the question.
-    * adults, hasadults - Each with name, phone, email, account, accounturl, editurl and removeurl.
+    * adults, hasadults - Each with name, phone, email, account, accounturl, editurl, removeurl and review (why the
+      school's data leaves them for a person to look at, or '').
     * children, haschildren - Each with name, url, key, noaccount, codeline, letterurl, revokeurl and removeurl.
     * addadulturl, addchildurl - To add more, unless closed.
     * gone, hasgone - Who left, each with name and when.
@@ -36,7 +37,7 @@
         "nav": {"items": [{"url": "#", "label": "Families", "current": true}]},
         "backurl": "#", "closed": false, "closedsince": "", "source": "Imported", "familykey": "F-1001", "since": "2 November 2026",
         "question": null, "action": "#", "cancelurl": "#", "sesskey": "abc",
-        "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "marta@example.com", "account": "", "accounturl": "", "editurl": "#", "removeurl": "#"}],
+        "adults": [{"name": "Marta Gil", "phone": "+14155550101", "email": "marta@example.com", "account": "", "accounturl": "", "editurl": "#", "removeurl": "#", "review": ""}],
         "hasadults": true,
         "children": [{"name": "Ana Ruiz", "url": "#", "key": "", "noaccount": false, "codeline": "Code in use until 2 January 2027 · uses: 1", "letterurl": "#", "revokeurl": "#", "removeurl": "#"}],
         "haschildren": true,
@@ -87,6 +88,7 @@
                         {{#phone}}<div class="okf-line">{{phone}}</div>{{/phone}}
                         {{#email}}<div class="okf-line">{{email}}</div>{{/email}}
                         {{#account}}<div class="okf-line">{{#str}} family:account, local_oksigeniafamily {{/str}} <a href="{{accounturl}}">{{account}}</a></div>{{/account}}
+                        {{#review}}<div class="okf-review">{{review}}</div>{{/review}}
                     </div>
                     <div class="okf-actions">
                         {{#editurl}}<a class="btn btn-sm btn-secondary" href="{{editurl}}">{{#str}} family:edit, local_oksigeniafamily {{/str}}</a>{{/editurl}}

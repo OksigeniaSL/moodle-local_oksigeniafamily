@@ -30,17 +30,22 @@ use local_oksigeniafamily\local\import\job;
  */
 class import_apply extends \core\task\adhoc_task {
     /**
-     * Queue it.
+     * Queue it, to run as whoever applied the import: what it changes is theirs in the log, as when it goes in inside
+     * the page.
      *
      * @param int $jobid The import.
      * @param int $delay Seconds to wait before it runs.
+     * @param int $userid Who applied it; 0 for the user of cron.
      * @return void
      */
-    public static function queue(int $jobid, int $delay = 0): void {
+    public static function queue(int $jobid, int $delay = 0, int $userid = 0): void {
         $task = new self();
         $task->set_custom_data((object) ['jobid' => $jobid]);
         if ($delay > 0) {
             $task->set_next_run_time(time() + $delay);
+        }
+        if ($userid > 0) {
+            $task->set_userid($userid);
         }
         \core\task\manager::queue_adhoc_task($task);
     }
@@ -52,7 +57,7 @@ class import_apply extends \core\task\adhoc_task {
         $jobid = (int) ($this->get_custom_data()->jobid ?? 0);
         if (!job::run($jobid)) {
             // Another import is going in: this one waits its turn.
-            self::queue($jobid, MINSECS);
+            self::queue($jobid, MINSECS, (int) $this->get_userid());
         }
     }
 }

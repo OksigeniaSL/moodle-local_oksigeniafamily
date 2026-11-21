@@ -131,4 +131,50 @@ final class families_needs_test extends \advanced_testcase {
         set_config('consents', '0', 'local_oksigeniafamily');
         $this->assertArrayNotHasKey('pending', families::need_counts($now));
     }
+
+    /**
+     * A student's own page code is not a letter given: it is no «Code not used».
+     */
+    public function test_page_code_is_no_letter(): void {
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        $leo = $this->getDataGenerator()->create_user();
+        $familyid = api::create_family();
+        api::add_adult($familyid, ['firstname' => 'Luis']);
+        api::add_child($familyid, (int) $leo->id);
+
+        api::join_for_student((int) $leo->id);
+        $this->assertSame(0, families::need_counts(time())['code']);
+        api::issue_claim_code((int) $leo->id);
+        $this->assertSame(1, families::need_counts(time())['code']);
+    }
+
+    /**
+     * An adult the school's data no longer has in their household, who had joined, waits in the list for a person to look
+     * at: a tile only while there is one, and words on their family's card.
+     */
+    public function test_review(): void {
+        $this->resetAfterTest();
+        $now = time();
+        $familyid = api::create_family('cifra', 'cifra:hogar:1');
+        $luis = api::add_adult($familyid, ['firstname' => 'Luis', 'lastname' => 'Rey']);
+        api::add_adult($familyid, ['firstname' => 'Eva', 'lastname' => 'Rey']);
+        $this->assertNotContains('review', families::needs());
+
+        families::set_review('gone', [$luis]);
+        $this->assertContains('review', families::needs());
+        $this->assertSame(1, families::need_counts($now)['review']);
+        $this->assertSame('gone', families::review_reason($luis));
+        $found = families::search('', 'active', 0, 'review', $now);
+        $this->assertSame([$familyid], array_map(fn($family) => (int) $family->id, $found['families']));
+        $flags = families::flags($found['families'], $found['people'], 'review', $now);
+        $this->assertContains(get_string('flag:review', 'local_oksigeniafamily', (object) [
+            'why' => get_string('review:gone', 'local_oksigeniafamily'),
+            'names' => 'Luis Rey',
+        ]), array_column($flags[$familyid], 'flagtext'));
+
+        // Once a person takes them out, there is nothing to look at.
+        api::remove_adult($luis);
+        $this->assertSame(0, families::need_counts($now)['review']);
+    }
 }

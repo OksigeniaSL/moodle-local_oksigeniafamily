@@ -142,6 +142,7 @@ foreach ($adults as $one) {
         continue;
     }
     $account = !empty($one->userid) ? ($people['users'][$one->userid] ?? null) : null;
+    $why = families::review_reason((int) $one->id);
     $adultrows[] = [
         'name' => $name,
         'phone' => $one->phone,
@@ -150,6 +151,7 @@ foreach ($adults as $one) {
         'accounturl' => $account ? (new moodle_url('/user/profile.php', ['id' => $account->id]))->out(false) : '',
         'editurl' => $closed ? '' : (new moodle_url('/local/oksigeniafamily/adult.php', ['id' => $one->id]))->out(false),
         'removeurl' => $closed ? '' : $action(['ask' => 'removeadult', 'adultid' => $one->id]),
+        'review' => $why === '' ? '' : get_string('review:' . $why, $component),
     ];
 }
 $childrows = [];

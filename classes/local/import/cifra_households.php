@@ -18,6 +18,7 @@ namespace local_oksigeniafamily\local\import;
 
 use local_oksigeniafamily\api;
 use local_oksigeniafamily\local\cifra;
+use local_oksigeniafamily\local\families;
 use local_oksigeniafamily\local\phone;
 use local_oksigeniafamily\local\readers\cifra_people;
 
@@ -474,6 +475,8 @@ final class cifra_households {
         } finally {
             $lock->release();
         }
+        // Those who joined and are no longer in their household in Cifra wait in «Families» for a person to look at.
+        families::set_review('gone', array_column($gone['review'], 'adultid'));
         $result['state'] = 'done';
         $result['counts'] = $done + [
             'familiesjoined' => $plan['counts']['familiesjoined'],

@@ -50,6 +50,20 @@ class join {
         if ($DB->record_exists('local_oksigeniafamily_adult', ['userid' => $userid, 'status' => api::ACTIVE])) {
             return false;
         }
+
+        return self::is_student($userid);
+    }
+
+    /**
+     * Whether an account is a student's: a child of a family, or a student somewhere and nothing that runs courses (a
+     * teacher in a course for the staff is enrolled as a student there too).
+     *
+     * @param int $userid The account.
+     * @return bool
+     */
+    public static function is_student(int $userid): bool {
+        global $DB;
+
         $archetypes = "archetype IN ('editingteacher', 'teacher', 'manager', 'coursecreator')";
         $staff = $DB->get_fieldset_select('role', 'id', $archetypes);
         if ($staff) {
@@ -68,6 +82,25 @@ class join {
         [$in, $params] = $DB->get_in_or_equal($students, SQL_PARAMS_NAMED);
 
         return $DB->record_exists_select('role_assignments', "userid = :userid AND roleid $in", ['userid' => $userid] + $params);
+    }
+
+    /**
+     * Whether the top bar shows «Family» to a person: eligible(), kept for a minute, since the bar asks on every page of
+     * everyone. The page itself and the app ask eligible().
+     *
+     * @param int $userid The person.
+     * @return bool
+     */
+    public static function in_bar(int $userid): bool {
+        $cache = \cache::make('local_oksigeniafamily', 'joinbar');
+        $kept = $cache->get($userid);
+        if ($kept === 'y' || $kept === 'n') {
+            return $kept === 'y';
+        }
+        $eligible = self::eligible($userid);
+        $cache->set($userid, $eligible ? 'y' : 'n');
+
+        return $eligible;
     }
 
     /**
@@ -107,11 +140,62 @@ class join {
                 foreach ($invite['steps'] as $phone => $steps) {
                     $invite['steps'][$phone] = array_values(array_filter($steps, fn($step) => $step['kind'] !== 'siblings'));
                 }
-                return self::build($invite, 'invite', '');
+                return self::build($invite, 'invite', '') + self::invite_extras($invite, (int) $family->familyid, $userid);
             }
         }
 
         return null;
+    }
+
+    /**
+     * What only the invitation has: the message to send it in (by WhatsApp, or copied into any other app), and the adults
+     * of the family who have already joined, so that the one who invites sees who is in.
+     *
+     * @param array $invite From api::invite_for_family().
+     * @param int $familyid The family.
+     * @param int $userid Who looks at it.
+     * @return array share (text, whatsappurl and the words of the buttons), adults (each with initial, name and you) and
+     *     hasadults, adultsheading.
+     */
+    private static function invite_extras(array $invite, int $familyid, int $userid): array {
+        global $DB;
+
+        $component = 'local_oksigeniafamily';
+        $text = get_string('invite:message', $component, (object) [
+            'site' => format_string(get_site()->fullname),
+            'url' => $invite['url'],
+            'code' => $invite['code'],
+        ]);
+        // Those who have joined: not those the school's data brought who have not come in yet.
+        $records = $DB->get_records(
+            'local_oksigeniafamily_adult',
+            ['familyid' => $familyid, 'status' => api::ACTIVE, 'quiet' => 0],
+            'id',
+            'id, firstname, lastname, email, phone, userid'
+        );
+        $adults = [];
+        foreach ($records as $adult) {
+            $name = families::adult_name($adult);
+            $adults[] = [
+                'initial' => \core_text::strtoupper(\core_text::substr($name, 0, 1)),
+                'name' => $name,
+                'you' => (int) $adult->userid === $userid,
+            ];
+        }
+
+        return [
+            'share' => [
+                'text' => $text,
+                'whatsappurl' => 'https://wa.me/?text=' . rawurlencode($text),
+                'whatsapp' => get_string('invite:whatsapp', $component),
+                'copy' => get_string('invite:copy', $component),
+                'copied' => get_string('invite:copied', $component),
+            ],
+            'adultsheading' => get_string('invite:adults', $component),
+            'adults' => $adults,
+            'hasadults' => !empty($adults),
+            'youlabel' => get_string('invite:you', $component),
+        ];
     }
 
     /**
@@ -160,7 +244,7 @@ class join {
     public static function primary_extend(\core\hook\navigation\primary_extend $hook): void {
         global $USER;
 
-        if (during_initial_install() || !isloggedin() || isguestuser() || !self::eligible((int) $USER->id)) {
+        if (during_initial_install() || !isloggedin() || isguestuser() || !self::in_bar((int) $USER->id)) {
             return;
         }
         $hook->get_primaryview()->add(

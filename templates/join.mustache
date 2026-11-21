@@ -20,17 +20,27 @@
     «For your family» on the site: the QR the family scans from this screen with their own phone, the code and the short
     address to type it, and the steps, one list per phone where they differ.
 
+    The same page invites another adult of a household («Invite another adult»): then it also has the buttons to send
+    the code and the adults of the family who have already joined.
+
     Context variables required for this template:
     * intro, qrsvg, codelabel, code, addresslabel, address, expires, hasstatus, status, care - The page.
     * twophones, phones - Each with name and steps (kind, text), where iPhone and Android differ.
     * steps - The steps, where they do not.
+    * share - Only for an invitation: text (the message), whatsappurl, whatsapp, copy and copied (the buttons' words).
+    * hasadults, adultsheading, adults, youlabel - Only for an invitation: who has joined, each with initial, name and
+      you (whether it is whoever looks).
 
     Example context (json):
     {
         "intro": "Show this to your family.", "qrsvg": "", "codelabel": "Your code", "code": "ABCD-EFGH",
         "addresslabel": "Or open", "address": "example.org/family", "expires": "It works until 2 January 2027.",
         "hasstatus": false, "status": "", "care": "Keep it for your family.", "twophones": false, "phones": [],
-        "steps": [{"kind": "scan", "text": "Point your phone's camera at the QR."}]
+        "steps": [{"kind": "scan", "text": "Point your phone's camera at the QR."}],
+        "share": {"text": "Join our family.", "whatsappurl": "https://wa.me/?text=Join", "whatsapp": "Send by WhatsApp",
+            "copy": "Copy", "copied": "Copied"},
+        "hasadults": true, "adultsheading": "Adults of your family", "youlabel": "you",
+        "adults": [{"initial": "E", "name": "Eva Gil", "you": true}]
     }
 }}
 <div class="local-oksigeniafamily okf-join">
@@ -44,8 +54,31 @@
             <div class="okf-join-label">{{addresslabel}}</div>
             <div class="okf-join-address">{{address}}</div>
             <div class="okf-join-until">{{expires}}</div>
+            {{#share}}
+            <div class="okf-share">
+                <a class="okf-share-wa" href="{{whatsappurl}}" target="_blank" rel="noopener noreferrer">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.5 19.5 5.6 16A7.8 7.8 0 1 1 8.3 18.6z"/><path d="M9 10.5h6M9 13.5h4"/></svg>
+                    <span>{{whatsapp}}</span>
+                </a>
+                <button type="button" class="okf-share-copy" data-okf-copy="{{text}}" data-okf-copied="{{copied}}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/></svg>
+                    <span class="okf-share-label">{{copy}}</span>
+                </button>
+                <span class="okf-share-said visually-hidden sr-only" aria-live="polite"></span>
+            </div>
+            {{/share}}
         </div>
     </div>
+    {{#hasadults}}
+    <section class="okf-join-adults">
+        <h3>{{adultsheading}}</h3>
+        <ul class="okf-join-people">
+            {{#adults}}
+            <li class="okf-join-person"><span class="okf-join-initial" aria-hidden="true">{{initial}}</span><span>{{name}}</span>{{#you}}<span class="okf-join-you">· {{youlabel}}</span>{{/you}}</li>
+            {{/adults}}
+        </ul>
+    </section>
+    {{/hasadults}}
     {{#twophones}}
     <div class="okf-join-phones">
         {{#phones}}

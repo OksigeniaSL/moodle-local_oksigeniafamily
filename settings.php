@@ -121,14 +121,18 @@ if ($hassiteconfig) {
             PARAM_ALPHANUMEXT
         );
         // A new word, a new short address.
-        $keyword->set_updatedcallback(fn() => unset_config('claimshort', 'local_oksigeniafamily'));
+        $keyword->set_updatedcallback(function () {
+            unset_config('claimshort', 'local_oksigeniafamily');
+            \local_oksigeniafamily\local\letters::short_again();
+        });
         $settings->add($keyword);
         // Every student has «For your family»: their QR, code and steps, for their family to join from the student's screen.
+        // Off on a new site: the centre turns it on when it has told its families. A site that had it keeps it.
         $settings->add(new admin_setting_configcheckbox(
             'local_oksigeniafamily/studentpage',
             new lang_string('settings:studentpage', 'local_oksigeniafamily'),
             new lang_string('settings:studentpage_desc', 'local_oksigeniafamily'),
-            1
+            0
         ));
         $settings->add(new admin_setting_configcheckbox(
             'local_oksigeniafamily/photos',

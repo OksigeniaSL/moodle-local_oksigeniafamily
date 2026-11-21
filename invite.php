@@ -37,6 +37,57 @@ $PAGE->set_pagelayout('standard');
 page::dress(get_string('invite:title', 'local_oksigeniafamily'));
 
 $context = join::invite_context((int) $USER->id);
+// The button «Copy»: the message goes to the clipboard, and the button says so for a moment (and a screen reader, once).
+$PAGE->requires->js_amd_inline("
+    require([], function() {
+        document.querySelectorAll('[data-okf-copy]').forEach(function(button) {
+            var label = button.querySelector('.okf-share-label');
+            var said = button.parentNode.querySelector('.okf-share-said');
+            var idle = label ? label.textContent : '';
+            var done = function() {
+                button.classList.add('is-done');
+                if (label) {
+                    label.textContent = button.getAttribute('data-okf-copied');
+                }
+                if (said) {
+                    said.textContent = button.getAttribute('data-okf-copied');
+                }
+                window.setTimeout(function() {
+                    button.classList.remove('is-done');
+                    if (label) {
+                        label.textContent = idle;
+                    }
+                }, 2000);
+            };
+            var fallback = function(text) {
+                var box = document.createElement('textarea');
+                box.value = text;
+                box.setAttribute('readonly', '');
+                box.style.position = 'fixed';
+                box.style.opacity = '0';
+                document.body.appendChild(box);
+                box.select();
+                try {
+                    if (document.execCommand('copy')) {
+                        done();
+                    }
+                } finally {
+                    document.body.removeChild(box);
+                }
+            };
+            button.addEventListener('click', function() {
+                var text = button.getAttribute('data-okf-copy');
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(done, function() {
+                        fallback(text);
+                    });
+                } else {
+                    fallback(text);
+                }
+            });
+        });
+    });
+");
 
 echo $OUTPUT->header();
 if ($context) {

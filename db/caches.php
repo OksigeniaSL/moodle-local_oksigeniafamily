@@ -32,6 +32,28 @@ $definitions = [
         'simpledata' => true,
         'ttl' => 900,
     ],
+    // The other brakes of the claim page (throttle::LIMITS): each entry says how many and since when; a day at most.
+    'claimlimits' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => DAYSECS,
+    ],
+    // Whether the top bar shows «Family» to each person (join::in_bar()), for a minute: the bar asks on every page.
+    'joinbar' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => 60,
+    ],
+    // Until when the pages use the full address after the link shortener failed to give a short one
+    // (letters::kept_short()), so that no page waits for it at every view.
+    'shortrest' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => DAYSECS,
+    ],
     // What each person's doors in «Your work» say, for a minute.
     'work' => [
         'mode' => cache_store::MODE_APPLICATION,

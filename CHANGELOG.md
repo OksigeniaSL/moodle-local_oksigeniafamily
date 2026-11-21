@@ -5,6 +5,64 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Security (0.3.36-dev)
+
+- The claim page answers alike whether the e-mail typed has an account of the site or not, so that a good code is no
+  longer a way to find out who has one: whoever types it joins at once as an adult without an account, as with any
+  other address or none, and an address that any account has (a student's too) is never kept with them. If it is the
+  address of an account that signs in as a person does, and not a student's, a link to put the child into that account
+  goes to it, and the page says the same in both cases («If that address has an account…»). Once its owner confirms,
+  the adult they became goes away when it was only that (`claimmail::merge()`: alone in a family the claim made, with
+  only children the account now has); anything else stays for the school. Before, «Check your e-mail» against «You are
+  now family» said whether the address had an account, and every try with another address sent another e-mail.
+- Brakes on the claim page besides the one on wrong codes (`throttle::LIMITS`): ten claims of one good code a day, three
+  links to one account a day, ten links from one visitor's address an hour. Over a code's limit the page asks to try
+  tomorrow; over a link's, the link does not go and the page says nothing different.
+- Taking an adult out of a family by hand stops the family's invitation and the codes its children's own pages show
+  (`api::remove_adult(..., 'manual')`), since the adult may have seen them; taken out by the school's data (`import`),
+  only the invitation. A child taken out of a family loses the code of their own page, and, taken out by hand, the
+  family its invitation. The pages make new ones when they are opened; a letter's code stays, for the school to
+  withdraw from the family's page. Before, an adult removed could join again with the invitation they had seen.
+- An adult the school's data brought, still quiet, who answers a request for consent by themselves (on the site, in the
+  app, by e-mail) comes in (`api::wake_adult()`), and their answer counts. Before, it was kept and did not count. A paper
+  answer the school writes down for them does not wake them.
+- The claim page sent again (a reload) is the same adult: one without an account who joined that family less than a day
+  ago, by a claim, with the same name and the same phone or e-mail; for a student's code, only in a family where that
+  student is the only child, so that it gives nothing the code alone would not. The others are told once. Before, each
+  reload added an adult, and for a letter's code a whole family.
+- The import of a file runs in the background as whoever applied it (`set_userid()`), so the log says who changed the
+  families. A failed import is erased with its file (names, phones, e-mails) a week after Moodle stops trying it again,
+  not a month (`job::FAILEDDAYS`).
+- The privacy provider declares the family of each adult and child, whether an adult's phone is vouched for and whether
+  they are quiet, the purpose, family and sealed code of the codes the pages show, and the table of the links already
+  used (`local_oksigeniafamily_spent`, only hashes).
+
+### Changed (0.3.36-dev)
+
+- «Invite another adult»: the code goes by WhatsApp (a `wa.me` link with the message) or copied, from two buttons; under
+  them, the adults of the family who have already joined. Its words: «For another adult to see your children too, show
+  them this QR or send them the code.», and at the end «Whoever has this code joins your family: give it only to someone
+  who should see your children.»; when it expires is said once. In the app, the copy is the app's own
+  (`core-copy-to-clipboard`) and WhatsApp opens outside it (`core-link`).
+- The letters go to the students whose family has nobody who has joined (the quiet adults the school's data brought are
+  not counted), and «Code not used» and a code in use count only a letter's codes, not the one a student's own page
+  shows nor an invitation (`students::state()`, the need `code`). Before, a student with only quiet adults, or who had
+  opened their own page, got no letter.
+- «For your family» (`studentpage`) is off on a new site; a site that had it keeps it, also one that never saved it.
+- An invitation whose child has left the family gives as `childuserid` one who is still in it; with no child left with an
+  account, it joins nobody (`claiminvalid`).
+- The top bar asks whether to show «Family» once a minute per person (`join::in_bar()`, cache `joinbar`), not on every
+  page; the page itself and the app ask `join::eligible()`.
+- When the link shortener gives no short address, the letters and the messages use the long one for fifteen minutes (a
+  day when asking again would get the same) instead of waiting for it at every view (`letters::kept_short()`).
+
+### Added (0.3.36-dev)
+
+- «Families» has the tile «To look at» while the last round of Cifra leaves adults for a person to look at: those who
+  joined and are no longer in their household in Cifra (before, only `cli/cifra_households.php` listed them). Their
+  card and the household's page say so (`families::review()`).
+- `join::is_student()`: a child of a family, or a student somewhere with nothing that runs courses.
+
 ### Security (0.3.35-dev)
 
 - A household the school's data brought (Cifra), while nobody of it has joined, is joined with its children only by

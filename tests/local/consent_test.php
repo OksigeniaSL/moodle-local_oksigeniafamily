@@ -439,4 +439,35 @@ final class consent_test extends \advanced_testcase {
         );
         $this->assertCount(2, array_unique($rounds));
     }
+
+    /**
+     * An adult the school's data brought, still quiet, who answers by themselves has come in: their answer counts. A paper
+     * answer the school writes down for one leaves them quiet.
+     */
+    public function test_quiet_adult_answering(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $gen = $this->getDataGenerator();
+        $ana = $gen->create_user();
+        $father = $gen->create_user();
+        $teacher = $gen->create_user();
+        $familyid = api::create_family('cifra', 'cifra:hogar:9');
+        $dario = api::add_adult($familyid, ['firstname' => 'Darío', 'userid' => (int) $father->id, 'quiet' => true]);
+        $marta = api::add_adult($familyid, ['firstname' => 'Marta', 'quiet' => true]);
+        api::add_child($familyid, (int) $ana->id);
+        $requestid = consent::create(
+            \context_system::instance(),
+            ['title' => 'Salida', 'deadline' => time() + DAYSECS],
+            [(int) $ana->id],
+            (int) $teacher->id
+        );
+        $request = consent::get($requestid);
+
+        consent::answer($requestid, (int) $ana->id, $marta, consent::YES, 'school', ['userid' => (int) $teacher->id]);
+        $this->assertSame(1, (int) $DB->get_field('local_oksigeniafamily_adult', 'quiet', ['id' => $marta]));
+
+        consent::answer($requestid, (int) $ana->id, $dario, consent::NO, 'web', ['userid' => (int) $father->id]);
+        $this->assertSame(0, (int) $DB->get_field('local_oksigeniafamily_adult', 'quiet', ['id' => $dario]));
+        $this->assertSame(consent::NO, consent::student_state($request, (int) $ana->id)->status);
+    }
 }

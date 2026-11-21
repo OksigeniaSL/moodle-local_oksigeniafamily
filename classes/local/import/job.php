@@ -76,6 +76,10 @@ class job {
     /** Days an import is kept for the page once it has finished. */
     public const KEEPDAYS = 30;
 
+    /** Days an import that stopped by an error is kept, with its file (the families' names, phones and e-mails), once
+     *  Moodle no longer runs it again: long enough to see why, not a month. */
+    public const FAILEDDAYS = 7;
+
     /** How many finished imports the page shows. */
     public const RECENT = 5;
 
@@ -164,7 +168,7 @@ class job {
             'timemodified' => $now,
         ]);
         get_file_storage()->create_file_from_string(self::filerecord($jobid), $text);
-        import_plan::queue($jobid);
+        import_plan::queue($jobid, $userid);
 
         return $jobid;
     }
@@ -318,7 +322,7 @@ class job {
         $job->status = self::QUEUED;
         $job->timemodified = time();
         $DB->update_record('local_oksigeniafamily_import', $job);
-        import_apply::queue($jobid);
+        import_apply::queue($jobid, 0, $userid);
 
         return $job;
     }
@@ -749,8 +753,9 @@ class job {
     }
 
     /**
-     * Erase the old imports: previews nobody applied, after a day, and the rest once they are past their days on the page.
-     * An import that is still going in is never erased.
+     * Erase the old imports: previews nobody applied, after a day; one that stopped by an error, with its file, after
+     * FAILEDDAYS; and the rest once they are past their days on the page. An import that is still going in, or that
+     * Moodle is still going to run again, is never erased.
      *
      * @param int $now The time.
      * @return int How many.
@@ -758,15 +763,19 @@ class job {
     public static function purge(int $now): int {
         global $DB;
 
-        [$endin, $params] = $DB->get_in_or_equal([self::DONE, self::STOPPED, self::FAILED], SQL_PARAMS_NAMED, 'end');
+        [$endin, $params] = $DB->get_in_or_equal([self::DONE, self::STOPPED], SQL_PARAMS_NAMED, 'end');
         $ids = $DB->get_fieldset_select(
             'local_oksigeniafamily_import',
             'id',
-            "(status IN (:preview, :planning) AND timemodified < :previewbefore) OR (status $endin AND timemodified < :before)",
+            "(status IN (:preview, :planning) AND timemodified < :previewbefore)
+             OR (status = :failed AND timemodified < :failedbefore)
+             OR (status $endin AND timemodified < :before)",
             $params + [
                 'preview' => self::PREVIEW,
                 'planning' => self::PLANNING,
                 'previewbefore' => $now - DAYSECS,
+                'failed' => self::FAILED,
+                'failedbefore' => $now - self::FAILEDDAYS * DAYSECS,
                 'before' => $now - self::KEEPDAYS * DAYSECS,
             ]
         );

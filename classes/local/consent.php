@@ -223,6 +223,12 @@ class consent {
             if (!$adult || !api::adult_has_child($adultid, $childuserid) || (int) $adult->userid === $childuserid) {
                 throw new \moodle_exception('consentnotfamily', 'local_oksigeniafamily');
             }
+            // An adult the school's data brought who answers by themselves (signed in to their account, in the app) has
+            // come in: from now on they are an adult of the family as any other, so that their answer counts. A paper
+            // answer the school writes down for them does not wake them.
+            if (!empty($adult->quiet) && $channel !== 'school') {
+                api::wake_adult($adultid);
+            }
             $name = self::adult_name($adult);
         } else if ($channel !== 'school' || $name === '') {
             throw new \moodle_exception('consentnotfamily', 'local_oksigeniafamily');

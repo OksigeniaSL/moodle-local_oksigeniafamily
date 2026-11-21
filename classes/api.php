@@ -787,8 +787,9 @@ class api {
      * A child leaves a family: the student left the school, or the school took them out of it.
      *
      * @param int $childid The child.
-     * @param string $reason Why: deleted, suspended, cohort, import (a complete list without them) or manual (a person
-     *     took them out, here or in another plugin, such as the admissions team when a family leaves).
+     * @param string $reason Why: deleted, suspended, cohort, import (a complete list without them), manual (a person
+     *     took them out, here or in another plugin, such as the admissions team when a family leaves) or merged (the
+     *     family was the same adult twice, see local\claimmail::merge()).
      * @return void
      */
     public static function unlink_child(int $childid, string $reason): void {
@@ -812,13 +813,23 @@ class api {
             'other' => ['familyid' => (int) $child->familyid, 'adultid' => null, 'reason' => $reason],
         ])->trigger();
         roles::sync_family((int) $child->familyid);
+        // Whoever of that family saw the code the child's own page shows must not come back with it, nor, when a person
+        // took the child out, with the family's invitation; the pages make new ones when they are opened. Not for the
+        // same adult twice (merged), who stays with the child.
+        if ($reason !== 'merged') {
+            $familyid = $reason === 'manual' ? (int) $child->familyid : 0;
+            self::revoke_shown_codes($familyid, $child->userid ? [(int) $child->userid] : []);
+        }
     }
 
     /**
-     * An adult leaves a family.
+     * An adult leaves a family. Taken out by a person (manual), the family's invitation and the codes its children's
+     * own pages show stop working, since the adult may have seen them; taken out by the school's data (import), only
+     * the invitation, which is all an adult who never joined can have seen. The pages make new ones when opened.
      *
      * @param int $adultid The adult.
-     * @param string $reason Why: manual or closed.
+     * @param string $reason Why: manual, import (the school's data no longer has them in the household), closed or
+     *     merged (the same adult twice, see local\claimmail::merge()).
      * @return void
      */
     public static function remove_adult(int $adultid, string $reason = 'manual'): void {
@@ -839,6 +850,49 @@ class api {
             'other' => ['familyid' => (int) $adult->familyid, 'reason' => $reason],
         ])->trigger();
         roles::sync_family((int) $adult->familyid);
+        if ($reason === 'manual' || $reason === 'import') {
+            $children = $reason !== 'manual' ? [] : $DB->get_fieldset_select(
+                'local_oksigeniafamily_child',
+                'userid',
+                'familyid = :familyid AND status = :active AND userid IS NOT NULL',
+                ['familyid' => (int) $adult->familyid, 'active' => self::ACTIVE]
+            );
+            self::revoke_shown_codes((int) $adult->familyid, array_map('intval', $children));
+        }
+    }
+
+    /**
+     * Stop the codes the pages show and show again: a family's invitation, and the codes of some students' own pages. A
+     * letter's code is never touched here (the school withdraws it, from the family's page). Nothing is logged: these
+     * are made again as soon as the page is opened, as shown_code() replaces them.
+     *
+     * @param int $familyid The family whose invitation stops; 0 for none.
+     * @param int[] $childuserids The students whose page code stops.
+     * @return void
+     */
+    private static function revoke_shown_codes(int $familyid, array $childuserids): void {
+        global $DB;
+
+        if ($familyid > 0) {
+            $DB->set_field_select(
+                'local_oksigeniafamily_claim',
+                'status',
+                self::REVOKED,
+                'familyid = :familyid AND purpose = :purpose AND status = :active',
+                ['familyid' => $familyid, 'purpose' => 'invite', 'active' => self::ACTIVE]
+            );
+        }
+        $childuserids = array_values(array_filter($childuserids));
+        if ($childuserids) {
+            [$in, $params] = $DB->get_in_or_equal($childuserids, SQL_PARAMS_NAMED, 'child');
+            $DB->set_field_select(
+                'local_oksigeniafamily_claim',
+                'status',
+                self::REVOKED,
+                "userid $in AND purpose = :purpose AND status = :active",
+                $params + ['purpose' => 'page', 'active' => self::ACTIVE]
+            );
+        }
     }
 
     /**
@@ -991,6 +1045,11 @@ class api {
             // Also a quiet adult of a household the school's data brought: the school vouched for their number.
             $known = self::adult_by_phone($adult['phone']);
         }
+        if (!$known && empty($adult['userid'])) {
+            // The same page sent again (a reload): the adult it made a moment ago, in a family that has only this child,
+            // so that it gives nothing the code alone would not.
+            $known = self::same_recent_adult(self::families_of_only((int) $claim->userid), $adult);
+        }
         // A household the school's data brought where nobody has joined yet is joined, with every child in it, brothers
         // and sisters too, only by one of its own adults: by their account or their number vouched for (above), or by
         // an account with the e-mail the school's data has for them. The code alone proves nothing about who holds it:
@@ -1026,15 +1085,81 @@ class api {
             }
         }
         $others = self::adults_of_child((int) $claim->userid);
+        $had = !$isnew && $DB->record_exists(
+            'local_oksigeniafamily_child',
+            ['familyid' => $familyid, 'userid' => (int) $claim->userid, 'status' => self::ACTIVE]
+        );
         $childid = self::add_child($familyid, (int) $claim->userid);
         $DB->set_field('local_oksigeniafamily_claim', 'claims', (int) $claim->claims + 1, ['id' => $claim->id]);
 
         $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid], '*', MUST_EXIST);
-        local\notices::new_adult($record, (int) $claim->userid, array_filter($others, fn($other) => (int) $other->id !== $adultid));
+        // The others hear of it once: an adult who already had the child (a reload, the same code again) is no news.
+        if (!$had) {
+            $others = array_filter($others, fn($other) => (int) $other->id !== $adultid);
+            local\notices::new_adult($record, (int) $claim->userid, $others);
+        }
         $record->childuserid = (int) $claim->userid;
         $record->childid = $childid;
 
         return $record;
+    }
+
+    /**
+     * An adult without an account who joined one of these families a moment ago, with the same name and the same phone
+     * or e-mail: the same person sending the page again (a reload), not a new one. Only within a day, only one a claim
+     * made (never one the school's data brought, nor a quiet one), and never one with an account: a phone typed proves
+     * nothing, so this never takes anyone into somebody else's record that the school or an account vouches for.
+     *
+     * @param int[] $familyids The families to look in.
+     * @param array $adult As for claim().
+     * @return stdClass|null The adult record, or null.
+     */
+    private static function same_recent_adult(array $familyids, array $adult): ?stdClass {
+        global $DB;
+
+        $name = local\names::fold(($adult['firstname'] ?? '') . ' ' . ($adult['lastname'] ?? ''));
+        $phone = (string) ($adult['phone'] ?? '');
+        $email = \core_text::strtolower(trim((string) ($adult['email'] ?? '')));
+        if (!$familyids || $name === '' || ($phone === '' && $email === '')) {
+            return null;
+        }
+        [$in, $params] = $DB->get_in_or_equal(array_values(array_unique($familyids)), SQL_PARAMS_NAMED, 'family');
+        $recent = $DB->get_records_select(
+            'local_oksigeniafamily_adult',
+            "familyid $in AND status = :active AND userid IS NULL AND sourcekey IS NULL AND quiet = 0
+                AND timecreated >= :since",
+            $params + ['active' => self::ACTIVE, 'since' => time() - DAYSECS],
+            'id DESC'
+        );
+        foreach ($recent as $one) {
+            $samephone = $phone !== '' && (string) $one->phone === $phone;
+            $samemail = $email !== '' && \core_text::strtolower(trim((string) $one->email)) === $email;
+            if (($samephone || $samemail) && local\names::fold($one->firstname . ' ' . $one->lastname) === $name) {
+                return $one;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The open families of a student where they are the only child.
+     *
+     * @param int $childuserid The student.
+     * @return int[] Family ids.
+     */
+    private static function families_of_only(int $childuserid): array {
+        global $DB;
+
+        return array_map('intval', $DB->get_fieldset_sql(
+            "SELECT c.familyid
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
+              WHERE c.userid = :userid AND c.status = :cactive
+                AND NOT EXISTS (SELECT 1 FROM {local_oksigeniafamily_child} o
+                                 WHERE o.familyid = c.familyid AND o.status = :oactive AND o.id <> c.id)",
+            ['userid' => $childuserid, 'factive' => self::ACTIVE, 'cactive' => self::ACTIVE, 'oactive' => self::ACTIVE]
+        ));
     }
 
     /**
@@ -1283,18 +1408,9 @@ class api {
      */
     public static function family_page_short(): string {
         $long = self::family_page_url();
-        $saved = (string) get_config('local_oksigeniafamily', 'joinshort');
-        if (str_starts_with($saved, $long . ' ')) {
-            return substr($saved, strlen($long) + 1);
-        }
-        $shortener = local\shortener::of_site();
-        $short = $shortener ? (string) $shortener->shorten($long, get_string('join:title', 'local_oksigeniafamily')) : '';
-        if ($short === '') {
-            return $long;
-        }
-        set_config('joinshort', $long . ' ' . $short, 'local_oksigeniafamily');
+        $short = local\letters::kept_short('joinshort', $long, get_string('join:title', 'local_oksigeniafamily'));
 
-        return $short;
+        return $short !== '' ? $short : $long;
     }
 
     /**
@@ -1314,12 +1430,13 @@ class api {
 
     /**
      * The claim of an invitation: the adult joins the family that invited them, with all its children; an adult of that
-     * family already is not added again.
+     * family already is not added again, by their account or, without one, when it is the same page sent again a moment
+     * later (same_recent_adult()).
      *
      * @param stdClass $claim The invitation.
      * @param array $adult As for claim().
      * @param bool $phoneverified As for claim().
-     * @return stdClass As for claim().
+     * @return stdClass As for claim(), with the child of the invitation when it is still in the family, or another.
      */
     private static function claim_invite(stdClass $claim, array $adult, bool $phoneverified): stdClass {
         global $DB;
@@ -1328,13 +1445,17 @@ class api {
         if (!$DB->record_exists('local_oksigeniafamily_family', ['id' => $familyid, 'status' => self::ACTIVE])) {
             throw new \moodle_exception('claiminvalid', 'local_oksigeniafamily');
         }
-        $children = $DB->get_records('local_oksigeniafamily_child', ['familyid' => $familyid, 'status' => self::ACTIVE]);
-        $childuserids = array_filter(array_map(fn($child) => (int) $child->userid, $children));
+        $children = $DB->get_records('local_oksigeniafamily_child', ['familyid' => $familyid, 'status' => self::ACTIVE], 'id');
+        $childuserids = array_values(array_filter(array_map(fn($child) => (int) $child->userid, $children)));
+        // A family with no child left to see: the invitation joins nobody.
+        if (!$childuserids) {
+            throw new \moodle_exception('claiminvalid', 'local_oksigeniafamily');
+        }
         if (!empty($adult['userid']) && in_array((int) $adult['userid'], $childuserids, true)) {
             throw new \moodle_exception('claimself', 'local_oksigeniafamily');
         }
 
-        $known = empty($adult['userid']) ? null : $DB->get_record(
+        $known = empty($adult['userid']) ? self::same_recent_adult([$familyid], $adult) : $DB->get_record(
             'local_oksigeniafamily_adult',
             ['familyid' => $familyid, 'userid' => $adult['userid'], 'status' => self::ACTIVE],
             '*',
@@ -1350,7 +1471,8 @@ class api {
         $DB->set_field('local_oksigeniafamily_claim', 'claims', (int) $claim->claims + 1, ['id' => $claim->id]);
 
         $record = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid], '*', MUST_EXIST);
-        $first = (int) $claim->userid;
+        // The child of the invitation, while they are in the family; else the first who is.
+        $first = in_array((int) $claim->userid, $childuserids, true) ? (int) $claim->userid : $childuserids[0];
         if (!$known) {
             local\notices::new_adult($record, $first, array_filter($others, fn($other) => (int) $other->id !== $adultid));
         }

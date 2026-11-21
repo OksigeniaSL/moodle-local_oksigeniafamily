@@ -194,6 +194,18 @@
     font-weight: 400;
 }
 
+/* What the school's data leaves for a person to look at, under the adult's name. */
+.local-oksigeniafamily .okf-review {
+    display: inline-block;
+    margin-top: .35rem;
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    background: var(--okf-warn-soft);
+    color: var(--okf-warn-text);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+
 .local-oksigeniafamily .okf-note {
     margin-top: .75rem;
     color: var(--okf-muted);
@@ -2053,6 +2065,130 @@
 
 .local-oksigeniafamily.okf-join ol li {
     margin-bottom: .4rem;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-care {
+    margin-top: 1.25rem;
+    padding: .75rem 1rem;
+    border-radius: 12px;
+    background: var(--okf-warn-soft);
+    color: var(--okf-warn-text);
+}
+
+/* «Invite another adult»: the code goes by WhatsApp or is copied, from pills that belong to the page. The filled one takes
+   the theme's main colour with the page's ground as its ink, so it reads in light and dark alike. */
+.local-oksigeniafamily.okf-join .okf-share {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: 1rem;
+}
+
+.local-oksigeniafamily.okf-join .okf-share a,
+.local-oksigeniafamily.okf-join .okf-share button {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1.15rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease;
+}
+
+.local-oksigeniafamily.okf-join .okf-share svg {
+    width: 1.2em;
+    height: 1.2em;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.local-oksigeniafamily.okf-join .okf-share-wa {
+    background: var(--okf-accent);
+    color: var(--okf-bg);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .15);
+}
+
+.local-oksigeniafamily.okf-join .okf-share-copy {
+    border-color: var(--okf-line);
+    background: var(--okf-bg);
+    color: var(--okf-ink);
+}
+
+.local-oksigeniafamily.okf-join .okf-share-copy.is-done {
+    border-color: transparent;
+    background: var(--okf-ok-soft);
+    color: var(--okf-ok-text);
+}
+
+@media (hover: hover) {
+    .local-oksigeniafamily.okf-join .okf-share a:hover,
+    .local-oksigeniafamily.okf-join .okf-share button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, .15);
+    }
+}
+
+.local-oksigeniafamily.okf-join .okf-share a:focus-visible,
+.local-oksigeniafamily.okf-join .okf-share button:focus-visible {
+    outline: 3px solid var(--okf-accent);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .local-oksigeniafamily.okf-join .okf-share a,
+    .local-oksigeniafamily.okf-join .okf-share button {
+        transition: none;
+    }
+}
+
+/* Who of the family has already joined, as people rather than rows. */
+.local-oksigeniafamily.okf-join .okf-join-adults {
+    margin: 0 0 1.5rem;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-person {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0;
+    padding: .3rem .9rem .3rem .3rem;
+    border-radius: 999px;
+    background: var(--okf-chip);
+}
+
+.local-oksigeniafamily.okf-join .okf-join-initial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--okf-accent-soft);
+    color: var(--okf-accent-text);
+    font-weight: 700;
+}
+
+.local-oksigeniafamily.okf-join .okf-join-you {
+    color: var(--okf-muted);
+    font-size: .875rem;
 }
 
 .local-oksigeniafamily.okf-join-canteen {

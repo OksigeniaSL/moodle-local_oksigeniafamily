@@ -37,6 +37,9 @@ class letters {
     /** Letters for everyone: the codes in use stop working. */
     public const REPLACE = 'replace';
 
+    /** Seconds the pages use the long address after the shortener failed to give a short one. */
+    public const SHORTREST = 15 * MINSECS;
+
     /**
      * How many letters each choice would give.
      *
@@ -185,23 +188,58 @@ class letters {
      */
     public static function claim_address(): string {
         $long = (new \moodle_url('/local/oksigeniafamily/claim.php'))->out(false);
-        // Kept with the address it stands for: a site that moves gets a new one.
-        $saved = (string) get_config('local_oksigeniafamily', 'claimshort');
-        $short = str_starts_with($saved, $long . ' ') ? substr($saved, strlen($long) + 1) : '';
-        if ($short === '' && ($shortener = shortener::of_site())) {
-            // A word only where the centre chose one: a test site that asks first would otherwise keep it for good.
-            $short = (string) $shortener->shorten(
-                $long,
-                get_string('letter:shorttitle', 'local_oksigeniafamily'),
-                false,
-                trim((string) get_config('local_oksigeniafamily', 'claimkeyword'))
-            );
-            if ($short !== '') {
-                set_config('claimshort', $long . ' ' . $short, 'local_oksigeniafamily');
-            }
-        }
+        // A word only where the centre chose one: a test site that asks first would otherwise keep it for good.
+        $short = self::kept_short(
+            'claimshort',
+            $long,
+            get_string('letter:shorttitle', 'local_oksigeniafamily'),
+            trim((string) get_config('local_oksigeniafamily', 'claimkeyword'))
+        );
 
         return preg_replace('~^https?://~', '', $short !== '' ? $short : $long);
+    }
+
+    /**
+     * A short address of the site's link shortener, made once and kept in a setting with the long one it stands for (a
+     * site that moves gets a new one). When the shortener does not give one, the pages use the long address for a while
+     * (SHORTREST, or a day when asking again would get the same) instead of waiting for it again at every view.
+     *
+     * @param string $setting Where it is kept.
+     * @param string $long The long address.
+     * @param string $title What it is, for whoever looks at the shortener's links.
+     * @param string $keyword The word asked for, if any.
+     * @return string The short address, or '' while there is none.
+     */
+    public static function kept_short(string $setting, string $long, string $title, string $keyword = ''): string {
+        $saved = (string) get_config('local_oksigeniafamily', $setting);
+        if (str_starts_with($saved, $long . ' ')) {
+            return substr($saved, strlen($long) + 1);
+        }
+        $resting = \cache::make('local_oksigeniafamily', 'shortrest');
+        if ((int) $resting->get($setting) > time()) {
+            return '';
+        }
+        $shortener = shortener::of_site();
+        if (!$shortener) {
+            return '';
+        }
+        $short = (string) $shortener->shorten($long, $title, false, $keyword);
+        if ($short === '') {
+            $resting->set($setting, time() + ($shortener->is_final() ? DAYSECS : self::SHORTREST));
+            return '';
+        }
+        set_config($setting, $long . ' ' . $short, 'local_oksigeniafamily');
+
+        return $short;
+    }
+
+    /**
+     * Ask the shortener again at the next view: after its settings or the word asked for change.
+     *
+     * @return void
+     */
+    public static function short_again(): void {
+        \cache::make('local_oksigeniafamily', 'shortrest')->purge();
     }
 
     /**

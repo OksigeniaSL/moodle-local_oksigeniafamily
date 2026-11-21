@@ -201,11 +201,12 @@ class students {
     }
 
     /**
-     * How each student stands: how many adults they have and the code they have in use.
+     * How each student stands: how many adults they have (not those the school's data brought who have not joined yet,
+     * who have no letter) and the letter's code they have in use.
      *
      * @param int[] $userids The students.
      * @param int $now The time to work from.
-     * @return array By user id: adults, expires (0 without a code in use) and claims (how many times it was used).
+     * @return array By user id: adults, expires (0 without a letter's code in use) and claims (how many times it was used).
      */
     public static function state(array $userids, int $now): array {
         global $DB;
@@ -219,7 +220,7 @@ class students {
             $sql = "SELECT c.userid, COUNT(DISTINCT a.id) AS adults
                       FROM {local_oksigeniafamily_child} c
                       JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
-                      JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive
+                      JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive AND a.quiet = 0
                      WHERE c.status = :cactive AND c.userid $in
                   GROUP BY c.userid";
             $active = ['factive' => api::ACTIVE, 'aactive' => api::ACTIVE, 'cactive' => api::ACTIVE];
@@ -227,11 +228,13 @@ class students {
             foreach ($adults as $row) {
                 $state[(int) $row->userid]['adults'] = (int) $row->adults;
             }
+            // Only the letters' codes: the one a student's own page shows, and an invitation, are not a letter given.
             $sql = "SELECT userid, MAX(expires) AS expires, SUM(claims) AS claims
                       FROM {local_oksigeniafamily_claim}
-                     WHERE status = :active AND expires >= :now AND userid $in
+                     WHERE status = :active AND expires >= :now AND purpose = :letter AND userid $in
                   GROUP BY userid";
-            foreach ($DB->get_records_sql($sql, $params + ['active' => api::ACTIVE, 'now' => $now]) as $row) {
+            $letter = ['active' => api::ACTIVE, 'now' => $now, 'letter' => 'letter'];
+            foreach ($DB->get_records_sql($sql, $params + $letter) as $row) {
                 $state[(int) $row->userid]['expires'] = (int) $row->expires;
                 $state[(int) $row->userid]['claims'] = (int) $row->claims;
             }

@@ -33,6 +33,25 @@ use local_oksigeniafamily\api;
 #[\PHPUnit\Framework\Attributes\CoversClass(provider::class)]
 final class provider_test extends \core_privacy\tests\provider_testcase {
     /**
+     * What is said to be kept: every field of a person, the codes' purpose and seal, and the links already used.
+     */
+    public function test_metadata(): void {
+        $collection = provider::get_metadata(new \core_privacy\local\metadata\collection('local_oksigeniafamily'));
+        $tables = [];
+        foreach ($collection->get_collection() as $item) {
+            $tables[$item->get_name()] = $item instanceof \core_privacy\local\metadata\types\database_table
+                ? array_keys($item->get_privacy_fields()) : [];
+        }
+
+        $this->assertArrayHasKey('local_oksigeniafamily_spent', $tables);
+        $this->assertContains('quiet', $tables['local_oksigeniafamily_adult']);
+        $this->assertContains('familyid', $tables['local_oksigeniafamily_adult']);
+        foreach (['purpose', 'codesealed', 'familyid'] as $field) {
+            $this->assertContains($field, $tables['local_oksigeniafamily_claim']);
+        }
+    }
+
+    /**
      * Who has data, what is exported, and what deleting takes away, the codes of a student and who issued them included.
      */
     public function test_export_and_delete(): void {

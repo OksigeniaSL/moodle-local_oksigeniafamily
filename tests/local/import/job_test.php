@@ -217,6 +217,9 @@ final class job_test extends \advanced_testcase {
 
         $jobid = $this->prepare($this->csv($this->families(1, 70)), (int) $user->id);
         job::start($jobid, null, (int) $user->id);
+        // It runs as whoever applied it, so that what it changes is theirs in the log.
+        $tasks = \core\task\manager::get_adhoc_tasks(import_apply::class);
+        $this->assertEquals($user->id, reset($tasks)->get_userid());
         ob_start();
         $this->runAdhocTasks(import_apply::class);
         ob_end_clean();
@@ -404,6 +407,18 @@ final class job_test extends \advanced_testcase {
         // The page lists the one on its way.
         $recent = job::recent($now);
         $this->assertSame([(int) $waiting], array_map(fn($job) => (int) $job->id, $recent));
+
+        // One that stopped by an error, and that Moodle no longer runs again, goes with its file after a week.
+        $failed = $this->prepare($this->csv($this->families(77, 78)), (int) $user->id);
+        $lately = $this->prepare($this->csv($this->families(79, 80)), (int) $user->id);
+        $DB->set_field('local_oksigeniafamily_import', 'status', job::FAILED, ['id' => $failed]);
+        $DB->set_field('local_oksigeniafamily_import', 'status', job::FAILED, ['id' => $lately]);
+        $DB->set_field('local_oksigeniafamily_import', 'timemodified', $now - (job::FAILEDDAYS + 1) * DAYSECS, ['id' => $failed]);
+        $DB->set_field('local_oksigeniafamily_import', 'timemodified', $now - DAYSECS, ['id' => $lately]);
+        job::purge($now);
+        $this->assertNull(job::get($failed));
+        $this->assertFalse($this->has_file($failed));
+        $this->assertNotNull(job::get($lately));
     }
 
     /**

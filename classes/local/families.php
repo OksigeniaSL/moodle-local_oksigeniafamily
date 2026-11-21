@@ -37,7 +37,59 @@ class families {
         'phone' => ['missing', 'phone'],
         'student' => ['know', 'student'],
         'image' => ['know', 'image'],
+        'review' => ['know', 'review'],
     ];
+
+    /** Where the adults to look at are kept: what the last round of the school's data could not settle by itself. */
+    private const REVIEW = 'cifrareview';
+
+    /** Why an adult is to be looked at, in the order the pages say it. */
+    public const REVIEWS = ['gone'];
+
+    /**
+     * The adults to look at, by why: gone (the school's data no longer has them in their household, and they had joined,
+     * so a person decides). The round of the school's data writes each list; an adult who left is no longer in the pages.
+     *
+     * @return int[][] By reason, the adult ids.
+     */
+    public static function review(): array {
+        $kept = json_decode((string) get_config('local_oksigeniafamily', self::REVIEW), true);
+        $review = [];
+        foreach (self::REVIEWS as $why) {
+            $review[$why] = is_array($kept) && is_array($kept[$why] ?? null) ? array_map('intval', $kept[$why]) : [];
+        }
+
+        return $review;
+    }
+
+    /**
+     * Write one list of adults to look at, as the last round found them, leaving the other as it is.
+     *
+     * @param string $why A reason of REVIEWS.
+     * @param int[] $adultids The adults.
+     * @return void
+     */
+    public static function set_review(string $why, array $adultids): void {
+        $review = self::review();
+        $review[$why] = array_values(array_unique(array_map('intval', $adultids)));
+        set_config(self::REVIEW, json_encode($review), 'local_oksigeniafamily');
+    }
+
+    /**
+     * Why an adult is to be looked at.
+     *
+     * @param int $adultid The adult.
+     * @return string A reason of REVIEWS, or '' for none.
+     */
+    public static function review_reason(int $adultid): string {
+        foreach (self::review() as $why => $ids) {
+            if (in_array($adultid, $ids, true)) {
+                return $why;
+            }
+        }
+
+        return '';
+    }
 
     /**
      * How many there are of each.
@@ -233,7 +285,12 @@ class families {
      * @return string[]
      */
     public static function needs(): array {
-        return array_values(array_filter(array_keys(self::NEEDS), fn($need) => $need !== 'pending' || consent::enabled()));
+        $review = (bool) array_merge(...array_values(self::review()));
+
+        return array_values(array_filter(
+            array_keys(self::NEEDS),
+            fn($need) => ($need !== 'pending' || consent::enabled()) && ($need !== 'review' || $review)
+        ));
     }
 
     /**
@@ -243,10 +300,12 @@ class families {
      * - pending: a student with a request still open (open and before its deadline) and no answer at all to it yet.
      *   With «every adult» (needall), a request half answered is not counted: the report of the request says it.
      * - noaccount: no active adult with an account that is not deleted.
-     * - code: a student with a code in use (active, not expired) that nobody has used, and no code of theirs used.
+     * - code: a student with a letter's code in use (active, not expired) that nobody has used, and no code of theirs
+     *   used (a letter's, their own page's or an invitation). The code a student's own page shows is not a letter given.
      * - phone: no active adult with a phone confirmed (phoneverified). The card says «Sin teléfono» when there is none.
      * - student: a student only with the school's key, without an account.
      * - image: a student whose image may not be shown (see image_keys()).
+     * - review: an active adult the last round of the school's data left for a person to look at (see review()).
      *
      * @param string $need A key of NEEDS.
      * @param int $now The time.
@@ -283,11 +342,11 @@ class families {
                       FROM {local_oksigeniafamily_child} cc
                       JOIN {local_oksigeniafamily_claim} cl ON cl.userid = cc.userid
                      WHERE cc.familyid = f.id AND cc.status = :ccactive
-                       AND cl.status = :clactive AND cl.claims = 0 AND cl.expires >= :clnow
+                       AND cl.status = :clactive AND cl.claims = 0 AND cl.expires >= :clnow AND cl.purpose = :clletter
                        AND NOT EXISTS (
                            SELECT 1 FROM {local_oksigeniafamily_claim} cu WHERE cu.userid = cc.userid AND cu.claims > 0
                        )
-                )", ['ccactive' => $active, 'clactive' => $active, 'clnow' => $now]];
+                )", ['ccactive' => $active, 'clactive' => $active, 'clnow' => $now, 'clletter' => 'letter']];
             case 'phone':
                 return ["NOT EXISTS (
                     SELECT 1
@@ -322,6 +381,17 @@ class families {
                       FROM {local_oksigeniafamily_child} ic
                      WHERE ic.familyid = f.id AND ic.status = :icactive AND (" . implode(' OR ', $match) . ')
                 )', $params];
+            case 'review':
+                $ids = array_merge(...array_values(self::review()));
+                if (!$ids) {
+                    return ['1 = 0', []];
+                }
+                [$in, $params] = $DB->get_in_or_equal($ids, SQL_PARAMS_NAMED, 'rva');
+                return ["EXISTS (
+                    SELECT 1
+                      FROM {local_oksigeniafamily_adult} ra
+                     WHERE ra.familyid = f.id AND ra.status = :raactive AND ra.id $in
+                )", $params + ['raactive' => $active]];
         }
         throw new \coding_exception('Unknown need: ' . $need);
     }
@@ -456,10 +526,11 @@ class families {
                 "SELECT DISTINCT cl.userid
                    FROM {local_oksigeniafamily_claim} cl
                   WHERE cl.userid $uin AND cl.status = :active AND cl.claims = 0 AND cl.expires >= :now
+                    AND cl.purpose = :letter
                     AND NOT EXISTS (
                         SELECT 1 FROM {local_oksigeniafamily_claim} cu2 WHERE cu2.userid = cl.userid AND cu2.claims > 0
                     )",
-                $uparams + ['active' => api::ACTIVE, 'now' => $now]
+                $uparams + ['active' => api::ACTIVE, 'now' => $now, 'letter' => 'letter']
             );
             $unused = array_flip($found);
         }
@@ -509,6 +580,20 @@ class families {
             if (isset($has['image'][$id])) {
                 $who = array_filter($list, $noimage);
                 $add('image', 'info', get_string('flag:image', $component, $names($who)));
+            }
+            if (isset($has['review'][$id])) {
+                foreach (self::review() as $why => $adultids) {
+                    $who = array_filter(
+                        $people['adults'][$id] ?? [],
+                        fn($adult) => $adult->status === api::ACTIVE && in_array((int) $adult->id, $adultids, true)
+                    );
+                    if ($who) {
+                        $add('review', 'warn', get_string('flag:review', $component, (object) [
+                            'why' => get_string('review:' . $why, $component),
+                            'names' => implode(', ', array_map(fn($adult) => self::adult_name($adult), $who)),
+                        ]));
+                    }
+                }
             }
         }
 

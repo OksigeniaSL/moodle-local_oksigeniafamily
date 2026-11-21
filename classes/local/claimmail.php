@@ -16,14 +16,21 @@
 
 namespace local_oksigeniafamily\local;
 
+use local_oksigeniafamily\api;
+
 /**
  * A code claimed with the address of an account of the site, such as a teacher who is also a parent: the child goes into
  * that account once the person shows it is theirs, through a link sent to that address. They see their children where
  * they already sign in, with one account, and the site never gets two accounts with one address.
  *
- * The link carries the code, the account and the phone typed, sealed with the site's key: nothing waits in the
- * database. It works for two days, and once: opening it only asks its owner to confirm (a mail scanner opens links
- * too), and once confirmed, the hash of what it says is kept until it would have expired anyway (spend()).
+ * The page answers alike whether the address has an account or not, so that a code is never a way to find out who has
+ * one: whoever typed it joins as an adult without an account, as with any other address (or none), and the address is
+ * kept only when no account has it. The link, if the address is an account's, goes on its own; once its owner
+ * confirms, the child goes into the account, and that first adult goes away when it was only that (merge()).
+ *
+ * The link carries the code, the account, the phone typed and that first adult, sealed with the site's key: nothing
+ * waits in the database. It works for two days, and once: opening it only asks its owner to confirm (a mail scanner opens
+ * links too), and once confirmed, the hash of what it says is kept until it would have expired anyway (spend()).
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -38,7 +45,8 @@ class claimmail {
 
     /**
      * The account of the site with this address, when there is exactly one that signs in as a person does: not one that
-     * cannot sign in, and not a family's own account in the app, which signs in by web services only.
+     * cannot sign in, not a family's own account in the app, which signs in by web services only, and never a student's,
+     * who is nobody's parent.
      *
      * @param string $email The address typed.
      * @return \stdClass|null
@@ -58,8 +66,31 @@ class claimmail {
             $users,
             fn(\stdClass $user): bool => !in_array($user->auth, ['nologin', 'webservice'], true) && !isguestuser($user)
         );
+        $user = count($users) === 1 ? reset($users) : null;
 
-        return count($users) === 1 ? reset($users) : null;
+        return $user && !join::is_student((int) $user->id) ? $user : null;
+    }
+
+    /**
+     * Whether any account of the site has this address, whatever it is (a student's, a suspended one): such an address is
+     * never kept with an adult who is not that account, or the app would make a second account with it.
+     *
+     * @param string $email The address typed.
+     * @return bool
+     */
+    public static function taken(string $email): bool {
+        global $DB;
+
+        $email = trim($email);
+        if ($email === '') {
+            return false;
+        }
+
+        return $DB->record_exists_select(
+            'user',
+            'LOWER(email) = LOWER(:email) AND deleted = 0',
+            ['email' => $email]
+        );
     }
 
     /**
@@ -69,13 +100,21 @@ class claimmail {
      * @param \stdClass $user The account.
      * @param int $childuserid The student the code is for.
      * @param string $phone The phone typed, in E.164 form ('' if none).
+     * @param int $adultid The adult without an account that whoever typed the address became, if any (see merge()).
      * @return bool Whether the e-mail went.
      */
-    public static function send(string $code, \stdClass $user, int $childuserid, string $phone = ''): bool {
+    public static function send(
+        string $code,
+        \stdClass $user,
+        int $childuserid,
+        string $phone = '',
+        int $adultid = 0
+    ): bool {
         $sealed = self::seal([
             'c' => strtoupper(preg_replace('/[\s-]+/', '', $code)),
             'u' => (int) $user->id,
             'p' => $phone,
+            'a' => $adultid,
             'x' => time() + self::DAYS * DAYSECS,
         ]);
         $url = (new \moodle_url('/local/oksigeniafamily/claim.php', ['confirm' => $sealed]))->out(false);
@@ -104,7 +143,7 @@ class claimmail {
      * What a link from send() says, while it is good.
      *
      * @param string $sealed The link's «confirm».
-     * @return array|null [code, userid, phone]; null if it is not one of this site's, has expired or has been used.
+     * @return array|null [code, userid, phone, adultid]; null if it is not one of this site's, has expired or has been used.
      */
     public static function read(string $sealed): ?array {
         global $DB;
@@ -118,7 +157,63 @@ class claimmail {
             return null;
         }
 
-        return ['code' => (string) $data['c'], 'userid' => (int) $data['u'], 'phone' => (string) ($data['p'] ?? '')];
+        return [
+            'code' => (string) $data['c'],
+            'userid' => (int) $data['u'],
+            'phone' => (string) ($data['p'] ?? ''),
+            'adultid' => (int) ($data['a'] ?? 0),
+        ];
+    }
+
+    /**
+     * Once the link put the child into the account: the adult without an account that whoever typed the address became
+     * goes away, when it was only that. With an invitation both are in the family that invited them: that adult leaves it
+     * (reason «merged»). Otherwise their family has nobody else, was made by that claim, and every child of it is now in
+     * the account's family too: then its children leave it (reason «merged») and it closes. Anything else (another adult
+     * joined it, it has a child the account does not have) stays, for the school to look at.
+     *
+     * @param int $adultid The adult the link carries.
+     * @param \stdClass $done What the claim with the account gave (api::claim()).
+     * @return bool Whether that adult went away.
+     */
+    public static function merge(int $adultid, \stdClass $done): bool {
+        global $DB;
+
+        if ($adultid <= 0 || $adultid === (int) $done->id) {
+            return false;
+        }
+        $stray = $DB->get_record('local_oksigeniafamily_adult', ['id' => $adultid, 'status' => api::ACTIVE]);
+        if (!$stray || !empty($stray->userid) || !empty($stray->sourcekey)) {
+            return false;
+        }
+        $familyid = (int) $stray->familyid;
+        if ($familyid === (int) $done->familyid) {
+            api::remove_adult($adultid, 'merged');
+            return true;
+        }
+        $family = $DB->get_record('local_oksigeniafamily_family', ['id' => $familyid, 'status' => api::ACTIVE]);
+        $alone = $DB->count_records('local_oksigeniafamily_adult', ['familyid' => $familyid, 'status' => api::ACTIVE]) === 1;
+        if (!$family || $family->source !== 'claim' || !$alone) {
+            return false;
+        }
+        $children = $DB->get_records('local_oksigeniafamily_child', ['familyid' => $familyid, 'status' => api::ACTIVE]);
+        $theirs = array_map('intval', $DB->get_fieldset_select(
+            'local_oksigeniafamily_child',
+            'userid',
+            'familyid = :familyid AND status = :active AND userid IS NOT NULL',
+            ['familyid' => (int) $done->familyid, 'active' => api::ACTIVE]
+        ));
+        foreach ($children as $child) {
+            if (empty($child->userid) || !in_array((int) $child->userid, $theirs, true)) {
+                return false;
+            }
+        }
+        foreach ($children as $child) {
+            api::unlink_child((int) $child->id, 'merged');
+        }
+        api::close_family($familyid);
+
+        return true;
     }
 
     /**

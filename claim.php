@@ -52,8 +52,9 @@ $done = null;
 $error = '';
 // Whoever claimed has shown the adult's account is theirs: signed in to it, or through the link sent to its address.
 $proven = $signedin;
-// The address a link went to, for a code claimed with the address of an account of the site.
-$mailed = '';
+// Whether a visitor typed an address: then the page says, whether it has an account or not, that if it has one a link
+// went to it. The page answers alike in both cases, so that a code is never a way to find out who has an account.
+$typedmail = false;
 $address = getremoteaddr();
 // The link sent to an account's address, while its owner has not confirmed it yet: who it is for and which child.
 $asking = null;
@@ -81,6 +82,8 @@ if ($confirm !== '') {
                 'phone' => $pending['phone'],
             ]);
             $proven = true;
+            // The adult without an account they became when they typed the address goes, when it was only that.
+            claimmail::merge($pending['adultid'], $done);
         } catch (moodle_exception $e) {
             if ($e->errorcode !== 'claimself' && $e->errorcode !== 'claiminvalid') {
                 // Nothing went in (someone was claiming the same at that moment): the link can be tried again.
@@ -96,45 +99,56 @@ if ($confirm !== '') {
         }
     }
 } else if ($data = $form->get_data()) {
+    $code = (string) $data->code;
+    $student = \local_oksigeniafamily\api::code_student($code);
     if (throttle::blocked($address)) {
         $error = get_string('claim:toomany', 'local_oksigeniafamily');
+    } else if (!$student) {
+        throttle::failed($address);
+        $error = get_string('claiminvalid', 'local_oksigeniafamily');
+    } else if (throttle::over('code', $code)) {
+        // A good code used over and over is someone else trying address after address, or filling a household.
+        $error = get_string('claim:toomanycode', 'local_oksigeniafamily');
     } else {
+        throttle::count('code', $code);
         $prefix = (string) get_config('local_oksigeniafamily', 'phoneprefix');
+        $email = trim((string) $data->email);
         $adult = [
             'firstname' => $data->firstname,
             'lastname' => $data->lastname,
-            'email' => $data->email,
+            'email' => $email,
             'phone' => phone::normalise((string) $data->phone, $prefix),
         ];
         if ($signedin) {
             $adult['userid'] = (int) $USER->id;
         }
-        $account = $signedin ? null : claimmail::account((string) $data->email);
-        $student = $account ? \local_oksigeniafamily\api::code_student((string) $data->code) : null;
-        if ($account && !$student) {
-            throttle::failed($address);
-            $error = get_string('claiminvalid', 'local_oksigeniafamily');
-        } else if ($account && (int) $account->id === $student) {
-            $error = get_string('claimself', 'local_oksigeniafamily');
-        } else if ($account) {
-            // The address of an account of the site (a teacher who is also a parent): the child goes into that account,
-            // once its owner opens the link sent to it. One account, and never two with one address.
-            claimmail::send((string) $data->code, $account, $student, $adult['phone']);
-            $mailed = (string) $data->email;
+        $typedmail = !$signedin && $email !== '';
+        if ($typedmail && claimmail::taken($email)) {
+            // The address of an account of the site stays with that account only: the adult typed joins without it.
+            $adult['email'] = '';
         }
-        if ($error === '' && $mailed === '') {
-            try {
-                // A phone typed here proves nothing, so it is not passed as verified: it never joins an adult already there.
-                $done = \local_oksigeniafamily\api::claim((string) $data->code, $adult);
-            } catch (moodle_exception $e) {
-                if ($e->errorcode === 'claimbusy' || $e->errorcode === 'claimself') {
-                    $error = get_string($e->errorcode, 'local_oksigeniafamily');
-                } else if ($e->errorcode !== 'claiminvalid') {
-                    throw $e;
-                } else {
-                    throttle::failed($address);
-                    $error = get_string('claiminvalid', 'local_oksigeniafamily');
-                }
+        try {
+            // A phone typed here proves nothing, so it is not passed as verified: it never joins an adult already there.
+            $done = \local_oksigeniafamily\api::claim($code, $adult);
+        } catch (moodle_exception $e) {
+            if ($e->errorcode === 'claimbusy' || $e->errorcode === 'claimself') {
+                $error = get_string($e->errorcode, 'local_oksigeniafamily');
+            } else if ($e->errorcode !== 'claiminvalid') {
+                throw $e;
+            } else {
+                throttle::failed($address);
+                $error = get_string('claiminvalid', 'local_oksigeniafamily');
+            }
+        }
+        $account = $done && $typedmail ? claimmail::account($email) : null;
+        if ($account && (int) $account->id !== $student) {
+            // The address of an account of the site (a teacher who is also a parent): a link to put the child into that
+            // account goes to it, a few times at most, and nothing on the page says whether it went.
+            $room = !throttle::over('mailto', (string) $account->id) && !throttle::over('mailfrom', $address);
+            if ($room) {
+                throttle::count('mailto', (string) $account->id);
+                throttle::count('mailfrom', $address);
+                claimmail::send($code, $account, $student, $adult['phone'], (int) $done->id);
             }
         }
     }
@@ -198,6 +212,10 @@ if ($done) {
         'groups' => $groups,
         'haslinks' => !empty($groups),
         'nolinks' => get_string('claim:nolinks', 'local_oksigeniafamily'),
+        'mailnote' => $typedmail ? get_string('claim:mailnote', 'local_oksigeniafamily', (object) [
+            'child' => $together,
+            'site' => format_string(get_site()->fullname),
+        ]) : '',
     ]);
 } else if ($asking) {
     echo $OUTPUT->heading(get_string('claimmail:confirmheading', 'local_oksigeniafamily'));
@@ -225,13 +243,6 @@ if ($done) {
         get_string('claimmail:confirmnot', 'local_oksigeniafamily'),
         ['class' => 'text-muted mt-3']
     );
-} else if ($mailed !== '') {
-    echo $OUTPUT->heading(get_string('claimmail:checkheading', 'local_oksigeniafamily'));
-    echo html_writer::tag('p', get_string('claimmail:sent', 'local_oksigeniafamily', (object) [
-        'email' => s($mailed),
-        'site' => format_string(get_site()->fullname),
-    ]));
-    echo html_writer::tag('p', get_string('claimmail:other', 'local_oksigeniafamily'), ['class' => 'text-muted']);
 } else {
     echo $OUTPUT->heading(get_string('claim:title', 'local_oksigeniafamily'));
     echo html_writer::tag('p', get_string('claim:intro', 'local_oksigeniafamily'));

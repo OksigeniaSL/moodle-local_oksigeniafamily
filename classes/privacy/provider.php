@@ -46,15 +46,19 @@ class provider implements
      */
     public static function get_metadata(collection $collection): collection {
         $collection->add_database_table('local_oksigeniafamily_adult', [
+            'familyid' => 'privacy:metadata:familyid',
             'firstname' => 'privacy:metadata:adult:firstname',
             'lastname' => 'privacy:metadata:adult:lastname',
             'email' => 'privacy:metadata:adult:email',
             'phone' => 'privacy:metadata:adult:phone',
+            'phoneverified' => 'privacy:metadata:adult:phoneverified',
             'sourcekey' => 'privacy:metadata:sourcekey',
             'userid' => 'privacy:metadata:adult:userid',
+            'quiet' => 'privacy:metadata:adult:quiet',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:adult');
         $collection->add_database_table('local_oksigeniafamily_child', [
+            'familyid' => 'privacy:metadata:familyid',
             'userid' => 'privacy:metadata:child:userid',
             'sourcekey' => 'privacy:metadata:sourcekey',
             'firstname' => 'privacy:metadata:child:firstname',
@@ -65,6 +69,9 @@ class provider implements
         ], 'privacy:metadata:child');
         $collection->add_database_table('local_oksigeniafamily_claim', [
             'userid' => 'privacy:metadata:claim:userid',
+            'purpose' => 'privacy:metadata:claim:purpose',
+            'codesealed' => 'privacy:metadata:claim:codesealed',
+            'familyid' => 'privacy:metadata:claim:familyid',
             'usermodified' => 'privacy:metadata:claim:usermodified',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:claim');
@@ -103,6 +110,10 @@ class provider implements
             'adultid' => 'privacy:metadata:sent:adultid',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:sent');
+        $collection->add_database_table('local_oksigeniafamily_spent', [
+            'stamp' => 'privacy:metadata:spent:stamp',
+            'timecreated' => 'privacy:metadata:timecreated',
+        ], 'privacy:metadata:spent');
         $collection->add_subsystem_link('core_files', [], 'privacy:metadata:core_files');
 
         return $collection;
@@ -199,7 +210,7 @@ class provider implements
             return;
         }
         $userid = (int) $contextlist->get_user()->id;
-        $fields = 'familyid, firstname, lastname, email, phone, sourcekey, status, timecreated';
+        $fields = 'familyid, firstname, lastname, email, phone, phoneverified, sourcekey, status, quiet, timecreated';
         $data = (object) [
             'adult' => array_values($DB->get_records('local_oksigeniafamily_adult', ['userid' => $userid], '', 'id, ' . $fields)),
             'child' => array_values($DB->get_records(
@@ -212,7 +223,7 @@ class provider implements
                 'local_oksigeniafamily_claim',
                 ['userid' => $userid],
                 '',
-                'id, status, claims, expires, timecreated'
+                'id, purpose, familyid, status, claims, expires, timecreated'
             )),
             'consentrequests' => array_values($DB->get_records(
                 'local_oksigeniafamily_request',
@@ -279,7 +290,8 @@ class provider implements
         if ($context->contextlevel != CONTEXT_SYSTEM) {
             return;
         }
-        $tables = ['adult', 'child', 'claim', 'family', 'answer', 'target', 'request', 'photo', 'standing', 'sent', 'import'];
+        $tables = ['adult', 'child', 'claim', 'family', 'answer', 'target', 'request', 'photo', 'standing', 'sent', 'import',
+            'spent'];
         foreach ($tables as $table) {
             $DB->delete_records('local_oksigeniafamily_' . $table);
         }

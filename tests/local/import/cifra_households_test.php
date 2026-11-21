@@ -386,6 +386,8 @@ final class cifra_households_test extends \advanced_testcase {
         $this->assertSame([1, 2, 1], $this->totals());
         $this->assertSame(api::LEFT, $DB->get_field('local_oksigeniafamily_adult', 'status', ['id' => $ofrosa]));
         $this->assertSame(api::ACTIVE, $DB->get_field('local_oksigeniafamily_adult', 'status', ['id' => $offelix]));
+        // The uncle, who was welcomed, waits in «Families» for a person to look at.
+        $this->assertSame([$offelix], \local_oksigeniafamily\local\families::review()['gone']);
         $this->assertFalse(api::is_guardian((int) $grandmother->id, (int) $student->id));
         $this->assertSame([], api::families_of_user((int) $grandmother->id));
 

@@ -74,4 +74,31 @@ final class claim_test extends \advanced_testcase {
         $this->assertTrue(throttle::blocked('192.0.2.1'));
         $this->assertFalse(throttle::blocked('192.0.2.2'));
     }
+
+    /**
+     * The other brakes count apart, each up to its limit: a code however it is typed, an account, a visitor's address (a
+     * whole IPv6 line as one).
+     */
+    public function test_limits(): void {
+        $this->resetAfterTest();
+
+        for ($i = 0; $i < throttle::LIMITS['code'][0]; $i++) {
+            $this->assertFalse(throttle::over('code', 'abcd-efgh'));
+            throttle::count('code', $i % 2 ? 'ABCDEFGH' : 'abcd efgh');
+        }
+        $this->assertTrue(throttle::over('code', 'ABCD-EFGH'));
+        $this->assertFalse(throttle::over('code', 'ABCD-EFGJ'));
+        $this->assertFalse(throttle::over('mailto', 'ABCDEFGH'));
+
+        for ($i = 0; $i < throttle::LIMITS['mailfrom'][0]; $i++) {
+            throttle::count('mailfrom', '2001:db8:1:2::' . dechex($i + 1));
+        }
+        $this->assertTrue(throttle::over('mailfrom', '2001:db8:1:2::ffff'));
+        $this->assertFalse(throttle::over('mailfrom', '2001:db8:1:3::1'));
+        // A wrong code is a brake of its own.
+        $this->assertFalse(throttle::blocked('2001:db8:1:2::1'));
+
+        $this->expectException(\coding_exception::class);
+        throttle::over('nonsense', 'x');
+    }
 }

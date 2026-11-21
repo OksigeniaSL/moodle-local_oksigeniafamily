@@ -159,5 +159,14 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112200, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026112300) {
+        // The page «For your family» is off on a new site from now on: a site that never saved the setting had it on, and
+        // keeps it.
+        if (get_config('local_oksigeniafamily', 'studentpage') === false) {
+            set_config('studentpage', 1, 'local_oksigeniafamily');
+        }
+        upgrade_plugin_savepoint(true, 2026112300, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

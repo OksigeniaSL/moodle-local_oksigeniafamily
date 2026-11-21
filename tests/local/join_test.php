@@ -113,6 +113,8 @@ final class join_test extends \advanced_testcase {
      */
     public function test_who_gets_the_page(): void {
         $this->resetAfterTest();
+        // A new site starts with the page off: the centre turns it on once it has told its families.
+        $this->assertEmpty(get_config('local_oksigeniafamily', 'studentpage'));
         set_config('enabled', 1, 'local_oksigeniafamily');
         set_config('studentpage', 1, 'local_oksigeniafamily');
         $gen = $this->getDataGenerator();
@@ -225,6 +227,13 @@ final class join_test extends \advanced_testcase {
         $context = join::invite_context((int) $teacher->id);
         $this->assertSame($invite['code'], $context['code']);
         $this->assertNotContains('siblings', array_column($context['steps'], 'kind'));
+        // The code goes by WhatsApp or copied, with the claim page's address; who has joined, Eva first, as herself.
+        $this->assertStringStartsWith('https://wa.me/?text=', $context['share']['whatsappurl']);
+        $this->assertStringContainsString(rawurlencode($invite['url']), $context['share']['whatsappurl']);
+        $this->assertStringContainsString($invite['code'], $context['share']['text']);
+        $this->assertSame(['Eva', 'Luis Rey'], array_column($context['adults'], 'name'));
+        $this->assertSame([true, false], array_column($context['adults'], 'you'));
+        $this->assertSame(['E', 'L'], array_column($context['adults'], 'initial'));
         $this->setUser($teacher);
         $view = \local_oksigeniafamily\output\mobile::mobile_invite_view([]);
         $this->assertStringContainsString($invite['code'], $view['templates'][0]['html']);
@@ -242,5 +251,25 @@ final class join_test extends \advanced_testcase {
         $this->assertStringEndsWith('/local/oksigeniafamily/join.php', api::family_page_url());
         $this->assertStringEndsWith('/local/oksigeniafamily/join.php?id=42', api::family_page_url(42));
         $this->assertSame(api::family_page_url(), api::family_page_short());
+    }
+
+    /**
+     * The top bar asks on every page: what it says is kept for a minute, while the page itself always asks again.
+     */
+    public function test_in_bar(): void {
+        $this->resetAfterTest();
+        set_config('enabled', 1, 'local_oksigeniafamily');
+        set_config('studentpage', 1, 'local_oksigeniafamily');
+        $gen = $this->getDataGenerator();
+        $student = $gen->create_user();
+        $gen->enrol_user($student->id, $gen->create_course()->id, 'student');
+
+        $this->assertTrue(join::in_bar((int) $student->id));
+        set_config('studentpage', 0, 'local_oksigeniafamily');
+        $this->assertFalse(join::eligible((int) $student->id));
+        $this->assertTrue(join::in_bar((int) $student->id));
+
+        \cache::make('local_oksigeniafamily', 'joinbar')->purge();
+        $this->assertFalse(join::in_bar((int) $student->id));
     }
 }

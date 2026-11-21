@@ -17,7 +17,9 @@
 namespace local_oksigeniafamily\local;
 
 /**
- * A brake on guessing codes: a few failed tries from one address, then a pause.
+ * The brakes of the claim page: on guessing codes, a few failed tries from one address and then a pause; and on using
+ * one good code over and over, or sending its links to an address, so that a code in someone else's hands neither fills
+ * a mailbox nor tries address after address.
  *
  * @package    local_oksigeniafamily
  * @copyright  2026 Oksigenia SL <dev@oksigenia.cc>
@@ -26,6 +28,19 @@ namespace local_oksigeniafamily\local;
 class throttle {
     /** How many wrong codes an address may try in a window. */
     public const LIMIT = 10;
+
+    /**
+     * The other brakes: what is counted => [how many, in how many seconds]. Each window starts with the first one counted.
+     *
+     * - code: claims of one good code. Each adult of a family uses it once or twice; many more is someone else.
+     * - mailto: links sent to the address of one account. A few, never a mailbox filled by someone else.
+     * - mailfrom: links sent from one visitor's address. A school's network on an enrolment day sends some, not dozens.
+     */
+    public const LIMITS = [
+        'code' => [10, DAYSECS],
+        'mailto' => [3, DAYSECS],
+        'mailfrom' => [10, HOURSECS],
+    ];
 
     /**
      * Whether an address has tried too many wrong codes lately.
@@ -47,6 +62,70 @@ class throttle {
         $cache = self::cache();
         $key = self::key($address);
         $cache->set($key, (int) $cache->get($key) + 1);
+    }
+
+    /**
+     * Whether one of the other brakes is on: as many as LIMITS allows were counted in its window.
+     *
+     * @param string $kind A key of LIMITS.
+     * @param string $what What is counted: the code as typed, the account's id or the visitor's address.
+     * @return bool
+     */
+    public static function over(string $kind, string $what): bool {
+        return self::used($kind, $what) >= self::LIMITS[$kind][0];
+    }
+
+    /**
+     * Count one for one of the other brakes.
+     *
+     * @param string $kind A key of LIMITS.
+     * @param string $what As for over().
+     * @return void
+     */
+    public static function count(string $kind, string $what): void {
+        $cache = \cache::make('local_oksigeniafamily', 'claimlimits');
+        $key = self::limit_key($kind, $what);
+        $used = self::used($kind, $what);
+        $kept = $cache->get($key);
+        $start = $used > 0 && is_array($kept) ? (int) $kept['t'] : time();
+        $cache->set($key, ['n' => $used + 1, 't' => $start]);
+    }
+
+    /**
+     * How many were counted in the window that is running.
+     *
+     * @param string $kind A key of LIMITS.
+     * @param string $what As for over().
+     * @return int
+     */
+    private static function used(string $kind, string $what): int {
+        if (!isset(self::LIMITS[$kind])) {
+            throw new \coding_exception('Unknown brake: ' . $kind);
+        }
+        $kept = \cache::make('local_oksigeniafamily', 'claimlimits')->get(self::limit_key($kind, $what));
+        if (!is_array($kept) || time() - (int) ($kept['t'] ?? 0) >= self::LIMITS[$kind][1]) {
+            return 0;
+        }
+
+        return (int) ($kept['n'] ?? 0);
+    }
+
+    /**
+     * The cache key of one of the other brakes. A code is counted however it was typed (spaces, dashes, case), and a
+     * visitor's address as key() counts it; nothing of either is kept in the clear.
+     *
+     * @param string $kind A key of LIMITS.
+     * @param string $what As for over().
+     * @return string
+     */
+    private static function limit_key(string $kind, string $what): string {
+        if ($kind === 'code') {
+            $what = strtoupper((string) preg_replace('/[\s-]+/', '', $what));
+        } else if ($kind === 'mailfrom') {
+            return $kind . '_' . self::key($what);
+        }
+
+        return $kind . '_' . sha1($what);
     }
 
     /**
