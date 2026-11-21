@@ -25,24 +25,23 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
-    // See and manage the family records of the site: import them, issue and revoke the codes, remove an adult.
+    // See and manage the family records of the site: import them, issue and revoke the codes, remove an adult. Every
+    // family's data: no role has it by itself, the school gives it to whoever runs the families (the office).
     'local/oksigeniafamily:manage' => [
         'riskbitmask' => RISK_PERSONAL | RISK_SPAM,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
+        'archetypes' => [],
     ],
     // Ask the families of some students for their consent (a trip, the photos of the year, going home alone), and see
-    // and write down their answers: in a course, its teachers; on the whole site, whoever runs it.
+    // and write down their answers: in a course, its teachers; on the whole site, whoever the school gives it to there
+    // (no role has it by itself, since it reaches every family).
     'local/oksigeniafamily:requestconsent' => [
         'riskbitmask' => RISK_PERSONAL | RISK_SPAM,
         'captype' => 'write',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
             'editingteacher' => CAP_ALLOW,
-            'manager' => CAP_ALLOW,
         ],
     ],
 ];

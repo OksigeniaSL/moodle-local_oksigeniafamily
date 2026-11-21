@@ -37,7 +37,11 @@ final class work_test extends \advanced_testcase {
         $generator = $this->getDataGenerator();
         $nobody = $generator->create_user();
         $manager = $generator->create_user();
-        $generator->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $manager->id);
+        // Whoever runs the families: since 0.3.36 no role has it by itself.
+        $managerrole = (int) $DB->get_field('role', 'id', ['shortname' => 'manager']);
+        assign_capability('local/oksigeniafamily:manage', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        assign_capability('local/oksigeniafamily:requestconsent', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        $generator->role_assign($managerrole, $manager->id);
         $parent = $generator->create_user();
         $child = $generator->create_user();
         $familyid = api::create_family();
@@ -131,7 +135,11 @@ final class work_test extends \advanced_testcase {
         $this->resetAfterTest();
         $generator = $this->getDataGenerator();
         $manager = $generator->create_user();
-        $generator->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $manager->id);
+        // Whoever runs the families: since 0.3.36 no role has it by itself.
+        $managerrole = (int) $DB->get_field('role', 'id', ['shortname' => 'manager']);
+        assign_capability('local/oksigeniafamily:manage', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        assign_capability('local/oksigeniafamily:requestconsent', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        $generator->role_assign($managerrole, $manager->id);
         $parent = $generator->create_user();
         $child = $generator->create_user();
         $familyid = api::create_family();
@@ -161,7 +169,11 @@ final class work_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         $manager = $this->getDataGenerator()->create_user();
-        $this->getDataGenerator()->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $manager->id);
+        // Whoever runs the families: since 0.3.36 no role has it by itself.
+        $managerrole = (int) $DB->get_field('role', 'id', ['shortname' => 'manager']);
+        assign_capability('local/oksigeniafamily:manage', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        assign_capability('local/oksigeniafamily:requestconsent', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        $this->getDataGenerator()->role_assign($managerrole, $manager->id);
 
         $first = work::for_user((int) $manager->id);
         api::create_family();

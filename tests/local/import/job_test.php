@@ -71,7 +71,11 @@ final class job_test extends \advanced_testcase {
         global $DB;
 
         $user = $this->getDataGenerator()->create_user();
-        $this->getDataGenerator()->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $user->id);
+        // Whoever runs the families: since 0.3.36 no role has it by itself.
+        $managerrole = (int) $DB->get_field('role', 'id', ['shortname' => 'manager']);
+        assign_capability('local/oksigeniafamily:manage', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        assign_capability('local/oksigeniafamily:requestconsent', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        $this->getDataGenerator()->role_assign($managerrole, $user->id);
 
         return $user;
     }

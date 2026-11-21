@@ -279,7 +279,11 @@ final class api_test extends \advanced_testcase {
         $ana = $generator->create_user();
         $mother = $generator->create_user();
         $manager = $generator->create_user();
-        $generator->role_assign($DB->get_field('role', 'id', ['shortname' => 'manager']), $manager->id);
+        // Whoever runs the families: since 0.3.36 no role has it by itself.
+        $managerrole = (int) $DB->get_field('role', 'id', ['shortname' => 'manager']);
+        assign_capability('local/oksigeniafamily:manage', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        assign_capability('local/oksigeniafamily:requestconsent', CAP_ALLOW, $managerrole, \context_system::instance()->id, true);
+        $generator->role_assign($managerrole, $manager->id);
         $code = api::issue_claim_code((int) $ana->id);
         api::claim($code, ['firstname' => 'Marta', 'userid' => $mother->id]);
 
@@ -742,5 +746,70 @@ final class api_test extends \advanced_testcase {
             'id',
             ['familyid' => $first->familyid, 'userid' => $lola->id]
         ), $ana->childid);
+    }
+
+    /**
+     * An account the school gives to somebody else lets go of every adult it was, who stay without an account in their
+     * families, and of the parent role this plugin gave it; the other plugins hear of each adult. A student's account,
+     * who stays, is left as it is.
+     */
+    public function test_account_reassigned(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $generator = $this->getDataGenerator();
+        $roleid = create_role('Parent', 'familyparent', '');
+        set_role_contextlevels($roleid, [CONTEXT_USER]);
+        set_config('parentroleid', $roleid, 'local_oksigeniafamily');
+        $leo = $generator->create_user();
+        $lola = $generator->create_user();
+        $teacher = $generator->create_user();
+        $eva = api::claim(api::issue_claim_code((int) $leo->id), ['userid' => (int) $teacher->id, 'firstname' => 'Eva']);
+        $second = api::create_family();
+        $again = api::add_adult($second, ['firstname' => 'Eva', 'userid' => (int) $teacher->id]);
+        api::add_child($second, (int) $lola->id);
+        $leocontext = \context_user::instance((int) $leo->id);
+        $this->assertTrue(user_has_role_assignment((int) $teacher->id, $roleid, $leocontext->id));
+
+        $sink = $this->redirectEvents();
+        api::account_reassigned((int) $teacher->id);
+        $updated = array_filter($sink->get_events(), fn($event) => $event instanceof event\adult_updated);
+        $sink->close();
+
+        $ids = array_values(array_map(fn($event) => (int) $event->objectid, $updated));
+        $this->assertEqualsCanonicalizing([(int) $eva->id, $again], $ids);
+        $this->assertSame(0, $DB->count_records('local_oksigeniafamily_adult', ['userid' => $teacher->id]));
+        $this->assertSame(api::ACTIVE, $DB->get_field('local_oksigeniafamily_adult', 'status', ['id' => $eva->id]));
+        $this->assertTrue(api::adult_has_child((int) $eva->id, (int) $leo->id));
+        $this->assertSame([], api::families_of_user((int) $teacher->id));
+        $this->assertSame([], api::children_of_user((int) $teacher->id));
+        $this->assertFalse(user_has_role_assignment((int) $teacher->id, $roleid, $leocontext->id));
+        $this->assertSame(0, $DB->count_records('role_assignments', [
+            'userid' => $teacher->id, 'component' => 'local_oksigeniafamily',
+        ]));
+
+        // A student who stays: their account is theirs still, also as an adult somewhere.
+        $classmate = api::add_adult(api::create_family(), ['firstname' => 'Leo', 'userid' => (int) $leo->id]);
+        api::account_reassigned((int) $leo->id);
+        $this->assertEquals($leo->id, $DB->get_field('local_oksigeniafamily_adult', 'userid', ['id' => $classmate]));
+        $this->assertTrue(api::adult_has_child((int) $eva->id, (int) $leo->id));
+    }
+
+    /**
+     * No role runs every family by itself on a new site: the school gives it to whoever does (the office). A course's
+     * teachers still ask the families of their course for consent.
+     */
+    public function test_no_role_runs_every_family(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $manager = (int) $DB->get_field('role', 'id', ['shortname' => 'manager']);
+        $teacher = (int) $DB->get_field('role', 'id', ['shortname' => 'editingteacher']);
+        $has = fn(int $roleid, string $capability) => $DB->record_exists(
+            'role_capabilities',
+            ['roleid' => $roleid, 'capability' => $capability, 'permission' => CAP_ALLOW]
+        );
+
+        $this->assertFalse($has($manager, 'local/oksigeniafamily:manage'));
+        $this->assertFalse($has($manager, 'local/oksigeniafamily:requestconsent'));
+        $this->assertTrue($has($teacher, 'local/oksigeniafamily:requestconsent'));
     }
 }

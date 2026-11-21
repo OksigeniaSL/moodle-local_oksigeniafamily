@@ -46,6 +46,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Changed (0.3.36-dev)
 
+- On a new site no role has `local/oksigeniafamily:manage` nor `local/oksigeniafamily:requestconsent` by itself (before,
+  the manager role had both): they reach every family's data, and the school gives them to whoever runs the families.
+  A course's teachers keep `requestconsent` in their course. Only new sites: on upgrading, Moodle does not change what a
+  role already has, so a site that wants the manager role without them takes them away by hand.
 - «Invite another adult»: the code goes by WhatsApp (a `wa.me` link with the message) or copied, from two buttons; under
   them, the adults of the family who have already joined. Its words: «For another adult to see your children too, show
   them this QR or send them the code.», and at the end «Whoever has this code joins your family: give it only to someone
@@ -65,6 +69,10 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Added (0.3.36-dev)
 
+- `api::account_reassigned($userid)`: an account the school gives to somebody else (that of someone who leaves, given to
+  who comes) lets go of every adult it was, who stay in their family without an account (`adult_updated` for each), and
+  of the parent role this plugin gave it in every family. An account that is a child of an open family is left as it
+  is. For the script of the server that hands the account over.
 - «Families» has the tile «To look at» while the last round of Cifra leaves adults for a person to look at: those who
   joined and are no longer in their household in Cifra (before, only `cli/cifra_households.php` listed them), and those
   linked to an account with another first name. Their card and the household's page say so (`families::review()`).

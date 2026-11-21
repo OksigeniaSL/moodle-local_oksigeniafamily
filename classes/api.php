@@ -763,6 +763,64 @@ class api {
     }
 
     /**
+     * An account of the site that the school gives to somebody else (the account of someone who leaves, given to who
+     * comes): the family records let go of it, so that its new owner sees nobody's children. Every adult linked to it, in
+     * a family or not any more, loses it, and stays as an adult without an account in their family; and the parent role
+     * this plugin gave the account goes, in every family. Each adult that changes triggers `adult_updated`, so that the
+     * other plugins check what they keep for them. A script of the server calls it when an account changes hands.
+     *
+     * An account that is a child of an open family is left as it is: a student who stays at the school is not an account
+     * given to somebody else.
+     *
+     * @param int $userid The account.
+     * @return void
+     */
+    public static function account_reassigned(int $userid): void {
+        global $DB;
+
+        if ($userid <= 0) {
+            return;
+        }
+        $student = $DB->record_exists_sql(
+            "SELECT 1
+               FROM {local_oksigeniafamily_child} c
+               JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
+              WHERE c.userid = :userid AND c.status = :cactive",
+            ['userid' => $userid, 'factive' => self::ACTIVE, 'cactive' => self::ACTIVE]
+        );
+        if ($student) {
+            return;
+        }
+        $adults = $DB->get_records('local_oksigeniafamily_adult', ['userid' => $userid], 'id', 'id, familyid, phone');
+        $now = time();
+        foreach ($adults as $adult) {
+            $DB->update_record('local_oksigeniafamily_adult', (object) [
+                'id' => $adult->id, 'userid' => null, 'timemodified' => $now,
+            ]);
+            event\adult_updated::create([
+                'objectid' => $adult->id,
+                'context' => \context_system::instance(),
+                'relateduserid' => $userid,
+                'other' => [
+                    'familyid' => (int) $adult->familyid,
+                    'oldphonehash' => $adult->phone ? hash('sha256', $adult->phone) : '',
+                ],
+            ])->trigger();
+        }
+        // The families of those adults, and any other where this plugin gave the account the parent role.
+        $familyids = array_map(fn($adult) => (int) $adult->familyid, $adults);
+        $assigned = $DB->get_fieldset_select(
+            'role_assignments',
+            'DISTINCT itemid',
+            'component = :component AND userid = :userid',
+            ['component' => roles::COMPONENT, 'userid' => $userid]
+        );
+        foreach (array_unique(array_merge($familyids, array_map('intval', $assigned))) as $familyid) {
+            roles::sync_family($familyid);
+        }
+    }
+
+    /**
      * An adult the school's data brought stops being quiet: they joined, or the school welcomed them (its own e-mail, sent
      * by whoever sends it). From then on the other plugins reach them as any other adult.
      *
