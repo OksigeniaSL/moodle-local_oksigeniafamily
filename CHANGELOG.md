@@ -5,6 +5,13 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.38-dev, Jujol's design of the 21-11 review)
+
+- A request for consent in the app: «I authorise» and «I do not authorise» side by side and the same size; once
+  answered, the answer with its date in words («You authorised on 3 November at 20:11») and «Change the answer», which
+  brings the two buttons back with «Leave it as it was». A single tap no longer changes an answer. The date in words
+  (`consent_view::datetime()`) is the web's and the team's list's too.
+
 ### Added (0.3.38-dev)
 
 - «Not of my family» (`notyours.php`, `local\notyours`): the notice that someone joined a family with a code takes the

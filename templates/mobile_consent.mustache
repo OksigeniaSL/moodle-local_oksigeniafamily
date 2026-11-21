@@ -18,9 +18,11 @@
     @template local_oksigeniafamily/mobile_consent
 
     One request for consent in the Moodle app and in Aty: what the school says and, for each child, what the adult
-    answered and two buttons that say what they do, with a comment if they want. It has no data of its own: request
+    answered and two buttons that say what they do, side by side and the same size, with a comment if they want, folded.
+    Once answered, the answer with its mark and its date in words, and «Change the answer» instead of the buttons, so that
+    one touch no longer changes anything; while changing, «Leave it as it was» (Jujol, 21 November 2026). It has no data of its own: request
     (id, title, until, open, message), sections (adultid, as, children with id, key, fullname, answered, saidyes,
-    answertext, yesaria, noaria, savedyes, savedno) and comments come as the page's other data, which the app binds, so
+    answertext, yesaria, noaria, savedyes, savedno), comments and changing come as the page's other data, which the app binds, so
     that nothing the school or the family wrote is compiled as part of the template.
 
     Example context (json):
@@ -42,31 +44,41 @@
     </ion-card>
     <ng-container *ngFor="let section of CONTENT_OTHERDATA.sections">
         <p class="ion-padding-horizontal">{{ section.as }}</p>
-        <ion-card *ngFor="let child of section.children">
+        <ion-card class="okf-consent-hijo" *ngFor="let child of section.children">
             <ion-card-header>
                 <ion-card-title>{{ child.fullname }}</ion-card-title>
             </ion-card-header>
             <ion-card-content>
-                <ion-text *ngIf="child.answered" role="status" [color]="child.saidyes ? 'success' : 'danger'">
+                <div *ngIf="child.answered" class="okf-consent-dicho" [class.okf-consent-no]="!child.saidyes" role="status">
+                    <span class="okf-consent-marca" aria-hidden="true">{{ child.saidyes ? '✓' : '✕' }}</span>
                     <p>{{ child.answertext }}</p>
-                </ion-text>
+                </div>
                 <ng-container *ngIf="CONTENT_OTHERDATA.request.open">
-                    <details>
-                        <summary><%#str%>consent:addcomment, local_oksigeniafamily<%/str%></summary>
-                        <ion-textarea class="okf-app-comment" rows="3" maxlength="1000"
-                            aria-label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>"
-                            [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
-                    </details>
-                    <ion-button expand="block" color="success" [attr.aria-label]="child.yesaria" core-site-plugins-call-ws
-                        name="local_oksigeniafamily_answer_consent"
-                        [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'yes', comment: CONTENT_OTHERDATA.comments[child.key]}"
-                        [preSets]="{getFromCache: 0, saveToCache: 0}" [successMessage]="child.savedyes"
-                        refreshOnSuccess="true"><%#str%>consent:yes, local_oksigeniafamily<%/str%></ion-button>
-                    <ion-button expand="block" fill="outline" color="danger" [attr.aria-label]="child.noaria"
-                        core-site-plugins-call-ws name="local_oksigeniafamily_answer_consent"
-                        [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'no', comment: CONTENT_OTHERDATA.comments[child.key]}"
-                        [preSets]="{getFromCache: 0, saveToCache: 0}" [successMessage]="child.savedno"
-                        refreshOnSuccess="true"><%#str%>consent:no, local_oksigeniafamily<%/str%></ion-button>
+                    <button type="button" class="okf-consent-cambiar"
+                        *ngIf="child.answered &amp;&amp; !CONTENT_OTHERDATA.changing[child.key]"
+                        (click)="CONTENT_OTHERDATA.changing[child.key] = true"><%#str%>consent:changeanswer, local_oksigeniafamily<%/str%></button>
+                    <ng-container *ngIf="!child.answered || CONTENT_OTHERDATA.changing[child.key]">
+                        <div class="okf-consent-botones">
+                            <ion-button color="success" [attr.aria-label]="child.yesaria" core-site-plugins-call-ws
+                                name="local_oksigeniafamily_answer_consent"
+                                [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'yes', comment: CONTENT_OTHERDATA.comments[child.key]}"
+                                [preSets]="{getFromCache: 0, saveToCache: 0}" [successMessage]="child.savedyes"
+                                refreshOnSuccess="true"><ion-icon name="fas-check" aria-hidden="true"></ion-icon><%#str%>consent:yes, local_oksigeniafamily<%/str%></ion-button>
+                            <ion-button fill="outline" color="danger" [attr.aria-label]="child.noaria"
+                                core-site-plugins-call-ws name="local_oksigeniafamily_answer_consent"
+                                [params]="{requestid: CONTENT_OTHERDATA.request.id, childuserid: child.id, adultid: section.adultid, answer: 'no', comment: CONTENT_OTHERDATA.comments[child.key]}"
+                                [preSets]="{getFromCache: 0, saveToCache: 0}" [successMessage]="child.savedno"
+                                refreshOnSuccess="true"><ion-icon name="fas-xmark" aria-hidden="true"></ion-icon><%#str%>consent:no, local_oksigeniafamily<%/str%></ion-button>
+                        </div>
+                        <details class="okf-consent-comentario">
+                            <summary><%#str%>consent:addcomment, local_oksigeniafamily<%/str%></summary>
+                            <ion-textarea class="okf-app-comment" rows="3" maxlength="1000"
+                                aria-label="<%#str%>consent:comment, local_oksigeniafamily<%/str%>"
+                                [(ngModel)]="CONTENT_OTHERDATA.comments[child.key]"></ion-textarea>
+                        </details>
+                        <button type="button" class="okf-consent-dejar" *ngIf="child.answered"
+                            (click)="CONTENT_OTHERDATA.changing[child.key] = false"><%#str%>consent:leaveasis, local_oksigeniafamily<%/str%></button>
+                    </ng-container>
                 </ng-container>
             </ion-card-content>
         </ion-card>

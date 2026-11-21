@@ -51,3 +51,30 @@ ion-textarea.okf-app-comment textarea.native-textarea {
 .okf-join .okf-join-steps li {
     margin-bottom: 6px;
 }
+
+/* A request for consent in the app (mobile_consent), Jujol, 21 November 2026: the two answers side by side and the same
+   size; once answered, the answer with its mark and its date in words, and «Change the answer» instead of the buttons, so
+   one touch no longer changes anything; the comment folded. */
+.okf-consent-hijo { margin: 10px 12px 14px; border-radius: 16px; }
+.okf-consent-hijo ion-card-title { font-size: 1.15rem; font-weight: 800; }
+.okf-consent-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 4px 0 0; }
+.okf-consent-botones ion-button { --border-radius: 14px; --padding-top: 14px; --padding-bottom: 14px; margin: 0;
+    min-height: 52px; font-size: 1rem; font-weight: 800; text-transform: none; letter-spacing: 0; }
+.okf-consent-botones ion-icon { margin-inline-end: 6px; }
+.okf-consent-dicho { display: flex; align-items: flex-start; gap: 12px; margin: 2px 0 0; padding: 12px 14px;
+    border-radius: 14px; background: rgba(var(--ion-color-success-rgb, 45, 160, 90), .12); color: var(--ion-text-color); }
+.okf-consent-dicho.okf-consent-no { background: rgba(var(--ion-color-danger-rgb, 196, 43, 28), .1); }
+.okf-consent-marca { flex: 0 0 auto; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--ion-color-success, #2d8a4e); color: #fff; font-size: 16px; font-weight: 800; line-height: 1; }
+.okf-consent-no .okf-consent-marca { background: var(--ion-color-danger, #c42b1c); }
+.okf-consent-dicho p { margin: 3px 0 0; font-size: 1rem; font-weight: 700; line-height: 1.35; }
+.okf-consent-cambiar, .okf-consent-dejar { display: inline-block; margin: 12px 0 0; padding: 6px 0; border: 0;
+    background: transparent; color: var(--ion-color-primary); font: inherit; font-weight: 700; text-decoration: underline;
+    text-underline-offset: 3px; }
+.okf-consent-comentario { margin: 14px 0 0; }
+.okf-consent-comentario summary { cursor: pointer; color: var(--ion-color-primary); font-weight: 700; list-style: none; }
+.okf-consent-comentario summary::-webkit-details-marker { display: none; }
+.okf-consent-comentario summary::before { content: '+ '; }
+.okf-consent-comentario[open] summary::before { content: '− '; }
+.okf-consent-comentario ion-textarea { margin-top: 8px; border-radius: 12px; --padding-start: 12px; --padding-end: 12px;
+    background: rgba(var(--ion-color-primary-rgb, 10, 46, 80), .06); }

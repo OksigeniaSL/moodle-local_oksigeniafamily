@@ -226,6 +226,8 @@ class mobile {
                 'request' => self::json($shown ?? new \stdClass()),
                 'sections' => self::json($sections),
                 'comments' => self::json((object) $comments),
+                // Which answered children are being changed: their two buttons come back only after «Change the answer».
+                'changing' => self::json(new \stdClass()),
             ],
         ];
     }
