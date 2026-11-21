@@ -49,7 +49,7 @@
     <p class="okf-join-until" style="margin: 10px 0 0; text-align: center; color: var(--ion-color-medium); font-size: .9rem;">{{expires}}</p>
     {{#share}}
     <div class="okf-share" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 14px 0 4px;">
-        <a class="okf-share-wa" href="{{whatsappurl}}" core-link [capture]="false" autoLogin="no" style="display: inline-flex; align-items: center; min-height: 40px; padding: 0 18px; border-radius: 999px; background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); font-weight: 600; text-decoration: none;">{{whatsapp}}</a>
+        <ion-button class="okf-share-wa" shape="round" core-link href="{{whatsappurl}}" capture="false" autoLogin="no">{{whatsapp}}</ion-button>
         <ion-button class="okf-share-copy" shape="round" fill="outline" core-copy-to-clipboard="{{text}}" message="{{copied}}">{{copy}}</ion-button>
     </div>
     {{/share}}
