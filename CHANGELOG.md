@@ -5,6 +5,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.37-dev)
+
+- Its notices in the app (a request for consent, a conflict between answers, a new adult, an import that ended) carry
+  the plugin's icon instead of the app's generic pencil: the app draws its own icon only beside notices of activities.
+
 ### Security (0.3.36-dev)
 
 - The claim page answers alike whether the e-mail typed has an account of the site or not, so that a good code is no
