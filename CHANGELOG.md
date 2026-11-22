@@ -11,7 +11,7 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   or after it, while the family is still open. A goodbye sent after the school's data took the student away (Oksigenia
   Ayvurenda's booklet of a whole school life) still reaches the family. Without it, as before.
 
-### Changed (0.3.38-dev, Jujol's design of the 21-11 review)
+### Changed (0.3.38-dev, the design of the 21 November review)
 
 - A request for consent in the app: «I authorise» and «I do not authorise» side by side and the same size; once
   answered, the answer with its date in words («You authorised on 3 November at 20:11») and «Change the answer», which
@@ -264,7 +264,7 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 ### Changed (0.3.22-dev)
 
 - A letter names the student with first name and surnames, whatever order the site uses for its lists: the school's
-  «lastname firstname» put «Rodríguez Pérez Carolina» at the top of the letter (seen by Nuryana).
+  «lastname firstname» put «Surname Surname Name» at the top of the letter.
 
 ### Changed (0.3.21-dev)
 
@@ -274,7 +274,7 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Changed (0.3.20-dev)
 
-- «Familias» says what each family is missing, and filters by it (design by Jujol). On top, a tile for each need with
+- «Familias» says what each family is missing, and filters by it. On top, a tile for each need with
   how many active families have it and what it means: consents not answered (with the consents on), nobody with an
   account, a code not used, no confirmed phone; and, good to know, students without an account and a «no» to their
   image. A touch shows only those families, with the search; another one shows them all. Each family is a card with its
@@ -310,7 +310,7 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ### Changed
 
-- «Ask for consent» is a letter (0.3.17-dev, Jujol's design), not a Moodle form. Who it is for is a row of chips (the
+- «Ask for consent» is a letter (0.3.17-dev), not a Moodle form. Who it is for is a row of chips (the
   whole course or one of its groups), so changing it reloads nothing and loses neither the text nor the file; the
   title is large, the text is a plain text area (kept as plain text: its paragraphs stay, nothing of it is taken as
   HTML), and the circular is clipped to it with an ordinary file field. Under the sheet go its terms as chips: until

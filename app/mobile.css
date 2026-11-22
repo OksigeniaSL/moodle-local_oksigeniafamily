@@ -52,7 +52,7 @@ ion-textarea.okf-app-comment textarea.native-textarea {
     margin-bottom: 6px;
 }
 
-/* A request for consent in the app (mobile_consent), Jujol, 21 November 2026: the two answers side by side and the same
+/* A request for consent in the app (mobile_consent), 21 November 2026: the two answers side by side and the same
    size; once answered, the answer with its mark and its date in words, and «Change the answer» instead of the buttons, so
    one touch no longer changes anything; the comment folded. */
 .okf-consent-hijo { margin: 10px 12px 14px; border-radius: 16px; }

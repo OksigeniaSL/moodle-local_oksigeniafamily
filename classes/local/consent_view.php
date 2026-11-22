@@ -32,8 +32,7 @@ class consent_view {
      * @return string
      */
     public static function datetime(int $time): string {
-        // In words, never in numbers («3 November at 20:11», not «3/11/2026 20:11»); the year only when it is not this one
-        // (Jujol, 21 November 2026).
+        // In words, never in numbers («3 November at 20:11», not «3/11/2026 20:11»); the year only when it is not this one.
         $thisyear = userdate(time(), '%Y') === userdate($time, '%Y');
 
         return userdate($time, get_string($thisyear ? 'consent:whenformat' : 'consent:whenformatyear', 'local_oksigeniafamily'));

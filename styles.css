@@ -991,7 +991,7 @@
     }
 }
 
-/* «Pedir una autorización» and its report (Jujol, 13 Nov 2026), for styles.css of local_oksigeniafamily, after what is
+/* «Pedir una autorización» and its report (13 Nov 2026), for styles.css of local_oksigeniafamily, after what is
    there. Everything hangs from .local-oksigeniafamily and uses its --okf-* colours, which are the theme's, so it follows
    the site in light and in dark. The request is a letter: who it is for, its title and its text, the circular clipped to
    it, and its terms; the report opens on who is missing, with the reminder over that list and the paper answer as a
@@ -1642,7 +1642,7 @@
     align-items: center;
 }
 
-/* «Familias»: what each family is missing, and the list filtered by it (Jujol, 15 Nov 2026), for styles.css of
+/* «Familias»: what each family is missing, and the list filtered by it (15 Nov 2026), for styles.css of
    local_oksigeniafamily, after what is there. It hangs from .okf-families and uses only the --okf-* variables, which
    are the theme's: it follows each site in light and dark. No :has(), no color-mix() and no max-width on text. */
 
