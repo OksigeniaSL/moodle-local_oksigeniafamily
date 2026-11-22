@@ -136,21 +136,31 @@ class api {
      * The adults of a student, to tell them something (a late book, a new adult). Not those the school's data brought who
      * have not joined nor been welcomed yet (quiet): nobody writes to a family before the school does.
      *
+     * With $leftsince, also the adults of a student who left the family since then, while the family is still open: a
+     * goodbye that goes out after the school's data took the student away (Ayvurenda's booklet of a whole school life).
+     *
      * @param int $childuserid The student's account.
+     * @param int $leftsince 0 for a student still in the family; a time, to count one who left at or after it too.
      * @return stdClass[] Adult records (id, familyid, firstname, lastname, email, phone, userid), keyed by id.
      */
-    public static function adults_of_child(int $childuserid): array {
+    public static function adults_of_child(int $childuserid, int $leftsince = 0): array {
         global $DB;
 
+        $params = [
+            'userid' => $childuserid, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE, 'cactive' => self::ACTIVE,
+        ];
+        $child = 'c.status = :cactive';
+        if ($leftsince > 0) {
+            $child = '(c.status = :cactive OR (c.status = :cleft AND c.timeleft >= :leftsince))';
+            $params += ['cleft' => self::LEFT, 'leftsince' => $leftsince];
+        }
         $sql = "SELECT a.id, a.familyid, a.firstname, a.lastname, a.email, a.phone, a.userid
                   FROM {local_oksigeniafamily_child} c
                   JOIN {local_oksigeniafamily_family} f ON f.id = c.familyid AND f.status = :factive
                   JOIN {local_oksigeniafamily_adult} a ON a.familyid = f.id AND a.status = :aactive AND a.quiet = 0
-                 WHERE c.userid = :userid AND c.status = :cactive";
+                 WHERE c.userid = :userid AND $child";
 
-        return $DB->get_records_sql($sql, [
-            'userid' => $childuserid, 'factive' => self::ACTIVE, 'aactive' => self::ACTIVE, 'cactive' => self::ACTIVE,
-        ]);
+        return $DB->get_records_sql($sql, $params);
     }
 
     /**

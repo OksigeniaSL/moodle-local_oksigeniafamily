@@ -5,6 +5,12 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.39-dev)
+
+- `api::adults_of_child()` takes an optional `$leftsince`: with a time, it also counts a student who left the family at
+  or after it, while the family is still open. A goodbye sent after the school's data took the student away (Oksigenia
+  Ayvurenda's booklet of a whole school life) still reaches the family. Without it, as before.
+
 ### Changed (0.3.38-dev, Jujol's design of the 21-11 review)
 
 - A request for consent in the app: «I authorise» and «I do not authorise» side by side and the same size; once

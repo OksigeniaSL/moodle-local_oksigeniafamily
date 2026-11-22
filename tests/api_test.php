@@ -812,4 +812,29 @@ final class api_test extends \advanced_testcase {
         $this->assertFalse($has($manager, 'local/oksigeniafamily:requestconsent'));
         $this->assertTrue($has($teacher, 'local/oksigeniafamily:requestconsent'));
     }
+
+    /**
+     * A student who left can still be reached for a while, when asked: the goodbye that goes after the school's data
+     * took them away. Not before the time asked for, not in a closed family, and never by default.
+     */
+    public function test_adults_of_child_left_since(): void {
+        $this->resetAfterTest();
+        $leo = $this->getDataGenerator()->create_user();
+        $familyid = api::create_family('csv', 'household:31');
+        $adultid = api::add_adult($familyid, ['firstname' => 'Raúl', 'lastname' => 'Díaz', 'email' => 'raul@example.com']);
+        $childid = api::add_child($familyid, (int) $leo->id);
+        $before = time() - 10;
+
+        api::unlink_child($childid, 'suspended');
+        $this->assertSame([], api::adults_of_child((int) $leo->id));
+        $this->assertSame([$adultid], array_map('intval', array_keys(api::adults_of_child((int) $leo->id, $before))));
+        $this->assertSame([], api::adults_of_child((int) $leo->id, time() + 60));
+
+        // Back in the family: the same record, active again.
+        api::add_child($familyid, (int) $leo->id);
+        $this->assertSame([$adultid], array_map('intval', array_keys(api::adults_of_child((int) $leo->id, $before))));
+
+        api::close_family($familyid);
+        $this->assertSame([], api::adults_of_child((int) $leo->id, $before));
+    }
 }
