@@ -1,21 +1,17 @@
 # Moodle Plugin CI — the suite that Moodle Marketplace reviewers expect (validate, lint, codechecker, phpdoc,
 # savepoints, mustache, grunt) plus the plugin's PHPUnit and Behat tests.
 #
-# Pushes and pull requests run a short matrix (the lowest and the highest supported branch); tags or a manual run
-# go through every branch that still gets security fixes, plus main. main tracks the next Moodle release and is
-# allowed to fail, so upstream breakage shows up early.
+# Only as the final check of a version: on a tag (v*), the lowest and the highest supported branch, with PostgreSQL and
+# MariaDB; run by hand, every branch that still gets security fixes, plus main (allowed to fail), once before the
+# Moodle Marketplace. Every push is checked first on the laptop with kit/ci-moodle of hq and goes up only in green: the
+# minutes of Actions are not spent finding what the laptop finds in seconds (Enrique, 22 November 2026).
 #
 # Reference template: https://github.com/moodlehq/moodle-plugin-ci
 name: Moodle Plugin CI
 
 on:
   push:
-    branches: [main]
     tags: ['v*']
-    # What is not code does not run the suite: the minutes of Actions are counted.
-    paths-ignore: ['**.md', 'docs/**', 'LICENSE', '.gitignore', 'provenance/**']
-  pull_request:
-    paths-ignore: ['**.md', 'docs/**', 'LICENSE', '.gitignore', 'provenance/**']
   workflow_dispatch:
 
 # Read only: the suite runs third-party actions and Composer packages, and needs no token that writes to the repository.
@@ -39,7 +35,7 @@ jobs:
           b502='{"moodle-branch":"MOODLE_502_STABLE","php":"8.3","node":"22"}'
           high='{"moodle-branch":"MOODLE_503_STABLE","php":"8.3","node":"22","pg":"17"}'
           next='{"moodle-branch":"main","php":"8.4","node":"22","pg":"17","experimental":true}'
-          if [[ "$GITHUB_REF" == refs/tags/* || "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
             echo "include=[$low,$b502,$high,$next]" >> "$GITHUB_OUTPUT"
           else
             echo "include=[$low,$high]" >> "$GITHUB_OUTPUT"
