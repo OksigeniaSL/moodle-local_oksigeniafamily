@@ -5,6 +5,16 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.40-dev)
+
+- `api::external_accounts(int $adultid)`: what a school management program says of an adult it brings, to help them
+  sign in there (the bot of the school's chat tells a family, partly hidden, their username and where the new password
+  goes). Each item: `system`, `label`, `username`, `derived`, `email`, `active` and `checked`. Cifra gives the
+  relative's identity document (`nif`) and e-mail with each student's record, not the username nor whether it is
+  active: the username follows from the centre's rule (`cifrausername`, such as `{nif}47`), so `derived` is true, and
+  `active` is null. Kept in a table of its own while Cifra keeps bringing the adult, and 30 days after; in the privacy
+  export and deletion.
+
 ### Added (0.3.39-dev)
 
 - `api::adults_of_child()` takes an optional `$leftsince`: with a time, it also counts a student who left the family at

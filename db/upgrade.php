@@ -168,5 +168,14 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112300, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026112304) {
+        // What a school management program says of an adult it brings (their identity document, the e-mail it sends
+        // to), to help them sign in there.
+        if (!$dbman->table_exists('local_oksigeniafamily_extern')) {
+            $dbman->install_one_table_from_xmldb_file(__DIR__ . '/install.xml', 'local_oksigeniafamily_extern');
+        }
+        upgrade_plugin_savepoint(true, 2026112304, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

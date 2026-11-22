@@ -114,6 +114,13 @@ class provider implements
             'stamp' => 'privacy:metadata:spent:stamp',
             'timecreated' => 'privacy:metadata:timecreated',
         ], 'privacy:metadata:spent');
+        $collection->add_database_table('local_oksigeniafamily_extern', [
+            'system' => 'privacy:metadata:extern:system',
+            'sourcekey' => 'privacy:metadata:extern:sourcekey',
+            'document' => 'privacy:metadata:extern:document',
+            'email' => 'privacy:metadata:extern:email',
+            'timeseen' => 'privacy:metadata:extern:timeseen',
+        ], 'privacy:metadata:extern');
         $collection->add_subsystem_link('core_files', [], 'privacy:metadata:core_files');
 
         return $collection;
@@ -257,6 +264,19 @@ class provider implements
                 'id, requestid, timecreated'
             ));
         }
+        $sourcekeys = $DB->get_fieldset_select('local_oksigeniafamily_adult', 'sourcekey',
+            "userid = :userid AND sourcekey IS NOT NULL AND sourcekey <> ''", ['userid' => $userid]);
+        $data->extern = [];
+        if ($sourcekeys) {
+            [$in, $params] = $DB->get_in_or_equal($sourcekeys, SQL_PARAMS_NAMED);
+            $data->extern = array_values($DB->get_records_select(
+                'local_oksigeniafamily_extern',
+                "sourcekey $in",
+                $params,
+                'id',
+                'id, system, sourcekey, document, email, timeseen'
+            ));
+        }
         [$select, $params] = self::standing_select($userid);
         $data->standing = $select === '' ? [] : array_values($DB->get_records_select(
             'local_oksigeniafamily_standing',
@@ -291,7 +311,7 @@ class provider implements
             return;
         }
         $tables = ['adult', 'child', 'claim', 'family', 'answer', 'target', 'request', 'photo', 'standing', 'sent', 'import',
-            'spent'];
+            'spent', 'extern'];
         foreach ($tables as $table) {
             $DB->delete_records('local_oksigeniafamily_' . $table);
         }
@@ -351,6 +371,8 @@ class provider implements
         }
         $DB->set_field('local_oksigeniafamily_standing', 'userid', null, ['userid' => $userid]);
 
+        \local_oksigeniafamily\local\external::forget($DB->get_fieldset_select('local_oksigeniafamily_adult', 'sourcekey',
+            "userid = :userid AND sourcekey IS NOT NULL", ['userid' => $userid]));
         $DB->delete_records('local_oksigeniafamily_adult', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_child', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_claim', ['userid' => $userid]);

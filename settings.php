@@ -160,6 +160,14 @@ if ($hassiteconfig) {
             '',
             \local_oksigeniafamily\local\import\cifra_households::status_text()
         ));
+        // How a parent's username in Cifra is made, to tell them when they cannot sign in there (api::external_accounts()).
+        $settings->add(new admin_setting_configtext(
+            "$p/cifrausername",
+            new lang_string('settings:cifrausername', $p),
+            new lang_string('settings:cifrausername_desc', $p),
+            '',
+            PARAM_TEXT
+        ));
         $settings->add(new admin_setting_configselect("$p/ciframode", new lang_string('ciframode', $p), '', '', [
             '' => new lang_string('ciframode_auto', $p),
             'oauth' => new lang_string('ciframode_oauth', $p),

@@ -18,6 +18,7 @@ namespace local_oksigeniafamily\local\import;
 
 use local_oksigeniafamily\api;
 use local_oksigeniafamily\local\cifra;
+use local_oksigeniafamily\local\external;
 
 /**
  * Tests for the households of Cifra, with made-up answers of Cifra and no network.
@@ -471,5 +472,43 @@ final class cifra_households_test extends \advanced_testcase {
         cifra_households::run(self::NOW + DAYSECS, $this->cifra($records), null, 0);
         $this->assertSame([$carmelo], \local_oksigeniafamily\local\families::review()['account']);
         $this->assertEquals($teacher->id, $DB->get_field('local_oksigeniafamily_adult', 'userid', ['id' => $carmelo]));
+    }
+
+    /**
+     * What Cifra says of each adult stays, to help them sign in there: the document and the e-mail Cifra has, and the
+     * username by the centre's rule, said as derived. Cifra does not say whether it is active.
+     */
+    public function test_external_accounts(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $mother = $this->relative('Madre', true, ['id' => 900, 'nombre' => 'Marta', 'nif' => 'x-1234567.l',
+            'email' => 'Marta@Example.invalid', 'telefono_movil' => '600 000 001']);
+        $father = $this->relative('Padre', true, ['id' => 901, 'nombre' => 'Darío', 'telefono_movil' => '600 000 002']);
+        $records = ['101' => ['nombre' => 'Leo', 'familiares' => [$mother, $father]]];
+        $this->assertSame(['cifra:900' => 'X1234567L'], cifra_households::documents($records));
+
+        $this->assertSame('done', cifra_households::run(self::NOW, $this->cifra($records), null, 0)['state']);
+        $marta = (int) $DB->get_field('local_oksigeniafamily_adult', 'id', ['sourcekey' => 'cifra:900']);
+        $dario = (int) $DB->get_field('local_oksigeniafamily_adult', 'id', ['sourcekey' => 'cifra:901']);
+
+        // Without the centre's rule, no username.
+        $this->assertSame([['system' => 'cifra', 'label' => 'Cifra', 'username' => '', 'derived' => false,
+            'email' => 'marta@example.invalid', 'active' => null, 'checked' => self::NOW]], api::external_accounts($marta));
+
+        set_config('cifrausername', '{nif}47', 'local_oksigeniafamily');
+        $accounts = api::external_accounts($marta);
+        $this->assertSame(['X1234567L47', true], [$accounts[0]['username'], $accounts[0]['derived']]);
+        // Cifra has no document of the father: no username, but the record says when it was read.
+        $this->assertSame(['', false, ''], [api::external_accounts($dario)[0]['username'],
+            api::external_accounts($dario)[0]['derived'], api::external_accounts($dario)[0]['email']]);
+        $this->assertSame([], api::external_accounts(0));
+
+        // A night later, a new e-mail in Cifra; a month after Cifra stops bringing them, nothing is kept.
+        $records['101']['familiares'][0]['usuario']['email'] = 'marta.faro@example.invalid';
+        cifra_households::run(self::NOW + DAYSECS, $this->cifra($records), null, 0);
+        $this->assertSame('marta.faro@example.invalid', api::external_accounts($marta)[0]['email']);
+        external::store('cifra', [], self::NOW + DAYSECS + external::KEEP + 1);
+        $this->assertSame(0, $DB->count_records(external::TABLE));
     }
 }

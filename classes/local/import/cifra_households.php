@@ -462,7 +462,8 @@ final class cifra_households {
         }
         try {
             // The plan again, now that nobody else is importing.
-            $rows = self::rows(self::groups($dry['read']['records'], $now), $dry['read']['students']);
+            $groups = self::groups($dry['read']['records'], $now);
+            $rows = self::rows($groups, $dry['read']['students']);
             $plan = importer::plan($rows['rows'], self::SOURCE, true, $rows['joined']);
             if ($plan['guarded'] && $confirm !== count($plan['leaving'])) {
                 $result['state'] = 'stopped';
@@ -503,6 +504,16 @@ final class cifra_households {
                     $transaction->rollback($e);
                 }
             }
+            // What Cifra says of each adult, to help them sign in there (\local_oksigeniafamily\api::external_accounts()).
+            $adults = [];
+            foreach ($groups as $group) {
+                $adults += $group['adults'];
+            }
+            $documents = self::documents($dry['read']['records']);
+            foreach ($adults as $key => $adult) {
+                $adults[$key]['document'] = $documents[$key] ?? '';
+            }
+            \local_oksigeniafamily\local\external::store(self::SOURCE, array_values($adults), $now);
             foreach ($dry['read']['students'] as $id => $student) {
                 $done['childrennamed'] += api::set_child_details(
                     'cifra:' . $id,
@@ -529,6 +540,29 @@ final class cifra_households {
         ];
 
         return self::keep($result, $now);
+    }
+
+    /**
+     * The identity documents of the relatives in some records, by their key: Cifra gives a relative's (nif) with them.
+     * Only those with their own id in Cifra, the key that stays.
+     *
+     * @param array[] $records The records of the students, as Cifra gives them.
+     * @return string[] cifra:<id> => the document, in capitals and without separators.
+     */
+    public static function documents(array $records): array {
+        $documents = [];
+        foreach ($records as $record) {
+            foreach ((array) ($record['familiares'] ?? []) as $relative) {
+                $person = (array) ($relative['usuario'] ?? $relative);
+                $id = (string) ($person['id'] ?? '');
+                $document = substr(preg_replace('/[^A-Z0-9]/', '', strtoupper((string) ($person['nif'] ?? ''))), 0, 30);
+                if ($id !== '' && $document !== '') {
+                    $documents['cifra:' . $id] = $document;
+                }
+            }
+        }
+
+        return $documents;
     }
 
     /**

@@ -218,6 +218,20 @@ class api {
     }
 
     /**
+     * The accounts an adult has in the school management programs that bring them, to help them sign in there: the
+     * username (by the centre's rule, so said as derived), the e-mail where the program sends a new password, whether it
+     * is active (null when the program does not say, as Cifra) and when the program last brought them. Whoever shows
+     * them hides most of each.
+     *
+     * @param int $adultid The adult.
+     * @return array[] Each with system, label, username, derived, email, active and checked; empty when the adult has
+     *     left or no program brings them.
+     */
+    public static function external_accounts(int $adultid): array {
+        return local\external::accounts($adultid);
+    }
+
+    /**
      * The adults of many students at once, as adults_of_child() gives them for one (without the quiet ones): for a request
      * to a whole school, where one query per student would be tens of thousands.
      *

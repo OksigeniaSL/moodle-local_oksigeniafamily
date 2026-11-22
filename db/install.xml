@@ -259,5 +259,24 @@
         <INDEX NAME="timecreated" UNIQUE="false" FIELDS="timecreated"/>
       </INDEXES>
     </TABLE>
+    <TABLE NAME="local_oksigeniafamily_extern" COMMENT="What a school management program says of an adult it brings, to help them sign in there: their identity document and the e-mail it sends to">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="system" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="The program, such as cifra"/>
+        <FIELD NAME="sourcekey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The adult in that program, as the adults' sourcekey: cifra:123"/>
+        <FIELD NAME="document" TYPE="char" LENGTH="30" NOTNULL="false" SEQUENCE="false" COMMENT="Their identity document as the program has it, in capitals and without separators"/>
+        <FIELD NAME="email" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="The e-mail the program has for them, where it sends a new password"/>
+        <FIELD NAME="timeseen" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The last time the program was read and brought them"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="systemkey" UNIQUE="true" FIELDS="system, sourcekey"/>
+        <INDEX NAME="sourcekey" UNIQUE="false" FIELDS="sourcekey"/>
+        <INDEX NAME="timeseen" UNIQUE="false" FIELDS="timeseen"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>
