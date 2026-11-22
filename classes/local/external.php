@@ -62,8 +62,9 @@ final class external {
             $email = strlen($email) <= 100 ? $email : '';
             $row = $known[$key] ?? null;
             if (!$row) {
-                $DB->insert_record(self::TABLE, ['system' => $system, 'sourcekey' => $key, 'document' => $document,
-                    'email' => $email, 'timeseen' => $now, 'timemodified' => $now]);
+                $record = ['system' => $system, 'sourcekey' => $key, 'document' => $document, 'email' => $email,
+                    'timeseen' => $now, 'timemodified' => $now];
+                $DB->insert_record(self::TABLE, $record);
                 $known[$key] = (object) ['sourcekey' => $key, 'document' => $document, 'email' => $email];
                 $changed++;
                 continue;
@@ -75,8 +76,8 @@ final class external {
             }
             $DB->update_record(self::TABLE, (object) $update);
         }
-        $DB->delete_records_select(self::TABLE, 'system = :system AND timeseen < :old',
-            ['system' => $system, 'old' => $now - self::KEEP]);
+        $old = ['system' => $system, 'old' => $now - self::KEEP];
+        $DB->delete_records_select(self::TABLE, 'system = :system AND timeseen < :old', $old);
 
         return $changed;
     }

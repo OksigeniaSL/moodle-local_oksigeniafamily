@@ -264,8 +264,12 @@ class provider implements
                 'id, requestid, timecreated'
             ));
         }
-        $sourcekeys = $DB->get_fieldset_select('local_oksigeniafamily_adult', 'sourcekey',
-            "userid = :userid AND sourcekey IS NOT NULL AND sourcekey <> ''", ['userid' => $userid]);
+        $sourcekeys = $DB->get_fieldset_select(
+            'local_oksigeniafamily_adult',
+            'sourcekey',
+            "userid = :userid AND sourcekey IS NOT NULL AND sourcekey <> ''",
+            ['userid' => $userid]
+        );
         $data->extern = [];
         if ($sourcekeys) {
             [$in, $params] = $DB->get_in_or_equal($sourcekeys, SQL_PARAMS_NAMED);
@@ -371,8 +375,13 @@ class provider implements
         }
         $DB->set_field('local_oksigeniafamily_standing', 'userid', null, ['userid' => $userid]);
 
-        \local_oksigeniafamily\local\external::forget($DB->get_fieldset_select('local_oksigeniafamily_adult', 'sourcekey',
-            "userid = :userid AND sourcekey IS NOT NULL", ['userid' => $userid]));
+        $sourcekeys = $DB->get_fieldset_select(
+            'local_oksigeniafamily_adult',
+            'sourcekey',
+            'userid = :userid AND sourcekey IS NOT NULL',
+            ['userid' => $userid]
+        );
+        \local_oksigeniafamily\local\external::forget($sourcekeys);
         $DB->delete_records('local_oksigeniafamily_adult', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_child', ['userid' => $userid]);
         $DB->delete_records('local_oksigeniafamily_claim', ['userid' => $userid]);
