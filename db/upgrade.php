@@ -177,5 +177,15 @@ function xmldb_local_oksigeniafamily_upgrade(int $oldversion): bool {
         upgrade_plugin_savepoint(true, 2026112304, 'local', 'oksigeniafamily');
     }
 
+    if ($oldversion < 2026112305) {
+        // A student's day of birth, as the school's data gives it (Cifra's fecha_nacimiento): 0 when unknown.
+        $table = new xmldb_table('local_oksigeniafamily_child');
+        $field = new xmldb_field('birthdate', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'groupname');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2026112305, 'local', 'oksigeniafamily');
+    }
+
     return true;
 }

@@ -64,6 +64,7 @@ class provider implements
             'firstname' => 'privacy:metadata:child:firstname',
             'lastname' => 'privacy:metadata:child:lastname',
             'groupname' => 'privacy:metadata:child:groupname',
+            'birthdate' => 'privacy:metadata:child:birthdate',
             'status' => 'privacy:metadata:child:status',
             'timeleft' => 'privacy:metadata:child:timeleft',
         ], 'privacy:metadata:child');
@@ -224,7 +225,7 @@ class provider implements
                 'local_oksigeniafamily_child',
                 ['userid' => $userid],
                 '',
-                'id, familyid, sourcekey, status, timecreated, timeleft'
+                'id, familyid, sourcekey, birthdate, status, timecreated, timeleft'
             )),
             'claims' => array_values($DB->get_records(
                 'local_oksigeniafamily_claim',

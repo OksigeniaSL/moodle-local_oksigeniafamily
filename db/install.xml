@@ -62,6 +62,7 @@
         <FIELD NAME="firstname" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="From the school's data, for a student without an account"/>
         <FIELD NAME="lastname" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="From the school's data, for a student without an account"/>
         <FIELD NAME="groupname" TYPE="char" LENGTH="100" NOTNULL="false" SEQUENCE="false" COMMENT="The student's group this school year, as the school's data names it (INF 3ºA)"/>
+        <FIELD NAME="birthdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The day of birth, as the school's data gives it: 12:00 UTC of that day, so any time zone reads the same day; 0 when unknown"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

@@ -485,12 +485,19 @@ final class cifra_households_test extends \advanced_testcase {
         $mother = $this->relative('Madre', true, ['id' => 900, 'nombre' => 'Marta', 'nif' => 'x-1234567.l',
             'email' => 'Marta@Example.invalid', 'telefono_movil' => '600 000 001']);
         $father = $this->relative('Padre', true, ['id' => 901, 'nombre' => 'Darío', 'telefono_movil' => '600 000 002']);
-        $records = ['101' => ['nombre' => 'Leo', 'familiares' => [$mother, $father]]];
+        $records = ['101' => ['nombre' => 'Leo', 'fecha_nacimiento' => '2008-03-01', 'familiares' => [$mother, $father]]];
         $this->assertSame(['cifra:900' => 'X1234567L'], cifra_households::documents($records));
+        $this->assertSame([0, 0], [cifra_households::birthdate(''), cifra_households::birthdate('2008-02-30')]);
 
         $this->assertSame('done', cifra_households::run(self::NOW, $this->cifra($records), null, 0)['state']);
         $marta = (int) $DB->get_field('local_oksigeniafamily_adult', 'id', ['sourcekey' => 'cifra:900']);
         $dario = (int) $DB->get_field('local_oksigeniafamily_adult', 'id', ['sourcekey' => 'cifra:901']);
+
+        // The child's day of birth, at 12:00 UTC, in what each plugin reads of the children.
+        $born = gmmktime(12, 0, 0, 3, 1, 2008);
+        $leo = array_values(api::children_of_adult($marta))[0];
+        $this->assertSame($born, (int) $leo->birthdate);
+        $this->assertSame($born, api::household((int) $leo->familyid)->children[0]->birthdate);
 
         // Without the centre's rule, no username.
         $this->assertSame([['system' => 'cifra', 'label' => 'Cifra', 'username' => '', 'derived' => false,

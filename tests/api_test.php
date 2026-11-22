@@ -468,6 +468,13 @@ final class api_test extends \advanced_testcase {
         // An empty group clears it.
         $this->assertSame(2, api::set_child_details('cifra:21', 'Hugo', 'Gil', ''));
         $this->assertNull(api::households()[$first]->children[0]->group);
+
+        // The day of birth, when given; leaving it out keeps it.
+        $born = gmmktime(12, 0, 0, 5, 14, 2010);
+        $this->assertSame(2, api::set_child_details('cifra:21', 'Hugo', 'Gil', '', $born));
+        $this->assertSame(0, api::set_child_details('cifra:21', 'Hugo', 'Gil', ''));
+        $this->assertSame($born, api::households()[$first]->children[0]->birthdate);
+        $this->assertSame(0, api::households()[$first]->children[1]->birthdate);
     }
 
     /**

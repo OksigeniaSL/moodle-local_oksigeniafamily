@@ -86,13 +86,13 @@ class api {
      * The children of an adult, with or without an account (for adults without one, such as Meals' keys).
      *
      * @param int $adultid The adult.
-     * @return stdClass[] Child records (id, familyid, userid, sourcekey, and firstname and lastname as the school's
-     *     data gave them to a child without an account, or null), keyed by id.
+     * @return stdClass[] Child records (id, familyid, userid, sourcekey, firstname and lastname as the school's data
+     *     gave them to a child without an account, or null, and birthdate, 12:00 UTC of the day of birth or 0), keyed by id.
      */
     public static function children_of_adult(int $adultid): array {
         global $DB;
 
-        $sql = "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.firstname, c.lastname
+        $sql = "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.firstname, c.lastname, c.birthdate
                   FROM {local_oksigeniafamily_adult} a
                   JOIN {local_oksigeniafamily_family} f ON f.id = a.familyid AND f.status = :factive
                   JOIN {local_oksigeniafamily_child} c ON c.familyid = f.id AND c.status = :cactive
@@ -276,7 +276,7 @@ class api {
      *
      * @param bool $activeonly Only active households, children and adults; false brings the closed and the gone too.
      * @return stdClass[] Households keyed by family id, each with familyid, status, source, sourcekey, timeclosed, children
-     *     (childid, userid, sourcekey, firstname, lastname, group, stage, status, timeleft) and adults (adultid, userid,
+     *     (childid, userid, sourcekey, firstname, lastname, group, stage, birthdate, status, timeleft) and adults (adultid, userid,
      *     firstname, lastname, email, phone, phoneverified, status), in the order they were added.
      */
     public static function households(bool $activeonly = true): array {
@@ -371,7 +371,7 @@ class api {
         [$in, $inparams] = $DB->get_in_or_equal(array_keys($households), SQL_PARAMS_NAMED, 'fam');
 
         $children = $DB->get_records_sql(
-            "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, c.groupname,
+            "SELECT c.id, c.familyid, c.userid, c.sourcekey, c.status, c.timeleft, c.groupname, c.birthdate,
                     c.firstname AS cfirstname, c.lastname AS clastname, u.firstname, u.lastname
                FROM {local_oksigeniafamily_child} c
           LEFT JOIN {user} u ON u.id = c.userid AND u.deleted = 0
@@ -389,6 +389,8 @@ class api {
                 'group' => $child->groupname,
                 // The school's own name for the stage, when the group's name has one (PRI 5º B: PRI), or ''.
                 'stage' => $child->groupname === null ? '' : stage_guesser::guess($child->groupname),
+                // The day of birth as the school's data gives it, at 12:00 UTC so any time zone reads that day; 0 unknown.
+                'birthdate' => (int) $child->birthdate,
                 'status' => $child->status,
                 'timeleft' => $child->timeleft === null ? null : (int) $child->timeleft,
             ];
@@ -433,9 +435,16 @@ class api {
      * @param string|null $firstname The first name; null or '' clears it.
      * @param string|null $lastname The last name; null or '' clears it.
      * @param string|null $group The group this school year, as the school names it (INF 3ºA); null or '' clears it.
+     * @param int|null $birthdate The day of birth at 12:00 UTC, 0 to clear it; null leaves it as it is.
      * @return int How many records changed.
      */
-    public static function set_child_details(string $sourcekey, ?string $firstname, ?string $lastname, ?string $group): int {
+    public static function set_child_details(
+        string $sourcekey,
+        ?string $firstname,
+        ?string $lastname,
+        ?string $group,
+        ?int $birthdate = null
+    ): int {
         global $DB;
 
         $values = [];
@@ -443,10 +452,17 @@ class api {
             $value = trim((string) $value);
             $values[$field] = $value === '' ? null : \core_text::substr($value, 0, 100);
         }
+        if ($birthdate !== null) {
+            $values['birthdate'] = max(0, $birthdate);
+        }
 
         $changed = 0;
         foreach ($DB->get_records('local_oksigeniafamily_child', ['sourcekey' => $sourcekey]) as $child) {
-            $update = array_filter($values, fn($value, $field) => $child->$field !== $value, ARRAY_FILTER_USE_BOTH);
+            $update = array_filter(
+                $values,
+                fn($value, $field) => $field === 'birthdate' ? (int) $child->$field !== $value : $child->$field !== $value,
+                ARRAY_FILTER_USE_BOTH
+            );
             if ($update) {
                 $record = ['id' => $child->id, 'timemodified' => time()] + $update;
                 $DB->update_record('local_oksigeniafamily_child', (object) $record);

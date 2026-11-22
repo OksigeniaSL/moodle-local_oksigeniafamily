@@ -650,6 +650,7 @@ $string['privacy:metadata:answer:childuserid'] = 'The student the answer is abou
 $string['privacy:metadata:answer:comment'] = 'The comment, if they wrote one.';
 $string['privacy:metadata:answer:userid'] = 'The account that answered, or that wrote down a paper answer.';
 $string['privacy:metadata:child'] = 'The students who are the children of each household.';
+$string['privacy:metadata:child:birthdate'] = 'The student\'s day of birth, as the school\'s data gives it.';
 $string['privacy:metadata:child:firstname'] = 'The student\'s first name, from the school\'s data, when they have no account.';
 $string['privacy:metadata:child:groupname'] = 'The student\'s group this school year, as the school\'s data names it.';
 $string['privacy:metadata:child:lastname'] = 'The student\'s last name, from the school\'s data, when they have no account.';

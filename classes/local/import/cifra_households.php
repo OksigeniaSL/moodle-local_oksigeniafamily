@@ -519,7 +519,8 @@ final class cifra_households {
                     'cifra:' . $id,
                     trim((string) ($student['nombre'] ?? '')),
                     trim(($student['apellido1'] ?? '') . ' ' . ($student['apellido2'] ?? '')),
-                    trim((string) ($student['grupo_academico_principal']['etiqueta'] ?? ''))
+                    trim((string) ($student['grupo_academico_principal']['etiqueta'] ?? '')),
+                    self::birthdate((string) ($student['fecha_nacimiento'] ?? ''))
                 );
             }
         } catch (\Throwable $e) {
@@ -540,6 +541,21 @@ final class cifra_households {
         ];
 
         return self::keep($result, $now);
+    }
+
+    /**
+     * A day of birth as Cifra gives it (2010-05-14), at 12:00 UTC so any time zone reads that day.
+     *
+     * @param string $date The date.
+     * @return int 0 when there is none or it does not read as a date.
+     */
+    public static function birthdate(string $date): int {
+        if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})/', trim($date), $parts)) {
+            return 0;
+        }
+        [$year, $month, $day] = [(int) $parts[1], (int) $parts[2], (int) $parts[3]];
+
+        return checkdate($month, $day, $year) ? gmmktime(12, 0, 0, $month, $day, $year) : 0;
     }
 
     /**

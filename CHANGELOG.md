@@ -14,6 +14,9 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
   active: the username follows from the centre's rule (`cifrausername`, such as `{nif}47`), so `derived` is true, and
   `active` is null. Kept in a table of its own while Cifra keeps bringing the adult, and 30 days after; in the privacy
   export and deletion.
+- Each child's day of birth, as the school's data gives it (Cifra's `fecha_nacimiento`): `birthdate` in
+  `children_of_adult()` and in the children of `household()` and `households()`, at 12:00 UTC of that day so any time
+  zone reads the same day, or 0. `set_child_details()` takes it as a fifth argument; leaving it out keeps it as it is.
 
 ### Added (0.3.39-dev)
 
