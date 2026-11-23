@@ -5,6 +5,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.43-dev)
+
+- «Propose an improvement» is beside the way between the school's pages, with what each page does, and no longer inside
+  it as if it were one more page (on a phone it fell alone to a row of its own).
+
 ### Added (0.3.42-dev)
 
 - «Propose an improvement» of Oksigenia Marandu (from its 0.61.1) at the end of the way between the school's pages:

@@ -142,7 +142,7 @@ class page {
     }
 
     /**
-     * The way between the pages, and «Propose an improvement» at its end.
+     * The way between the pages, and «Propose an improvement» beside it.
      *
      * @param string $current The page: families, import, codes, consents or photos.
      * @param string $screen The screen, for the proposals; the name of the current page when empty.
@@ -173,7 +173,7 @@ class page {
             return null;
         }
 
-        return ['items' => $items, 'proposal' => $proposal];
+        return ['hasitems' => !empty($items), 'items' => $items, 'proposal' => $proposal];
     }
 
     /**
