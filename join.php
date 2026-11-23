@@ -50,13 +50,20 @@ $context = join::eligible($student) ? join::context($student) : null;
 // The canteen's way without installing anything, for a student who eats at one (Oksigenia Meals); it says which
 // phone from the visitor's, and it brings its own sheet.
 $canteen = '';
+$meals = '\\local_oksigeniameals\\api';
 $help = '\\local_oksigeniameals\\local\\familyhelp';
-if ($context && class_exists($help) && method_exists($help, 'section')) {
-    // A phone, not a tablet: on the child's tablet the parent scans the QR with their own phone (Meals says which).
+$section = null;
+if ($context && class_exists($meals) && method_exists($meals, 'family_section')) {
+    // A phone, not a tablet: on the child's tablet the parent scans the QR with their own phone (Meals tells which).
+    $section = $meals::family_section($student);
+} else if ($context && class_exists($help) && method_exists($help, 'section')) {
+    // Meals before 0.115.0, without its API for it.
     $phone = method_exists($help, 'phone')
         ? $help::phone()
         : core_useragent::get_device_type() === core_useragent::DEVICETYPE_MOBILE;
     $section = $help::section($student, $phone);
+}
+if ($section) {
     $canteen = (string) ($section['html'] ?? '');
     if ($canteen !== '' && !empty($section['css'])) {
         $PAGE->requires->css(new moodle_url((string) $section['css']));

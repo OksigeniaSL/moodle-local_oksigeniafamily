@@ -5,6 +5,11 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.41-dev)
+
+- The join page takes the canteen's part from Oksigenia Meals' stable API (`api::family_section()`, from its 0.115.0),
+  which tells a phone from a tablet itself; with an older Meals it goes on as before.
+
 ### Added (0.3.40-dev)
 
 - `api::external_accounts(int $adultid)`: what a school management program says of an adult it brings, to help them
