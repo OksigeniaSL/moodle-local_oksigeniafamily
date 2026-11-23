@@ -5,6 +5,18 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Added (0.3.42-dev)
+
+- «Propose an improvement» of Oksigenia Marandu (from its 0.61.1) at the end of the way between the school's pages:
+  families, a family, a child or an adult added, import, codes and letters, photos, and the requests for consent (also
+  inside a course, where it comes alone). The staff mark on a picture of the screen what they would change. Nothing
+  shows on a site without Marandu. `page::nav()` takes the screen's name and may return null.
+
+### Changed (0.3.42-dev)
+
+- The check of GitHub gives write permission to the plugin's git files after the checkout: git now writes the reverse
+  indexes of its packs read-only, and «grunt» of moodle-plugin-ci could not put back its copy of the plugin over them.
+
 ### Changed (0.3.41-dev)
 
 - The join page takes the canteen's part from Oksigenia Meals' stable API (`api::family_section()`, from its 0.115.0),

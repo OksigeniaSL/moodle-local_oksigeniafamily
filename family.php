@@ -181,7 +181,7 @@ foreach ($children as $one) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_oksigeniafamily/family', [
-    'nav' => page::nav('families'),
+    'nav' => page::nav('families', get_string('proposal:family', $component)),
     'backurl' => (new moodle_url('/local/oksigeniafamily/index.php'))->out(false),
     'closed' => $closed,
     'source' => page::source($family->source),

@@ -98,7 +98,7 @@ if ($data = $form->get_data()) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_oksigeniafamily/adult', [
-    'nav' => page::nav('families'),
+    'nav' => page::nav('families', $title),
     'backurl' => $back->out(false),
     'form' => $form->render(),
     'isnew' => !$family,

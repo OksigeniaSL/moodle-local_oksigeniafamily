@@ -61,9 +61,21 @@
 
 /* Only where there is a pointer that hovers: a touch would leave it stuck. */
 @media (hover: hover) {
-    .local-oksigeniafamily .okf-nav a[href]:hover {
+    .local-oksigeniafamily .okf-nav a[href]:hover,
+    .local-oksigeniafamily .okf-nav .okf-propose:hover {
         background: var(--okf-bg);
     }
+}
+
+/* «Propose an improvement» of Oksigenia Marandu, at the end of the way between the pages: one more of them, framed. */
+.local-oksigeniafamily .okf-nav .okf-propose {
+    padding: .4rem .9rem;
+    border: 1px solid var(--okf-line);
+    border-radius: .55rem;
+    background: transparent;
+    color: var(--okf-ink);
+    font-size: inherit;
+    line-height: inherit;
 }
 
 .local-oksigeniafamily .okf-nav a[href][aria-current] {

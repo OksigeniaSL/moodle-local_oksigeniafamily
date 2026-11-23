@@ -85,7 +85,7 @@ if ($q !== '') {
 
 echo $OUTPUT->header();
 echo $OUTPUT->render_from_template('local_oksigeniafamily/child', [
-    'nav' => page::nav('families'),
+    'nav' => page::nav('families', $title),
     'backurl' => $back->out(false),
     'action' => $url->out(false),
     'familyid' => $familyid,

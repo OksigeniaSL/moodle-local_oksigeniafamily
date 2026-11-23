@@ -45,7 +45,7 @@ if (!$site) {
     echo $OUTPUT->heading($title);
 }
 echo $OUTPUT->render_from_template('local_oksigeniafamily/consents', [
-    'nav' => $site ? page::nav('consents') : null,
+    'nav' => page::nav('consents', '', $site),
     'newurl' => (new moodle_url('/local/oksigeniafamily/consent_edit.php', $params))->out(false),
     'hasrows' => (bool) $rows,
     'wherecolumn' => $site,

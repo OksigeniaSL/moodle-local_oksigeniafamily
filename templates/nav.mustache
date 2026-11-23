@@ -17,18 +17,21 @@
 {{!
     @template local_oksigeniafamily/nav
 
-    The way between the pages of the school's side.
+    The way between the pages of the school's side, and «Propose an improvement» of Oksigenia Marandu at its end.
 
     Context variables required for this template:
-    * items - Each with url, label and current.
+    * items - Each with url, label and current (none inside a course).
+    * proposal - The button of Marandu, as its HTML; empty without Marandu or for whoever may not propose.
 
     Example context (json):
     {
-        "items": [{"url": "#", "label": "Families", "current": true}, {"url": "#", "label": "Import", "current": false}]
+        "items": [{"url": "#", "label": "Families", "current": true}, {"url": "#", "label": "Import", "current": false}],
+        "proposal": "<button type=\"button\" class=\"btn btn-outline-secondary okf-propose\">Propose an improvement</button>"
     }
 }}
 <nav class="okf-nav" aria-label="{{#str}} pluginname, local_oksigeniafamily {{/str}}">
     {{#items}}
     <a class="nav-link" href="{{url}}" {{#current}}aria-current="page"{{/current}}>{{label}}</a>
     {{/items}}
+    {{{proposal}}}
 </nav>

@@ -691,6 +691,7 @@ $string['privacy:metadata:target'] = 'Los alumnos de los que trata una autorizac
 $string['privacy:metadata:target:userid'] = 'El alumno.';
 $string['privacy:metadata:timecreated'] = 'Cuándo se creó el registro.';
 $string['privacy:photo'] = 'Foto';
+$string['proposal:family'] = 'La ficha de una familia';
 $string['review:account'] = 'Enlazado por su correo a una cuenta con otro nombre';
 $string['review:gone'] = 'Los datos del centro ya no lo ponen en este hogar';
 $string['settings:cifrahouseholds'] = 'Hogares desde Cifra cada noche';

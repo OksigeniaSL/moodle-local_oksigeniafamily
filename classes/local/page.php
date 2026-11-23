@@ -125,17 +125,36 @@ class page {
     }
 
     /**
-     * The way between the pages.
+     * «Propose an improvement» of Oksigenia Marandu for one of the staff's screens, with what it needs loaded on the
+     * page: called before the page's header. Empty on a site without Marandu (or with one before 0.61.1) and for an
+     * account that may not propose.
      *
-     * @param string $current The page: families, import, codes or consents.
-     * @return array For the template local_oksigeniafamily/nav.
+     * @param string $screen The screen, as this plugin names it.
+     * @return string Its HTML.
      */
-    public static function nav(string $current): array {
+    public static function proposal(string $screen): string {
+        $marandu = '\\local_oksigeniamarandu\\api';
+        if (!class_exists($marandu) || !method_exists($marandu, 'proposal_button')) {
+            return '';
+        }
+
+        return (string) $marandu::proposal_button('local_oksigeniafamily', $screen, 'okf-propose');
+    }
+
+    /**
+     * The way between the pages, and «Propose an improvement» at its end.
+     *
+     * @param string $current The page: families, import, codes, consents or photos.
+     * @param string $screen The screen, for the proposals; the name of the current page when empty.
+     * @param bool $links Whether to show the way between the pages (not inside a course).
+     * @return array|null For the template local_oksigeniafamily/nav; null when there is nothing to show.
+     */
+    public static function nav(string $current, string $screen = '', bool $links = true): ?array {
         $pages = ['families' => 'index.php', 'import' => 'import.php', 'codes' => 'codes.php', 'consents' => 'consents.php',
             'photos' => 'photos.php'];
         $caps = ['consents' => 'local/oksigeniafamily:requestconsent'];
         $items = [];
-        foreach ($pages as $name => $script) {
+        foreach ($links ? $pages : [] as $name => $script) {
             if ($name === 'consents' && !consent::enabled()) {
                 continue;
             }
@@ -149,7 +168,12 @@ class page {
             ];
         }
 
-        return ['items' => $items];
+        $proposal = self::proposal($screen !== '' ? $screen : get_string('nav:' . $current, 'local_oksigeniafamily'));
+        if (!$items && $proposal === '') {
+            return null;
+        }
+
+        return ['items' => $items, 'proposal' => $proposal];
     }
 
     /**

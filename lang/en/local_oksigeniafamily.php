@@ -691,6 +691,7 @@ $string['privacy:metadata:target'] = 'The students a request for consent is abou
 $string['privacy:metadata:target:userid'] = 'The student.';
 $string['privacy:metadata:timecreated'] = 'When the record was made.';
 $string['privacy:photo'] = 'Photo';
+$string['proposal:family'] = 'A family\'s page';
 $string['review:account'] = 'Linked by their e-mail to an account with another first name';
 $string['review:gone'] = 'The school\'s data no longer has them in this household';
 $string['settings:cifrahouseholds'] = 'Households from Cifra every night';
