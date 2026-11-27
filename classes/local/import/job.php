@@ -16,6 +16,7 @@
 
 namespace local_oksigeniafamily\local\import;
 
+use local_oksigeniafamily\local\commonmail;
 use local_oksigeniafamily\local\page;
 use local_oksigeniafamily\task\import_apply;
 use local_oksigeniafamily\task\import_plan;
@@ -609,6 +610,18 @@ class job {
             $message->courseid = SITEID;
             // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
             $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
+            $site = format_string(get_site()->fullname, true, ['context' => \context_system::instance()]);
+            commonmail::notice($message, [
+                'subject' => $message->subject,
+                'heading' => $message->subject,
+                'preheader' => $text,
+                'hello' => get_string('mail:hello', $component, $user->firstname),
+                'blocks' => [
+                    ['paragraph' => $text],
+                    ['action' => ['actionurl' => $url->out(false), 'actiontext' => $message->contexturlname]],
+                ],
+                'reason' => commonmail::plain(get_string('import:notify:reason', $component, $site)),
+            ]);
             message_send($message);
         } finally {
             force_current_language($previous);

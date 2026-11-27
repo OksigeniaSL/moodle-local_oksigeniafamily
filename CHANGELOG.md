@@ -5,6 +5,19 @@ All notable changes to `local_oksigeniafamily` are listed here. The format follo
 
 ## [Unreleased]
 
+### Changed (0.3.44-dev)
+
+- Its mails go in the common look of the organization, by the way of Oksigenia Marandu 0.70 or later when it is there:
+  the link that puts a child into an account, a request for consent (by mail to an adult without an account, and as a
+  notice to one with an account), a new adult in a family, answers of a family that do not agree, and an import that
+  ended. Its name, colour and logo go inside the mail, with a greeting, one button, why it arrives and a text version.
+  To an address of the school they go by the site's mail; to the rest, by Mailjet if the site chose it. What the bell and
+  the app show does not change, and without Marandu they go as before.
+
+### Fixed (0.3.44-dev)
+
+- The notice of a new adult in a family goes in the language of whoever gets it, not in that of whoever joined.
+
 ### Changed (0.3.43-dev)
 
 - «Propose an improvement» is beside the way between the school's pages, with what each page does, and no longer inside

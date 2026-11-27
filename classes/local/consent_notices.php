@@ -178,7 +178,7 @@ class consent_notices {
      * @param string $site The name of the site.
      * @param bool $reminder Whether it is the reminder.
      * @param \moodle_url $url Where they answer.
-     * @return array subject, text, html and small.
+     * @return array subject, text, html, small and pieces (of the common mail, without the greeting).
      */
     private static function compose(
         \stdClass $request,
@@ -204,8 +204,19 @@ class consent_notices {
         ]);
         $html = \html_writer::tag('p', s($lead)) . \html_writer::div($message) . \html_writer::tag('p', $link);
         $text = $lead . "\n\n" . html_to_text($message, 0, false) . "\n\n" . $button . ': ' . $url->out(false);
+        $pieces = [
+            'subject' => commonmail::plain($subject),
+            'heading' => commonmail::plain($a->title),
+            'preheader' => commonmail::plain($lead),
+            'blocks' => array_merge(
+                [['paragraph' => commonmail::plain($lead)]],
+                commonmail::paragraphs(html_to_text($message, 0, false)),
+                [['action' => ['actionurl' => $url->out(false), 'actiontext' => $button]]]
+            ),
+            'reason' => commonmail::plain(get_string('consent:mail:reason', $component, $a)),
+        ];
 
-        return ['subject' => $subject, 'text' => $text, 'html' => $html, 'small' => $lead];
+        return ['subject' => $subject, 'text' => $text, 'html' => $html, 'small' => $lead, 'pieces' => $pieces];
     }
 
     /**
@@ -263,6 +274,7 @@ class consent_notices {
 
         // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
         $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
+        commonmail::notice($message, self::greeted($texts['pieces'], (string) $user->firstname));
         return (bool) message_send($message);
     }
 
@@ -301,7 +313,31 @@ class consent_notices {
         $to->suspended = 0;
         $to->deleted = 0;
 
+        // In the common look of the organization, by the way of Oksigenia Marandu, when it is there: an address out of
+        // the school goes by Mailjet if the site chose it.
+        $went = commonmail::send($to->email, self::greeted($texts['pieces'], $to->firstname), current_language());
+
+        if ($went !== null) {
+            return $went;
+        }
+
         return (bool) email_to_user($to, \core_user::get_noreply_user(), $texts['subject'], $texts['text'], $texts['html']);
+    }
+
+    /**
+     * The pieces of a mail with the greeting, when the name is known.
+     *
+     * @param array $pieces The pieces.
+     * @param string $firstname The first name of whoever reads it.
+     * @return array
+     */
+    private static function greeted(array $pieces, string $firstname): array {
+        $firstname = trim($firstname);
+        if ($firstname !== '') {
+            $pieces['hello'] = get_string('mail:hello', 'local_oksigeniafamily', $firstname);
+        }
+
+        return $pieces;
     }
 
     /**
@@ -384,6 +420,20 @@ class consent_notices {
             $message->courseid = SITEID;
             // The app draws its own icon only beside notices of activities; anyone else's, it takes from the notice.
             $message->customdata = ['notificationiconurl' => $OUTPUT->image_url('icon', 'local_oksigeniafamily')->out(false)];
+            commonmail::notice($message, self::greeted([
+                'subject' => commonmail::plain($message->subject),
+                'heading' => commonmail::plain($message->subject),
+                'preheader' => commonmail::plain($text),
+                'blocks' => [
+                    ['paragraph' => commonmail::plain($text)],
+                    ['action' => ['actionurl' => $url->out(false), 'actiontext' => $message->contexturlname]],
+                ],
+                'reason' => commonmail::plain(get_string(
+                    'consent:conflict:reason',
+                    'local_oksigeniafamily',
+                    format_string(get_site()->fullname, true, ['context' => \context_system::instance()])
+                )),
+            ], (string) $user->firstname));
             message_send($message);
         } finally {
             force_current_language($previous);

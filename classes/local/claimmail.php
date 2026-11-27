@@ -132,11 +132,27 @@ class claimmail {
             $subject = get_string('claimmail:subject', $component, $a);
             $text = get_string('claimmail:text', $component, $a);
             $html = get_string('claimmail:html', $component, (object) ((array) $a + ['url' => s($url)]));
+            $say = fn(string $key, $b = null): string => commonmail::plain(get_string($key, $component, $b ?? $a));
+            $pieces = [
+                'subject' => commonmail::plain($subject),
+                'heading' => $say('claimmail:heading'),
+                'preheader' => $say('claimmail:lead'),
+                'hello' => $say('mail:hello', $a->name),
+                'blocks' => [
+                    ['paragraph' => $say('claimmail:lead')],
+                    ['action' => ['actionurl' => $url, 'actiontext' => $say('claimmail:button')]],
+                    ['small' => $say('claimmail:once')],
+                ],
+                'reason' => $say('claimmail:reason'),
+            ];
         } finally {
             force_current_language($lang);
         }
 
-        return (bool) email_to_user($user, \core_user::get_noreply_user(), $subject, $text, $html);
+        // In the common look of the organization, by the way of Oksigenia Marandu, when it is there.
+        $went = commonmail::send($user, $pieces);
+
+        return $went ?? (bool) email_to_user($user, \core_user::get_noreply_user(), $subject, $text, $html);
     }
 
     /**
